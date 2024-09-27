@@ -1,5 +1,6 @@
 docker-compose.yaml
 .env.dev
+.env
 
 data
 postgres-data
@@ -26,6 +27,8 @@ solr/**/*
 *.bkp.*
 *.bak
 *.bak.*
+
+*.DS_Store
 
 # Ignore Byebug command history file.
 #.byebug_history
