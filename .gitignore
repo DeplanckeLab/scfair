@@ -14,7 +14,6 @@ src/public/assets/*
 
 */node_modules
 .env.prod
-src/Gemfile.lock
 src/package-lock.json
 
 solr/**/*
