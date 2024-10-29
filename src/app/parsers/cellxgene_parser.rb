@@ -6,7 +6,6 @@ end
 
 class CellxgeneParser
   BASE_URL = "https://api.cellxgene.cziscience.com/curation/v1/collections/".freeze
-  FILETYPE_MAPPING = { "H5AD" => :h5ad, "RDS" => :rds }.freeze
 
   attr_reader :errors
 
@@ -82,7 +81,7 @@ class CellxgeneParser
       update_technologies(dataset, data.fetch(:assay, []))
       update_file_resources(dataset, data.fetch(:assets))
 
-      puts "imported #{dataset.id}"
+      puts "Imported #{dataset.id}"
     else
       @errors << "Failed to save dataset #{dataset.id}: #{dataset.errors.full_messages.join(", ")}"
     end
@@ -173,7 +172,7 @@ class CellxgeneParser
     assets_data.each do |asset_hash|
       dataset.file_resources.find_or_create_by(
         url: asset_hash.fetch(:url, ""),
-        filetype: FILETYPE_MAPPING[asset_hash.fetch(:filetype)] || :undefined,
+        filetype: Dataset::FILETYPES[asset_hash.fetch(:filetype)] || :undefined,
       )
     end
   end

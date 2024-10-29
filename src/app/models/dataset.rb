@@ -30,6 +30,7 @@ class Dataset < ApplicationRecord
       .compact
       .flat_map { |children| children.split(",") }
       .compact
+  FILETYPES = { "H5AD" => :h5ad, "RDS" => :rds }.freeze
 
       children = OntologyTerm.where(identifier: children_identifiers).all
       children.map{|e| [e.identifier, e.name]}
