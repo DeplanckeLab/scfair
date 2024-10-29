@@ -33,3 +33,4 @@ solr/**/*
 #.byebug_history
 
 
+src/.vscode/settings.json
