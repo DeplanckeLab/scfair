@@ -10,9 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_09_27_200855) do
+ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
 
   create_table "cell_types", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|

@@ -2,15 +2,6 @@
 
 rm -f ./tmp/pids/server.pid
 
-# Install node_modules if doesn't exist in container
-if [ ! -d "node_modules" ]; then
-    npm i
-fi
-
-#bundle install &&
-
-yarn build && yarn build:css
-
 if [ ! -f "config/sunspot.yml" ]; then
     rails generate sunspot_rails:install
 fi
