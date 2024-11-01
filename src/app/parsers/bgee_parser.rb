@@ -88,7 +88,7 @@ class BgeeParser
 
       dataset.file_resources.find_or_create_by(
         url: asset[:path] + asset[:fileName],
-        filetype: Dataset::FILETYPES[asset[:filetype]] || :undefined,
+        filetype: FileResource::FILETYPES[asset[:filetype]] || :undefined,
       )
     end
   end

@@ -172,7 +172,7 @@ class CellxgeneParser
     assets_data.each do |asset_hash|
       dataset.file_resources.find_or_create_by(
         url: asset_hash.fetch(:url, ""),
-        filetype: Dataset::FILETYPES[asset_hash.fetch(:filetype)] || :undefined,
+        filetype: FileResource::FILETYPES[asset_hash.fetch(:filetype)] || :undefined,
       )
     end
   end

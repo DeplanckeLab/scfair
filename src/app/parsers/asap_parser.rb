@@ -114,7 +114,7 @@ class AsapParser
       
       dataset.file_resources.find_or_create_by(
         url: file[:url],
-        filetype: Dataset::FILETYPES[file[:filetype]] || :undefined
+        filetype: FileResource::FILETYPES[file[:filetype]] || :undefined
       )
     end
   end
