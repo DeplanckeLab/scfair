@@ -1,52 +1,62 @@
-# app/models/dataset.rb
-
 class Dataset < ApplicationRecord
+  has_and_belongs_to_many :sexes
+  has_and_belongs_to_many :cell_types
+  has_and_belongs_to_many :tissues
+  has_and_belongs_to_many :developmental_stages
+  has_and_belongs_to_many :organisms
+  has_and_belongs_to_many :diseases
+  has_and_belongs_to_many :technologies
+
+  has_many :file_resources
+
   searchable do
-    integer :id
-    text :collection_id
-    text :dataset_id
-    text :source
-    text :doi
-    text :cell_types
-    text :tissue
-    text :tissue_uberon
-    text :developmental_stage
-    text :developmental_stage_id
-    text :sex
-    text :organisms
-    text :disease
-    text :assay_info
-    integer :number_of_cells, multiple: true
-    text :processed_data
-    text :link_to_dataset
-    text :link_to_explore_data
-    text :link_to_raw_data
-    text :dataset_hash
-    text :ontology_children, default_boost: 0.3, stored: true do
-      terms = [tissue_uberon, developmental_stage_id].flatten
-      ots = OntologyTerm.where(:identifier => terms).all
-      children_identifiers = ots.map { |e| e.all_children }
-      .flatten
-      .compact
-      .flat_map { |children| children.split(",") }
-      .compact
+    string :id
+    string :collection_id
+    string :source_reference_id
+    string :source_name
+    string :source_url
+    string :explorer_url
+    string :doi
+    integer :cell_count
 
-      children = OntologyTerm.where(identifier: children_identifiers).all
-      children.map{|e| [e.identifier, e.name]}
+    string :sexes, multiple: true do
+      sexes.map(&:name)
+    end
+    
+    string :cell_types, multiple: true do
+      cell_types.map(&:name)
+    end
+    
+    string :tissues, multiple: true do
+      tissues.map(&:name)
+    end
+    
+    string :developmental_stages, multiple: true do
+      developmental_stages.map(&:name)
+    end
+    
+    string :organisms, multiple: true do
+      organisms.map(&:name)
+    end
+    
+    string :diseases, multiple: true do
+      diseases.map(&:name)
+    end
+    
+    string :technologies, multiple: true do
+      technologies.map(&:protocol_name)
     end
 
-    text :ontology_parents, default_boost: 0.3, stored: true do
-      terms = [tissue_uberon, developmental_stage_id].flatten
-      ots = OntologyTerm.where(:identifier => terms).all
-      parents_identifiers = ots.map { |e| e.all_parents }
-                          .flatten
-                          .compact
-                          .flat_map { |parents| parents.split(",") }
-                          .compact
-
-      parents = OntologyTerm.where(identifier: parents_identifiers).all
-      parents.map{|e| [e.identifier, e.name]}
+    text :text_search do
+      [
+        sexes.map(&:name),
+        cell_types.map(&:name),
+        tissues.map(&:name),
+        developmental_stages.map(&:name),
+        organisms.map(&:name),
+        diseases.map(&:name),
+        technologies.map(&:protocol_name)
+      ].flatten.compact.join(' ')
     end
-
   end
 end
