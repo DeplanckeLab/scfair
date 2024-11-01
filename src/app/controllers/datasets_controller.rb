@@ -19,7 +19,7 @@ class DatasetsController < ApplicationController
       with(:diseases, params[:diseases]) if params[:diseases].present?
       with(:technologies, params[:technologies]) if params[:technologies].present?
       
-      paginate page: params[:page] || 1, per_page: 8
+      paginate page: params[:page] || 1, per_page: 7
     end
     
     @datasets = @search.results
