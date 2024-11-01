@@ -1,233 +1,64 @@
-<!--<div class="d-flex justify-content-between align-items-center flex-grow-1 w-100"> -->
-<div id='search_container' class='w-100'>
+<div class="container mx-auto px-4 mt-8">
+  <div class="flex">
+    <div class="w-1/4 pr-6">
+      <%= form_with(
+            url: datasets_path, 
+            method: :get,
+            data: { turbo: true },
+            class: "space-y-6"
+          ) do |form| %>
+        
+        <div class="search-box">
+          <%= form.search_field :search, 
+              class: "w-full rounded-md border-gray-300",
+              placeholder: "Search datasets...",
+              oninput: "this.form.requestSubmit()",
+              data: { turbo_permanent: true } %>
+        </div>
 
-  <%= render :partial => 'search_form' %>
-  
-  <!--    <div class="overflow-scroll w-100 h-100"> -->
-    <div id='datasets_container' class="hidden"><!-- style="display: none">-->
+        <div id="filters" class="space-y-6">
+          <% @search.facets.each do |facet| %>
+            <div class="facet-group">
+              <h3 class="font-semibold text-gray-700 mb-2"><%= facet.name.to_s.titleize %></h3>
+              <div class="space-y-2">
+                <% facet.rows.each do |row| %>
+                  <div class="flex items-center">
+                    <%= form.check_box "#{facet.name}[]", 
+                        { 
+                          checked: params[facet.name]&.include?(row.value),
+                          class: "mr-2",
+                          onchange: "this.form.requestSubmit()"
+                        },
+                        row.value,
+                        nil %>
+                    <%= form.label "#{facet.name}_#{row.value}", 
+                        "#{row.value} (#{row.count})",
+                        class: "text-sm text-gray-600" %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     </div>
-    <!--    </div> -->
-  <!--</div>-->
-</div>
 
-<div id='spinner' class="flex-column justify-content-center align-items-center h-100 w-100" style='display: flex'>
-    <div class="spinner-border text-primary" role="status">
+    <div class="w-3/4" id="datasets">
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+          <h2 class="text-xl font-bold mb-4">
+            Found <%= @search.total %> datasets
+          </h2>
+
+          <div class="space-y-6">
+            <%= render partial: "dataset", collection: @datasets %>
+          </div>
+
+          <div class="mt-6">
+            <%= will_paginate @datasets %>
+          </div>
+        </div>
+      </div>
     </div>
-    <h4 class="mt-5">Please wait while we load datasets...</h4>
+  </div>
 </div>
-
-<%= javascript_tag do %>
-
-function intersect_of_lists(l){
-
-const flatArray = l.flat();
-const idCount = flatArray.reduce((acc, id) => {
-    acc[id] = (acc[id] || 0) + 1;
-    return acc;
-  }, {});
-  // Filter IDs that occurred in all nested arrays
-  const intersection = Object.keys(idCount).filter(id => idCount[id] === l.length);
-    const result = intersection.map(id => parseInt(id))
-    return result;
-
-}
-
-
-function getListofDatasetIDs(h){
-
-let l = Object.keys(h)
-let list_of_dataset_ids = []
-for (let i=0; i<l.length; i++){
-			  let filter_value = $("#filter_" + l[i]).val()
-    if ($("#filter_" + l[i]).length > 0 && h[l[i]][filter_value] && filter_value !== ""){
-  let dataset_ids = Object.keys(h[l[i]][filter_value])
-  if (dataset_ids.length > 0){ list_of_dataset_ids.push(dataset_ids)}  
-  }
-  }
-  let res = intersect_of_lists(list_of_dataset_ids)
-  return res
-
-}
-
-  function filterDataTable(list_dataset_ids) {
-   // Iterate through each row in the DataTable
-    dataset_table.rows().every(function () {
-        var rowData = this.data(); // Get data of the current row
-        var valueInFirstColumn = rowData[0]; // Get value in the first column
-        // Check if the value in the first column matches any value in the filterValues array
-        if (list_dataset_ids.includes(parseInt(valueInFirstColumn))) {
-            // If the value is in the filterValues array, show the row
-            $(this.node()).show();
-        } else {
-            // If the value is not in the filterValues array, hide the row
-            $(this.node()).hide();
-        }
-  });
-  
-}
-
-  function filterDataTable2(list_dataset_ids){
-  if ($.fn.dataTable.ext.search.length >0){
-    $.fn.dataTable.ext.search.pop(); // Remove the filter after applying
-   }
-   $.fn.dataTable.ext.search.push(
-  function(settings, data, dataIndex) {
-  var rowId = data[0] //dataset_table.row(dataIndex).node().id;
-          return list_dataset_ids.includes(parseInt(rowId));
-        }
-      );
-      dataset_table.draw();
-
-  
-  }
-
-  function upd_nber_filters(){
-  var nber_filters = 0;
-  $(".filter_field").each(function(){
-  if ($(this).val() != ''){
-   nber_filters +=1;
-  } 
-  })
-  $("#nber_applied_filters").html(nber_filters)
-  }
-  
-function createAutocompleteWithValues(hListValues) {
-  return function(fields, i) {
- 
-  if ($("#filter_" + fields[i]).data('ui-autocomplete')) {
-  $("#filter_" + fields[i]).autocomplete('destroy');
-  }
-
-  $("#filter_" + fields[i]).keyup(function(){
-  if ($(this).val() != ''){
-  $("#filter_" + fields[i] + "_reset").removeClass("hidden")
-  upd_nber_filters()
-  }
-  })
-  $("#filter_" + fields[i]).autocomplete({
-            minLength: 0,
-            appendTo: "#filter_" + fields[i] + "_autocomplete_container",
-            classes: {
-                "ui-autocomplete": "test_ui",
-            },
-            html: true,
-            position: {
-                offset: '0 0' // Shift 0px left, 4px down.
-            },
-            source: function(request, response) {
-  var data = Object.keys(hListValues[fields[i]]);
-  var filteredData = $.ui.autocomplete.filter(data, request.term);
-                  var maxItemsToShow = 20;
-var slicedData = filteredData.slice(0, maxItemsToShow);
-slicedData.sort(function(a, b) {
-                    return a.toLowerCase().localeCompare(b.toLowerCase());
-                });
-                response(slicedData);
-            },
-            select: function(event, ui) {
-  $(this).val(ui.item.value)
-             let dataset_ids = getListofDatasetIDs(hListValues)
-  filterDataTable2(dataset_ids)
-  set_filter_autocomplete(h_list_values, dataset_ids)
-  $("#filter_" + fields[i] + "_reset").removeClass("hidden")
-  upd_nber_filters()
-  }
-  }).blur(function() {
-            console.log("empty list #filter_" + fields[i] + "_automplete_container...")
-            $("#filter_" + fields[i] + "_automplete_container").empty()            
-        }).focus(function() {
-            $(this).autocomplete("search");
-        }).click(function() {
-            $(this).autocomplete("search");
-        });
-    };
-}
-
-  function filter_hash(h, l) {
-   let filteredHash = {}; // Create a new hash to store filtered values
-
-    // Iterate over each field_name in the original hash
-    for (let field_name in h) {
-        if (h.hasOwnProperty(field_name)) {
-            filteredHash[field_name] = {}; // Initialize field_name in the filtered hash
-
-            // Iterate over each field_value for the current field_name
-            for (let field_value in h[field_name]) {
-                if (h[field_name].hasOwnProperty(field_value)) {
-                    filteredHash[field_name][field_value] = {}; // Initialize field_value in the filtered hash
-
-                    // Iterate over each dataset_id for the current field_value
-                    for (let dataset_id in h[field_name][field_value]) {
-                        if (h[field_name][field_value].hasOwnProperty(dataset_id)) {
-                            // If dataset_id is in the list l, include it in the filtered hash
-                            if (l.includes(parseInt(dataset_id))) {
-                                filteredHash[field_name][field_value][dataset_id] = 1;
-                            }
-                        }
-                    }
-
-                    // If after filtering, no dataset_ids are left, remove the field_value
-                    if (Object.keys(filteredHash[field_name][field_value]).length === 0) {
-                        delete filteredHash[field_name][field_value];
-                    }
-                }
-            }
-        }
-    }
-  return filteredHash;
-}
-  
-  function set_filter_autocomplete(h_list_values, dataset_ids) {
-    var fields = Object.keys(h_list_values);
-    var fields_to_remove = <%= raw @fields_without_autocomplete_filter.to_json %>
-    fields = fields.filter(item => !fields_to_remove.includes(item));
-
-    // filter h_list_values that have none entry that have at least one dataset in dataset_ids
-//  let tmp_h = Object.assign({}, h_list_values);
-  filtered_h_list_values = filter_hash(h_list_values, dataset_ids)
-    var autocompleteFunc = createAutocompleteWithValues(filtered_h_list_values);
-
-    for (var i = 0; i < fields.length; i++) {
-        autocompleteFunc(fields, i);
-    }
-}
-
-$(".filter_field").on('keyup', function(e) {
-			if (e.which === 8 || e.which === 46) {
-			let dataset_ids = getListofDatasetIDs(h_list_values)
-			if (dataset_ids.length == 0){
-			dataset_ids = datasets.map(x => x.id)
-    }
-    if ($(this).val() == ""){
-     $("#" + this.id + "_reset").addClass("hidden")
-    }
-    filterDataTable2(dataset_ids)
-    set_filter_autocomplete(h_list_values, dataset_ids)
-    upd_nber_filters()
-			}
-})
-
-			
-function do_search(){
-
-/*var h_filters = {
-}
-$(".filter_fields").each(function(){
- h_filters[this.id] = $(this).val()
-})
-*/
-var data = [
-{name : 'q', value : $("#dataset_free_text").val()}
-//{name : 'filters', value : JSON.stringify(h_filters)}
-]
-refresh_post("datasets_container", "<%= search_datasets_path() %>", data, 'post', {loading:''})
-}
-
-
-$("#dataset_search-btn").click(function(){
-do_search()
-})
-
-do_search()
-
-<% end %>

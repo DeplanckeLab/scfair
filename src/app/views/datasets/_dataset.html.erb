@@ -1,2 +1,12 @@
-<div id="<%= dom_id dataset %>">
+<div class="border rounded-lg p-4 hover:bg-gray-50">
+  <div class="flex justify-between items-start">
+    <div>
+      <h3 class="text-lg font-semibold">
+        <%= dataset.source_name %>
+      </h3>
+    </div>
+    <div class="mt-2 text-sm text-gray-600">
+        <p>Cell Count: <%= dataset.cell_count %></p>
+    </div>
+  </div>
 </div>
