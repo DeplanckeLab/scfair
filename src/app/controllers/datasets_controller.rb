@@ -3,7 +3,7 @@ class DatasetsController < ApplicationController
     @search = Dataset.search do
       fulltext params[:search] if params[:search].present?
       
-      facet :sexes
+      facet :sexes, name: "Sex"
       facet :cell_types
       facet :tissues
       facet :developmental_stages

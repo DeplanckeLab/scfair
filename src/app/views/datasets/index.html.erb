@@ -19,7 +19,9 @@
         <div id="filters" class="space-y-6">
           <% @search.facets.each do |facet| %>
             <div class="facet-group">
-              <h3 class="font-semibold text-gray-700 mb-2"><%= facet.name.to_s.titleize %></h3>
+              <h3 class="font-semibold text-gray-700 mb-2">
+                <%= facet.name.to_s.titleize %>
+              </h3>
               <div class="space-y-2">
                 <% facet.rows.each do |row| %>
                   <div class="flex items-center">
