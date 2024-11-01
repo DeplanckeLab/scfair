@@ -7,14 +7,18 @@
     <%= favicon_link_tag 'scfair.png' %>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "inter-font", "data-turbo-track": "reload" %>
 
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
+
+    <%= turbo_refreshes_with method: :morph, scroll: :preserve %>
+    <%= yield :head %>
   </head>
 
   <body class="d-flex flex-column vh-100">
     <%= render :partial => "shared/header" %>
-      <%= yield %>
+    <%= yield %>
     <%= render :partial => 'shared/footer' %>
   </body>
 </html>
