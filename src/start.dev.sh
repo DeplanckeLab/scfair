@@ -11,4 +11,4 @@ fi
 sed -i 's/exists/exist/g' /usr/local/bundle/gems/sunspot_solr-2.6.0/lib/sunspot/solr/server.rb
 
 
-bundle exec rake sunspot:solr:run & ./bin/rails server -b "0.0.0.0" && fg 
+bundle exec rake sunspot:solr:run & ./bin/thrust ./bin/rails server -b "0.0.0.0" && fg 
