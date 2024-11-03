@@ -1,27 +1,65 @@
 <div class="container mx-auto px-4 mt-8">
-  <div class="flex">
-      <div class="w-1/4 pr-6">
+  <%= turbo_frame_tag "datasets", data: {turbo_action: "advance"}, class: "flex" do %>
+    <div class="w-1/4 pr-6">
       <%= form_with(
               url: datasets_path, 
               method: :get,
-              data: { turbo_stream: true, turbo_action: "advance" },
+              data: { turbo_frame: "datasets" },
               class: "space-y-6",
               id: :search_form
           ) do |form| %>
-      
-      <div class="search-box">
+        <div class="search-box">
           <%= form.search_field :search, 
-              class: "w-full rounded-md border-gray-300",
-              placeholder: "Search datasets...",
-              oninput: "this.form.requestSubmit()",
-              data: { turbo_permanent: true } %>
-      </div>
+                class: "w-full rounded-md border-gray-300",
+                placeholder: "Search datasets...",
+                oninput: "this.form.requestSubmit()",
+                data: { turbo_permanent: true } %>
+        </div>
+        <div class="space-y-6">
+          <% @search.facets.each do |facet| %>
+            <div class="facet-group">
+              <h3 class="font-semibold text-gray-700 mb-2">
+                <%= facet.name.to_s.titleize %>
+              </h3>
+              <div class="space-y-2">
+                <% facet.rows.each do |row| %>
+                  <div class="flex items-center">
+                    <% checkbox_id = "#{facet.name}_#{row.value.parameterize}" %>
+                    <%= form.check_box "#{facet.name}[]", 
+                        { 
+                          id: checkbox_id,
+                          checked: params[facet.name]&.include?(row.value),
+                          class: "mr-2",
+                          onchange: "this.form.requestSubmit()",
+                          turbo_permanent: true
+                        },
+                        row.value,
+                        nil %>
+                    <%= form.label checkbox_id, 
+                        "#{row.value} (#{row.count})",
+                        class: "text-sm text-gray-600" %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
       <% end %>
-
-      <%= render "filters", form: :search_form %>
-  </div>
-
-  <div class="w-3/4">
-    <%= render "datasets", search: @search, datasets: @datasets %>
-  </div>
+    </div>
+    <div class="w-3/4">
+      <div class="bg-white rounded-lg shadow">
+        <div class="p-6">
+          <h2 class="text-xl font-bold mb-4">
+            Found <%= @search.total %> datasets
+          </h2>
+          <div class="space-y-6">
+            <%= render partial: "dataset", collection: @datasets %>
+          </div>
+          <div class="mt-6">
+            <%= will_paginate @datasets %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>

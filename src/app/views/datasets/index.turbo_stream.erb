@@ -1,7 +1,0 @@
-<%= turbo_stream.update :datasets do %>
-  <%= render "datasets", search: @search, datasets: @datasets %>
-<% end %>
-
-<%= turbo_stream.update :filters do %>
-  <%= render "filters", form: :search_form %>
-<% end %>

@@ -3,7 +3,7 @@ class DatasetsController < ApplicationController
     @search = Dataset.search do
       fulltext params[:search] if params[:search].present?
       
-      facet :sexes, name: "Sex"
+      facet :sexes, name: "sex"
       facet :cell_types
       facet :tissues
       facet :developmental_stages
@@ -11,7 +11,7 @@ class DatasetsController < ApplicationController
       facet :diseases
       facet :technologies
 
-      with(:sexes, params[:sexes]) if params[:sexes].present?
+      with(:sexes, params[:sex]) if params[:sex].present?
       with(:cell_types, params[:cell_types]) if params[:cell_types].present?
       with(:tissues, params[:tissues]) if params[:tissues].present?
       with(:developmental_stages, params[:developmental_stages]) if params[:developmental_stages].present?
@@ -23,10 +23,5 @@ class DatasetsController < ApplicationController
     end
     
     @datasets = @search.results
-
-    respond_to do |format|
-      format.html
-      format.turbo_stream
-    end
   end
 end
