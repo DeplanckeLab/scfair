@@ -23,5 +23,10 @@ class DatasetsController < ApplicationController
     end
     
     @datasets = @search.results
+
+    respond_to do |format|
+      format.html
+      format.turbo_stream
+    end
   end
 end

@@ -1,0 +1,15 @@
+<div class="bg-white rounded-lg shadow" id="datasets">
+    <div class="p-6">
+        <h2 class="text-xl font-bold mb-4">
+        Found <%= search.total %> datasets
+        </h2>
+
+        <div class="space-y-6">
+        <%= render partial: "dataset", collection: datasets %>
+        </div>
+
+        <div class="mt-6">
+        <%= will_paginate datasets, data: { turbo_action: "advance" } %>
+        </div>
+    </div>
+</div>
