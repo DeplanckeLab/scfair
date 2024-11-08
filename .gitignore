@@ -34,3 +34,4 @@ solr/**/*
 
 
 src/.vscode/settings.json
+.DS_Store
