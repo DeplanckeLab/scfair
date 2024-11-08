@@ -1,12 +1,204 @@
-<div class="border rounded-lg p-4 hover:bg-gray-50">
-  <div class="flex justify-between items-start">
-    <div>
-      <h3 class="text-lg font-semibold">
-        <%= dataset.source_name %>
-      </h3>
+<div class="bg-white rounded-lg shadow p-4 mb-3">
+  <div class="flex items-start justify-between mb-2">
+    <div class="flex items-center gap-2">
+      <% logo_classes = "w-6 h-6" %>
+      <% container_classes = "flex items-center justify-center w-8 h-8 rounded bg-brand-dark" %>
+      <% case dataset.source_name.downcase %>
+      <% when /cellxgene/ %>
+        <div class="<%= container_classes %>">
+          <%= image_tag "cellxgene.svg", class: logo_classes, alt: "CellXGene logo" %>
+        </div>
+      <% when /bgee/ %>
+        <div class="<%= container_classes %>">
+          <%= image_tag "bgee.svg", class: logo_classes, alt: "Bgee logo" %>
+        </div>
+      <% when /asap/ %>
+        <div class="<%= container_classes %>">
+          <%= image_tag "asap.svg", class: logo_classes, alt: "ASAP logo" %>
+        </div>
+      <% else %>
+        <div class="<%= container_classes %>">
+          <%= image_tag "default_logo.svg", class: logo_classes, alt: "Default logo" %>
+        </div>
+      <% end %>
+      <div class="flex flex-col h-8">
+        <div class="flex flex-col justify-between h-full py-0.5">
+          <h2 class="text-xs font-medium text-gray-900 leading-none">
+            <%= dataset.source_name %>
+          </h2>
+          <span class="text-xs text-gray-600 leading-none">
+            <%= number_with_delimiter(dataset.cell_count) %> cells
+          </span>
+        </div>
+      </div>
     </div>
-    <div class="mt-2 text-sm text-gray-600">
-        <p>Cell Count: <%= dataset.cell_count %></p>
+    <div class="flex gap-2 shrink-0">
+      <% if dataset.explorer_url.present? %>
+        <%= link_to "Explorer", dataset.explorer_url,
+            class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
+            target: "_blank" %>
+      <% end %>
+      <% if dataset.source_url.present? %>
+        <%= link_to "Source", dataset.source_url,
+            class: "px-3 py-1.5 text-sm font-medium rounded
+                   text-gray-700 bg-gray-100 
+                   hover:bg-gray-200",
+            target: "_blank" %>
+      <% end %>
+      <% dataset.file_links.each do |link| %>
+        <%= link_to link[:text], link[:url],
+            class: "px-3 py-1.5 text-sm font-medium rounded
+                   text-#{link[:color]}-700 bg-#{link[:color]}-100 
+                   hover:bg-#{link[:color]}-200",
+            target: "_blank" %>
+      <% end %>
+    </div>
+  </div>
+  <div class="relative" data-controller="expandable-card">
+    <div class="flex flex-wrap gap-1.5">
+      <% all_tags = [
+        dataset.organisms.map { |o| { text: o.name, color: "blue", type: "Organism" } },
+        dataset.cell_types.map { |c| { text: c.name, color: "green", type: "Cell Type" } },
+        dataset.tissues.map { |t| { text: t.name, color: "purple", type: "Tissue" } },
+        dataset.developmental_stages.map { |d| { text: d.name, color: "orange", type: "Development" } },
+        dataset.diseases.map { |d| { text: d.name, color: "red", type: "Disease" } },
+        dataset.sexes.map { |s| { text: s.name, color: "pink", type: "Sex" } },
+        dataset.technologies.map { |t| { text: t.protocol_name, color: "indigo", type: "Technology" } }
+      ].flatten %>
+      <% visible_tags = all_tags.first(5) %>
+      <% remaining_count = all_tags.size - visible_tags.size %>
+      <% visible_tags.each do |tag| %>
+        <span class="px-2 py-0.5 rounded-full text-xs bg-<%= tag[:color] %>-100 text-<%= tag[:color] %>-800">
+          <%= tag[:text] %>
+        </span>
+      <% end %>
+      <% if remaining_count > 0 %>
+        <button 
+          data-expandable-card-target="button"
+          data-action="expandable-card#toggle"
+          class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700 hover:bg-gray-200">
+          +<%= remaining_count %> more
+        </button>
+        <div 
+          data-expandable-card-target="content" 
+          class="hidden absolute left-0 right-0 top-full -mt-2 pt-2 z-10">
+          <div class="bg-white rounded-lg shadow-lg border border-gray-200">
+            <div class="max-h-[60vh] overflow-y-auto">
+              <div class="p-4">
+                <div class="flex flex-wrap gap-6">
+                  <% if dataset.organisms.any? %>
+                    <div class="min-w-[200px]">
+                      <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+                        Organisms
+                      </h3>
+                      <div class="flex flex-wrap gap-1">
+                        <% dataset.organisms.each do |item| %>
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
+                            <%= item.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                  <% if dataset.cell_types.any? %>
+                    <div class="min-w-[200px]">
+                      <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                        Cell Types
+                      </h3>
+                      <div class="flex flex-wrap gap-1">
+                        <% dataset.cell_types.each do |item| %>
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                            <%= item.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                  <% if dataset.tissues.any? %>
+                    <div class="min-w-[200px]">
+                      <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
+                        Tissues
+                      </h3>
+                      <div class="flex flex-wrap gap-1">
+                        <% dataset.tissues.each do |item| %>
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800">
+                            <%= item.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                  <% if dataset.developmental_stages.any? %>
+                    <div class="min-w-[200px]">
+                      <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-orange-500 mr-2"></span>
+                        Development stages
+                      </h3>
+                      <div class="flex flex-wrap gap-1">
+                        <% dataset.developmental_stages.each do |item| %>
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">
+                            <%= item.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                  <% if dataset.diseases.any? %>
+                    <div class="min-w-[200px]">
+                      <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                        Diseases
+                      </h3>
+                      <div class="flex flex-wrap gap-1">
+                        <% dataset.diseases.each do |item| %>
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800">
+                            <%= item.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                  <% if dataset.sexes.any? %>
+                    <div class="min-w-[200px]">
+                      <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-pink-500 mr-2"></span>
+                        Sex
+                      </h3>
+                      <div class="flex flex-wrap gap-1">
+                        <% dataset.sexes.each do |item| %>
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-pink-100 text-pink-800">
+                            <%= item.name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                  <% if dataset.technologies.any? %>
+                    <div class="min-w-[200px]">
+                      <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
+                        Technology
+                      </h3>
+                      <div class="flex flex-wrap gap-1">
+                        <% dataset.technologies.each do |item| %>
+                          <span class="px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                            <%= item.protocol_name %>
+                          </span>
+                        <% end %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </div>
+            <div class="sticky top-0 inset-x-0 h-2 bg-gradient-to-b from-white pointer-events-none"></div>
+            <div class="sticky bottom-0 inset-x-0 h-2 bg-gradient-to-t from-white pointer-events-none"></div>
+          </div>
+        </div>
+      <% end %>
     </div>
   </div>
 </div>

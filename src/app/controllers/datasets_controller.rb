@@ -3,13 +3,13 @@ class DatasetsController < ApplicationController
     @search = Dataset.search do
       fulltext params[:search] if params[:search].present?
       
-      facet :sexes, name: "sex"
-      facet :cell_types
-      facet :tissues
-      facet :developmental_stages
-      facet :organisms
-      facet :diseases
-      facet :technologies
+      facet :organisms, sort: :index
+      facet :cell_types, sort: :index
+      facet :tissues, sort: :index
+      facet :developmental_stages, sort: :index
+      facet :diseases, sort: :index
+      facet :sexes, name: "sex", sort: :index
+      facet :technologies, sort: :index
 
       with(:sexes, params[:sex]) if params[:sex].present?
       with(:cell_types, params[:cell_types]) if params[:cell_types].present?
@@ -19,7 +19,18 @@ class DatasetsController < ApplicationController
       with(:diseases, params[:diseases]) if params[:diseases].present?
       with(:technologies, params[:technologies]) if params[:technologies].present?
       
-      paginate page: params[:page] || 1, per_page: 7
+      paginate page: params[:page] || 1, per_page: 6
+
+      data_accessor_for(Dataset).include = [
+        :sexes,
+        :cell_types,
+        :tissues,
+        :developmental_stages,
+        :organisms,
+        :diseases,
+        :technologies,
+        :file_resources
+      ]
     end
     
     @datasets = @search.results
