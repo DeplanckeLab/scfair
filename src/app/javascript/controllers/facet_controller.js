@@ -7,6 +7,13 @@ export default class extends Controller {
   connect() {
     if (this.hasItemsTarget) {
       this.restoreOrder()
+      
+      // Restore accordion state
+      const facetId = this.element.id
+      const isExpanded = sessionStorage.getItem(`${facetId}-expanded`) === 'true'
+      if (isExpanded) {
+        this.expand()
+      }
     }
   }
 
@@ -82,6 +89,8 @@ export default class extends Controller {
       this.moveToUnselected(checkbox)
     }
     
+    // Store current expanded state before form submission
+    sessionStorage.setItem(`${facetId}-expanded`, 'true')
     this.expand()
     
     setTimeout(() => {
@@ -138,6 +147,10 @@ export default class extends Controller {
     } else {
       this.collapse()
     }
+    
+    // Store accordion state
+    const facetId = this.element.id
+    sessionStorage.setItem(`${facetId}-expanded`, isCollapsed)
   }
 
   expand() {
