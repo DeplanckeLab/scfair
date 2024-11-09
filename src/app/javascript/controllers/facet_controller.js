@@ -1,12 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["items", "item", "button", "content", "searchInput", "clearButton"]
-  static values = { name: String }
+  static targets = ["items", "item", "button", "content", "searchInput", "clearButton", "hiddenCounter", "hiddenCount"]
+  static values = { name: String, showingAll: Boolean }
 
   connect() {
     if (this.hasItemsTarget) {
+      this.showingAllValue = false
       this.restoreOrder()
+      this.limitUnselectedItems()
       
       // Restore accordion state
       const facetId = this.element.id
@@ -42,7 +44,21 @@ export default class extends Controller {
       return indexA - indexB
     })
     
-    // Update stored order with any new checked items
+    // Sort unchecked items alphabetically
+    const sortedUncheckedItems = uncheckedItems.sort((a, b) => 
+      a.dataset.value.toLowerCase().localeCompare(b.dataset.value.toLowerCase())
+    )
+    
+    // Clear and reappend all items
+    while (itemsContainer.firstChild) {
+      itemsContainer.removeChild(itemsContainer.firstChild)
+    }
+    
+    // Append all items in order
+    sortedCheckedItems.forEach(item => itemsContainer.appendChild(item))
+    sortedUncheckedItems.forEach(item => itemsContainer.appendChild(item))
+    
+    // Update stored order
     selectedOrder = [
       ...selectedOrder.filter(value => checkedItems.some(item => item.dataset.value === value)),
       ...checkedItems
@@ -50,21 +66,92 @@ export default class extends Controller {
         .map(item => item.dataset.value)
     ]
     sessionStorage.setItem(orderKey, JSON.stringify(selectedOrder))
+  }
+
+  toggleShowAll() {
+    this.showingAllValue = !this.showingAllValue
     
-    // Sort unchecked items alphabetically
-    const sortedUncheckedItems = uncheckedItems.sort((a, b) => 
-      a.dataset.value.toLowerCase().localeCompare(b.dataset.value.toLowerCase())
-    )
-    
-    // Clear and reappend all items in the correct order
-    while (itemsContainer.firstChild) {
-      itemsContainer.removeChild(itemsContainer.firstChild)
+    if (this.showingAllValue) {
+      // Show all items
+      this.getUncheckedItems().forEach(item => {
+        item.style.display = 'flex'
+      })
+      this.hiddenCounterTarget.textContent = 'Show less'
+    } else {
+      // Show only first 10
+      this.limitUnselectedItems()
     }
+  }
+
+  limitUnselectedItems() {
+    if (this.showingAllValue) return
+
+    const uncheckedItems = this.getUncheckedItems()
     
-    // Append all items in the correct order
-    [...sortedCheckedItems, ...sortedUncheckedItems].forEach(item => 
-      itemsContainer.appendChild(item)
+    uncheckedItems.forEach((item, index) => {
+      item.style.display = index < 10 ? 'flex' : 'none'
+    })
+    
+    // Update hidden counter
+    const hiddenCount = Math.max(0, uncheckedItems.length - 10)
+    this.updateHiddenCounter(hiddenCount)
+  }
+
+  updateHiddenCounter(count) {
+    if (this.hasHiddenCounterTarget) {
+      if (count > 0) {
+        if (this.showingAllValue) {
+          this.hiddenCounterTarget.textContent = 'Show less'
+        } else {
+          this.hiddenCounterTarget.textContent = `Show ${count} more options`
+        }
+        this.hiddenCounterTarget.classList.remove('hidden')
+      } else {
+        this.hiddenCounterTarget.classList.add('hidden')
+      }
+    }
+  }
+
+  filter(event) {
+    const searchTerm = event.target.value.toLowerCase()
+    this.clearButtonTarget.style.display = searchTerm ? 'block' : 'none'
+    
+    let hiddenCount = 0
+    
+    // Show all items when searching
+    this.itemTargets.forEach(item => {
+      const value = item.dataset.value.toLowerCase()
+      const isChecked = item.querySelector('input[type="checkbox"]').checked
+      
+      // Always show checked items, filter unchecked ones
+      if (isChecked) {
+        item.style.display = 'flex'
+      } else {
+        const shouldShow = value.includes(searchTerm)
+        item.style.display = shouldShow ? 'flex' : 'none'
+        if (!shouldShow) hiddenCount++
+      }
+    })
+    
+    // Hide the show more/less button during search
+    this.hiddenCounterTarget.classList.add('hidden')
+  }
+
+  getUncheckedItems() {
+    return this.itemTargets.filter(item => 
+      !item.querySelector('input[type="checkbox"]').checked
     )
+  }
+
+  clearSearch(event) {
+    this.searchInputTarget.value = ''
+    this.clearButtonTarget.style.display = 'none'
+    
+    // Reset showing all state
+    this.showingAllValue = false
+    
+    // Restore limited view
+    this.limitUnselectedItems()
   }
 
   submitForm(event) {
@@ -89,7 +176,15 @@ export default class extends Controller {
       this.moveToUnselected(checkbox)
     }
     
-    // Store current expanded state before form submission
+    // Reset showing all state after form submission
+    this.showingAllValue = false
+    
+    // Update counter after selection changes
+    setTimeout(() => {
+      this.limitUnselectedItems()
+    }, 0)
+    
+    // Store current expanded state
     sessionStorage.setItem(`${facetId}-expanded`, 'true')
     this.expand()
     
@@ -161,23 +256,5 @@ export default class extends Controller {
   collapse() {
     this.contentTarget.style.maxHeight = '0px'
     this.buttonTarget.querySelector('svg').classList.remove('rotate-180')
-  }
-
-  filter(event) {
-    const searchTerm = event.target.value.toLowerCase()
-    this.clearButtonTarget.style.display = searchTerm ? 'block' : 'none'
-    
-    this.itemTargets.forEach(item => {
-      const value = item.dataset.value.toLowerCase()
-      item.style.display = value.includes(searchTerm) ? 'flex' : 'none'
-    })
-  }
-
-  clearSearch(event) {
-    this.searchInputTarget.value = ''
-    this.clearButtonTarget.style.display = 'none'
-    this.itemTargets.forEach(item => {
-      item.style.display = 'flex'
-    })
   }
 } 
