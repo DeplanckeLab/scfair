@@ -30,7 +30,6 @@
             <% @search.facets.each do |facet| %>
               <div class="facet-group" 
                    data-controller="facet"
-                   data-turbo-permanent
                    id="facet-<%= facet.name %>">
                 <% dot_color = case facet.name.to_s
                    when "organisms" then "blue"
@@ -65,7 +64,6 @@
                 <div 
                   class="space-y-2 overflow-hidden transition-all duration-200"
                   data-facet-target="content"
-                  data-turbo-permanent
                   id="facet-content-<%= facet.name %>"
                   style="max-height: 0px;">
                   <div class="py-1">
