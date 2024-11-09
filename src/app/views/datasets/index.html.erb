@@ -41,31 +41,29 @@
                    when "technologies" then "indigo"
                    else "gray"
                    end %>
+                <% selected_count = params[facet.name]&.size || 0 %>
                 <%= button_tag type: "button",
                   class: "w-full flex items-center justify-between text-left font-semibold text-gray-700 mb-2 group",
                   data: {
-                    action: "facet#toggle",
+                    action: "click->facet#toggle",
                     facet_target: "button",
-                    expanded: false,
-                    turbo_permanent: true
                   },
                   id: "facet-button-#{facet.name}" do %>
                   <div class="flex items-center">
                     <span class="w-2 h-2 rounded-full bg-<%= dot_color %>-500 mr-2"></span>
                     <%= facet.name.to_s.titleize %>
                   </div>
-                  <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150" 
+                  <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150 <%= 'rotate-180' if selected_count > 0 %>" 
                        viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" 
                           d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" 
                           clip-rule="evenodd" />
                   </svg>
                 <% end %>
-                <div 
-                  class="space-y-2 overflow-hidden transition-all duration-200"
-                  data-facet-target="content"
-                  id="facet-content-<%= facet.name %>"
-                  style="max-height: 0px;">
+                <div class="space-y-2 overflow-hidden transition-all duration-200"
+                     data-facet-target="content"
+                     id="facet-content-<%= facet.name %>"
+                     style="max-height: <%= selected_count > 0 ? 'none' : '0px' %>">
                   <div class="py-1">
                     <% if facet.rows.length > 10 %>
                       <div class="mb-3 px-1 relative">
