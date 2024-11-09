@@ -257,4 +257,29 @@ export default class extends Controller {
     this.contentTarget.style.maxHeight = '0px'
     this.buttonTarget.querySelector('svg').classList.remove('rotate-180')
   }
+
+  clearAllSelected(event) {
+    event.preventDefault()
+    event.stopPropagation() // Prevent accordion toggle
+
+    // Get all checked checkboxes
+    const checkedCheckboxes = this.itemTargets
+      .map(item => item.querySelector('input[type="checkbox"]'))
+      .filter(checkbox => checkbox.checked)
+
+    // Uncheck all selected checkboxes
+    checkedCheckboxes.forEach(checkbox => {
+      checkbox.checked = false
+    })
+
+    // Update the selection order in sessionStorage
+    const facetId = this.element.id
+    const orderKey = `${facetId}-order`
+    sessionStorage.setItem(orderKey, JSON.stringify([]))
+
+    // Submit the form after unchecking
+    setTimeout(() => {
+      this.element.closest('form').requestSubmit()
+    }, 0)
+  }
 } 
