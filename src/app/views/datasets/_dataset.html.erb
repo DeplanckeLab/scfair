@@ -1,26 +1,30 @@
 <div class="bg-white rounded-lg shadow p-4 mb-3" data-controller="dataset">
-  <div class="flex items-start justify-between mb-2">
-    <div class="flex items-center gap-2">
-      <% logo_classes = "w-6 h-6" %>
-      <% container_classes = "flex items-center justify-center w-8 h-8 rounded bg-brand-dark" %>
-      <% case dataset.source_name.downcase %>
-      <% when /cellxgene/ %>
-        <div class="<%= container_classes %>">
-          <%= image_tag "cellxgene.svg", class: logo_classes, alt: "CellXGene logo" %>
-        </div>
-      <% when /bgee/ %>
-        <div class="<%= container_classes %>">
-          <%= image_tag "bgee.svg", class: logo_classes, alt: "Bgee logo" %>
-        </div>
-      <% when /asap/ %>
-        <div class="<%= container_classes %>">
-          <%= image_tag "asap.svg", class: logo_classes, alt: "ASAP logo" %>
-        </div>
-      <% else %>
-        <div class="<%= container_classes %>">
-          <%= image_tag "default_logo.svg", class: logo_classes, alt: "Default logo" %>
-        </div>
-      <% end %>
+  <div class="flex items-start justify-between">
+    <div class="flex gap-2 flex-grow">
+      <div class="shrink-0">
+        <% logo_classes = "w-6 h-6" %>
+        <% container_classes = "flex items-center justify-center w-8 h-8 rounded bg-brand-dark hover:bg-brand-dark/90 cursor-pointer" %>
+        <%= link_to dataset.source_url, target: "_blank" do %>
+          <% case dataset.source_name.downcase %>
+          <% when /cellxgene/ %>
+            <div class="<%= container_classes %>">
+              <%= image_tag "cellxgene.svg", class: logo_classes, alt: "CellXGene logo" %>
+            </div>
+          <% when /bgee/ %>
+            <div class="<%= container_classes %>">
+              <%= image_tag "bgee.svg", class: logo_classes, alt: "Bgee logo" %>
+            </div>
+          <% when /asap/ %>
+            <div class="<%= container_classes %>">
+              <%= image_tag "asap.svg", class: logo_classes, alt: "ASAP logo" %>
+            </div>
+          <% else %>
+            <div class="<%= container_classes %>">
+              <%= image_tag "default_logo.svg", class: logo_classes, alt: "Default logo" %>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
       <div class="flex flex-col h-8">
         <div class="flex flex-col justify-between h-full py-0.5">
           <h2 class="text-xs font-medium text-gray-900 leading-none">
@@ -34,13 +38,8 @@
     </div>
     <div class="flex gap-2 shrink-0">
       <% if dataset.explorer_url.present? %>
-        <%= link_to "Explorer", dataset.explorer_url,
+        <%= link_to "Explore", dataset.explorer_url,
             class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
-            target: "_blank" %>
-      <% end %>
-      <% if dataset.source_url.present? %>
-        <%= link_to "Source", dataset.source_url,
-            class: "px-3 py-1.5 text-sm font-medium rounded text-gray-700 bg-gray-100 hover:bg-gray-200",
             target: "_blank" %>
       <% end %>
       <% dataset.file_links.each do |link| %>
@@ -50,7 +49,7 @@
       <% end %>
     </div>
   </div>
-  <div class="flex flex-wrap gap-1.5 items-center" data-dataset-target="summary">
+  <div class="flex flex-wrap gap-1.5 mt-2 items-center" data-dataset-target="summary">
     <% tag_categories = {
       organisms: { color: "blue", items: dataset.organisms, name_method: :name },
       cell_types: { color: "green", items: dataset.cell_types, name_method: :name },
