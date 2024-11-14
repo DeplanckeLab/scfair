@@ -2,11 +2,8 @@
 
 rm -f ./tmp/pids/server.pid
 
-if [ ! -f "config/sunspot.yml" ]; then
-    rails generate sunspot_rails:install
-fi
+# Precompile assets
+bundle exec rails assets:precompile
 
-sed -i 's/exists/exist/g' /usr/local/bundle/gems/sunspot_solr-2.6.0/lib/sunspot/solr/server.rb
-rm -rf ./solr/pids/development/sunspot-solr-development.pid
-
-bundle exec rake sunspot:solr:run & ./bin/thrust ./bin/rails server -b "0.0.0.0" && fg 
+# Start Rails server
+bundle exec rails server -b "0.0.0.0"

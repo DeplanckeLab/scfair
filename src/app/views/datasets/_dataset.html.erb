@@ -42,11 +42,6 @@
             class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
             target: "_blank" %>
       <% end %>
-      <% dataset.file_links.each do |link| %>
-        <%= link_to link[:text], link[:url],
-            class: "px-3 py-1.5 text-sm font-medium rounded text-#{link[:color]}-700 bg-#{link[:color]}-100 hover:bg-#{link[:color]}-200",
-            target: "_blank" %>
-      <% end %>
     </div>
   </div>
   <div class="flex flex-wrap gap-1.5 mt-2 items-center" data-dataset-target="summary">

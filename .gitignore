@@ -1,6 +1,5 @@
 docker-compose.yaml
-.env.dev
-.env
+*.env*
 
 data
 postgres-data
@@ -34,4 +33,3 @@ solr/**/*
 
 
 src/.vscode/settings.json
-.DS_Store
