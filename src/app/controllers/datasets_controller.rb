@@ -3,6 +3,25 @@ class DatasetsController < ApplicationController
     @search = Dataset.search do
       fulltext params[:search] if params[:search].present?
       
+      adjust_solr_params do |params|
+        params[:fq] = params[:fq].map do |fq|
+          if fq == "type:Dataset"
+            fq
+          else
+            field = fq.split(":").first
+            "{!tag=#{field}}#{fq}"
+          end
+        end
+
+        params[:"facet.field"] = params[:"facet.field"].map do |field|
+          if field.include?("{!key=sex}")
+            "{!ex=sexes_sm key=sex}sexes_sm"
+          else
+            "{!ex=#{field}}#{field}"
+          end
+        end
+      end
+      
       facet :organisms, sort: :index
       facet :cell_types, sort: :index
       facet :tissues, sort: :index
