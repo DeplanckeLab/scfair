@@ -4,8 +4,27 @@ class DatasetsController < ApplicationController
       fulltext params[:search] if params[:search].present?
       
       adjust_solr_params do |params|
+        facet_fields = %w[
+          organisms_sm 
+          cell_types_sm 
+          tissues_sm 
+          developmental_stages_sm 
+          diseases_sm 
+          sexes_sm 
+          technologies_sm
+        ]
+
+        if params[:q] && params[:q] != "*:*"
+          search_query = params[:q]
+          params[:fq] = Array(params[:fq])
+          params[:fq] << "{!tag=text}text_search_text:#{search_query}"
+          params[:q] = "*:*"
+        end
+
         params[:fq] = params[:fq].map do |fq|
           if fq == "type:Dataset"
+            fq
+          elsif fq.start_with?("{!tag=text}")
             fq
           else
             field = fq.split(":").first
@@ -14,10 +33,11 @@ class DatasetsController < ApplicationController
         end
 
         params[:"facet.field"] = params[:"facet.field"].map do |field|
+          exclusions = (facet_fields + ['text']).join(',')
           if field.include?("{!key=sex}")
-            "{!ex=sexes_sm key=sex}sexes_sm"
+            "{!ex=#{exclusions} key=sex}sexes_sm"
           else
-            "{!ex=#{field}}#{field}"
+            "{!ex=#{exclusions}}#{field}"
           end
         end
       end
