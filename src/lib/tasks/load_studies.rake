@@ -1,42 +1,43 @@
-desc '####################### load studies'
+desc "Load or update studies from dataset DOIs"
 task load_studies: :environment do
-  puts 'Executing...'
+  puts "Loading studies from dataset DOIs..."
 
+  stats = { total: 0, found: 0, errors: 0 }
 
-#  data_dir = Pathname.new(APP_CONFIG[:data_dir])
+  dois = Dataset.where.not(doi: [nil, ""]).pluck(:doi).uniq
+  
+  dois.each do |doi|
+    stats[:total] += 1
+    print "Processing DOI #{stats[:total]}/#{dois.count}: #{doi}"
 
-  all = 0
-  found = 0
+    begin
+      metadata = CustomFetch.doi_info(doi)
 
-  list_dois = []
+      if metadata.present? && metadata[:first_author].present? && metadata[:title].present?
+        stats[:found] += 1
 
-  list_dois = Dataset.all.map{|d| d.doi}.flatten.uniq #Study.all.map{|s| s.doi and s.status_id == 1 and s.first_author == nil}
+        study = Study.find_or_initialize_by(doi: doi)
+        study.assign_attributes(metadata)
+        
+        if study.new_record?
+          puts " - Creating new study"
+        else
+          puts " - Updating existing study"
+        end
 
-  list_dois.each do |doi|
-
-    h = CustomFetch.doi_info(doi)
-    #        puts h.to_json                                                                                                                              
-    all+=1
-    if h.keys.size > 0 and h[:first_author] != nil and h[:title]
-      
-      found+=1
-      s = Study.where(:doi => doi).first
-      if !s
-        h.delete(:title)
-        s = Study.new(h)
-        s.save
+        study.save!
       else
-        puts "Update study..."
-        #            h[:key] = Basic.create_key(Study, 6) if !s.key                                                                                      
-        puts h[:title]
-        s.update(h)
+        puts " - Insufficient metadata found"
+        stats[:errors] += 1
       end
-    else
-      puts "#{doi}: Not found"
-    end
-    
-  end
-  puts all
-  puts found
 
+    rescue => e
+      puts " - Error: #{e.message}"
+      stats[:errors] += 1
+    end
+  end
+
+  puts "Total DOIs processed: #{stats[:total]}"
+  puts "Studies created/updated: #{stats[:found]}"
+  puts "Errors encountered: #{stats[:errors]}"
 end
