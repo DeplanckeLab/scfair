@@ -40,6 +40,8 @@ class DatasetsController < ApplicationController
             "{!ex=#{exclusions}}#{field}"
           end
         end
+
+        params[:"facet.limit"] = -1
       end
       
       facet :organisms, sort: :index
