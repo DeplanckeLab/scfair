@@ -34,17 +34,26 @@
             <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>
             <span class="text-gray-400">•</span>
             <% if dataset.study.present? %>
-              <%= link_to "https://doi.org/#{dataset.study.doi}",
-                    target: "_blank",
-                    title: dataset.study.title,
-                    class: "text-brand-dark hover:text-brand-dark/80" do %>
-                <span class="truncate"><%= dataset.study.first_author %>, <%= dataset.study.year %></span>
-              <% end %>
+              <div class="relative group">
+                <%= link_to "https://doi.org/#{dataset.study.doi}",
+                      target: "_blank",
+                      class: "text-brand-dark hover:text-brand-dark/80" do %>
+                  <span class="truncate">
+                    <%= dataset.study.first_author %>, <%= dataset.study.year %>
+                  </span>
+                <% end %>
+                <div class="absolute hidden group-hover:block -left-4 bottom-6 z-50">
+                  <div class="bg-gray-900 text-white text-xs rounded-md py-1.5 px-2 whitespace-normal w-80">
+                    <%= dataset.study.title %>
+                  </div>
+                  <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-6 -translate-y-1"></div>
+                </div>
+              </div>
             <% else %>
               <%= link_to "https://doi.org/#{dataset.doi}",
                     target: "_blank",
-                    class: "text-brand-dark hover:text-brand-dark/80 truncate" do %>
-                <%= dataset.doi %>
+                    class: "text-brand-dark hover:text-brand-dark/80" do %>
+                Article
               <% end %>
             <% end %>
           </div>
