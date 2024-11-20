@@ -48,7 +48,8 @@ class DatasetsController < ApplicationController
         :organisms,
         :diseases,
         :technologies,
-        :file_resources
+        :file_resources,
+        :study
       ]
     end
     
