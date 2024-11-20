@@ -125,7 +125,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     create_table :file_resources, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.references :dataset, type: :uuid, null: false, foreign_key: true
       t.string :url, null: false
-      t.integer :filetype, default: 0
+      t.string :filetype, null: false
       t.timestamps
     end
 

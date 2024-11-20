@@ -170,9 +170,12 @@ class CellxgeneParser
 
   def update_file_resources(dataset, assets_data)
     assets_data.each do |asset_hash|
+      filetype = asset_hash.fetch(:filetype, "").to_s.downcase
+      next unless filetype.in?(FileResource::VALID_FILETYPES)
+
       dataset.file_resources.find_or_create_by(
         url: asset_hash.fetch(:url, ""),
-        filetype: FileResource::FILETYPES[asset_hash.fetch(:filetype)] || :undefined,
+        filetype: filetype
       )
     end
   end

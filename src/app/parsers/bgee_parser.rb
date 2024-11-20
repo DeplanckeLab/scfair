@@ -86,9 +86,12 @@ class BgeeParser
     assets_data.each do |asset|
       next if asset.nil?
 
+      filetype = asset[:filetype].to_s.downcase
+      next unless filetype.in?(FileResource::VALID_FILETYPES)
+
       dataset.file_resources.find_or_create_by(
         url: asset[:path] + asset[:fileName],
-        filetype: FileResource::FILETYPES[asset[:filetype]] || :undefined,
+        filetype: filetype
       )
     end
   end

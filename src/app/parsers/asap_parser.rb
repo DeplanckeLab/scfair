@@ -66,10 +66,6 @@ class AsapParser
   def extract_files(data)
     files = []
     
-    data[:experiments].each do |experiment|
-      files << { url: experiment[:url], filetype: "raw" }
-    end
-    
     files << {
       url: "https://asap.epfl.ch/projects/#{data[:key]}/get_file?filename=parsing/output.h5ad",
       filetype: "h5ad"
@@ -112,9 +108,12 @@ class AsapParser
     files.each do |file|
       next if file[:url].blank?
       
+      filetype = file[:filetype].to_s.downcase
+      next unless filetype.in?(FileResource::VALID_FILETYPES)
+      
       dataset.file_resources.find_or_create_by(
         url: file[:url],
-        filetype: FileResource::FILETYPES[file[:filetype]] || :undefined
+        filetype: filetype
       )
     end
   end

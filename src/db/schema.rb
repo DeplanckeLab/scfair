@@ -153,7 +153,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
   create_table "file_resources", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.uuid "dataset_id", null: false
     t.string "url", null: false
-    t.integer "filetype", default: 0
+    t.string "filetype", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["dataset_id"], name: "index_file_resources_on_dataset_id"

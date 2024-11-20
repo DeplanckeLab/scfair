@@ -1,7 +1,16 @@
 class FileResource < ApplicationRecord
-  FILETYPES = { "H5AD" => :h5ad, "RDS" => :rds }.freeze
+  VALID_FILETYPES = %w[h5ad rds].freeze
   
-  belongs_to :dataset
-
-  # enum filetype: { undefined: 0, h5ad: 1, rds: 2 }
+  validates :filetype, inclusion: { in: VALID_FILETYPES }
+  
+  scope :h5ad_files, -> { where(filetype: "h5ad") }
+  scope :rds_files, -> { where(filetype: "rds") }
+  
+  def h5ad?
+    filetype == "h5ad"
+  end
+  
+  def rds?
+    filetype == "rds"
+  end
 end

@@ -60,42 +60,70 @@
         </div>
       </div>
     </div>
-    <div class="flex gap-2 shrink-0">
+    <div class="flex items-center gap-2 shrink-0">
       <% if dataset.explorer_url.present? %>
         <%= link_to "Explore", dataset.explorer_url,
             class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
             target: "_blank" %>
       <% end %>
-    </div>
-  </div>
-  <div class="flex flex-wrap gap-1.5 mt-2 items-center" data-dataset-target="summary">
-    <% tag_categories = {
-      organisms: { color: "blue", items: dataset.organisms, name_method: :name },
-      cell_types: { color: "green", items: dataset.cell_types, name_method: :name },
-      tissues: { color: "purple", items: dataset.tissues, name_method: :name },
-      developmental_stages: { color: "orange", items: dataset.developmental_stages, name_method: :name },
-      diseases: { color: "red", items: dataset.diseases, name_method: :name },
-      sexes: { color: "pink", items: dataset.sexes, name_method: :name },
-      technologies: { color: "indigo", items: dataset.technologies, name_method: :protocol_name }
-    } %>
-    <% tag_categories.each do |category, data| %>
-      <% if data[:items].any? %>
-        <div class="px-2 py-0.5 rounded-full text-xs bg-<%= data[:color] %>-100 text-<%= data[:color] %>-800 flex items-center max-w-[160px] cursor-pointer" 
-             title="<%= data[:items].first.send(data[:name_method]) %>"
-             data-action="click->dataset#toggle">
-          <div class="truncate">
-            <%= data[:items].first.send(data[:name_method]) %>
-          </div>
-          <% if data[:items].length > 1 %>
-            <div class="ml-1 pl-1 flex items-center shrink-0">
-              <div class="font-semibold text-<%= data[:color] %>-800">
-                +<%= data[:items].length - 1 %>
-              </div>
+      
+      <% if dataset.file_resources.any? %>
+        <div class="relative group">
+          <button type="button" 
+                  class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          
+          <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
+            <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
+              <% dataset.file_resources.each do |resource| %>
+                <%= link_to resource.url,
+                    target: "_blank",
+                    class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50" do %>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                  </svg>
+                  <%= resource.filetype %>
+                <% end %>
+              <% end %>
             </div>
-          <% end %>
+          </div>
         </div>
       <% end %>
-    <% end %>
+    </div>
+  </div>
+  <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" data-dataset-target="summary">
+    <div class="flex flex-wrap gap-1.5 items-center">
+      <% tag_categories = {
+        organisms: { color: "blue", items: dataset.organisms, name_method: :name },
+        cell_types: { color: "green", items: dataset.cell_types, name_method: :name },
+        tissues: { color: "purple", items: dataset.tissues, name_method: :name },
+        developmental_stages: { color: "orange", items: dataset.developmental_stages, name_method: :name },
+        diseases: { color: "red", items: dataset.diseases, name_method: :name },
+        sexes: { color: "pink", items: dataset.sexes, name_method: :name },
+        technologies: { color: "indigo", items: dataset.technologies, name_method: :protocol_name }
+      } %>
+      <% tag_categories.each do |category, data| %>
+        <% if data[:items].any? %>
+          <div class="px-2 py-0.5 rounded-full text-xs bg-<%= data[:color] %>-100 text-<%= data[:color] %>-800 flex items-center max-w-[160px] cursor-pointer" 
+               title="<%= data[:items].first.send(data[:name_method]) %>"
+               data-action="click->dataset#toggle">
+            <div class="truncate">
+              <%= data[:items].first.send(data[:name_method]) %>
+            </div>
+            <% if data[:items].length > 1 %>
+              <div class="ml-1 pl-1 flex items-center shrink-0">
+                <div class="font-semibold text-<%= data[:color] %>-800">
+                  +<%= data[:items].length - 1 %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
   </div>
   <div class="hidden mt-4 space-y-4 relative" data-dataset-target="content">
     <div class="flex flex-wrap gap-6">
