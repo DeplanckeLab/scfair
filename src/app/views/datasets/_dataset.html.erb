@@ -60,11 +60,23 @@
             <% if dataset.dataset_links_count > 0 %>
               <span class="text-gray-400">•</span>
               <% if dataset.dataset_links_count == 1 %>
-                <%= link_to dataset.dataset_links.first.url,
-                    class: "text-brand-dark hover:text-brand-dark/80 max-w-[200px] truncate inline-block align-bottom",
-                    target: "_blank" do %>
-                  <%= dataset.dataset_links.first.name.presence || "External Link" %>
-                <% end %>
+                <% link_text = dataset.dataset_links.first.name.presence || "External Link" %>
+                <div class="relative group inline-block" data-controller="tooltip">
+                  <%= link_to dataset.dataset_links.first.url,
+                      class: "text-brand-dark hover:text-brand-dark/80 max-w-[200px] truncate inline-block align-bottom",
+                      target: "_blank",
+                      data: { tooltip_target: "text" } do %>
+                    <span class="truncate">
+                      <%= link_text %>
+                    </span>
+                  <% end %>
+                  <div class="absolute hidden -left-4 bottom-6 z-50"
+                       data-tooltip-target="tooltip">
+                    <div class="bg-gray-900 text-white text-xs rounded-md py-1.5 px-2 whitespace-normal max-w-xs">
+                      <%= link_text %>
+                    </div>
+                  </div>
+                </div>
               <% else %>
                 <div class="relative group" data-controller="dropdown">
                   <button type="button" 
