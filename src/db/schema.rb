@@ -44,6 +44,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
+    t.index ["doi"], name: "index_datasets_on_doi"
     t.index ["source_name"], name: "index_datasets_on_source_name"
   end
 
@@ -260,5 +261,4 @@ ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
   add_foreign_key "datasets_tissues", "datasets"
   add_foreign_key "datasets_tissues", "tissues"
   add_foreign_key "file_resources", "datasets"
-  add_foreign_key "studies", "journals"
 end

@@ -10,7 +10,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.string :source_name, null: false, index: true
       t.string :source_url, null: false # previously link_to_dataset
       t.string :explorer_url, null: false # previously link_to_explore_data
-      t.string :doi
+      t.string :doi, index: true
       t.integer :cell_count, null: false, default: 0, index: true
       t.string :parser_hash, null: false
       t.timestamps

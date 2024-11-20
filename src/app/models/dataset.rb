@@ -9,6 +9,8 @@ class Dataset < ApplicationRecord
 
   has_many :file_resources
 
+  belongs_to :study, primary_key: :doi, foreign_key: :doi, optional: true
+
   searchable do
     string :id
     string :collection_id
