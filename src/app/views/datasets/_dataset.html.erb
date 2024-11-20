@@ -30,9 +30,24 @@
           <h2 class="text-xs font-medium text-gray-900 leading-none">
             <%= dataset.source_name %>
           </h2>
-          <span class="text-xs text-gray-600 leading-none">
-            <%= number_with_delimiter(dataset.cell_count) %> cells
-          </span>
+          <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
+            <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>
+            <span class="text-gray-400">•</span>
+            <% if dataset.study.present? %>
+              <%= link_to "https://doi.org/#{dataset.study.doi}",
+                    target: "_blank",
+                    title: dataset.study.title,
+                    class: "text-brand-dark hover:text-brand-dark/80" do %>
+                <span class="truncate"><%= dataset.study.first_author %>, <%= dataset.study.year %></span>
+              <% end %>
+            <% else %>
+              <%= link_to "https://doi.org/#{dataset.doi}",
+                    target: "_blank",
+                    class: "text-brand-dark hover:text-brand-dark/80 truncate" do %>
+                <%= dataset.doi %>
+              <% end %>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>
