@@ -48,6 +48,7 @@ class AsapParser
       update_organisms(dataset, [data[:organism]].compact)
       update_technologies(dataset, [data[:technology]].compact)
       update_file_resources(dataset, extract_files(data))
+      update_dataset_links(dataset, data.dig(:experiments))
       
       puts "Imported #{dataset.id}"
     else
@@ -115,6 +116,13 @@ class AsapParser
         url: file[:url],
         filetype: filetype
       )
+    end
+  end
+
+  def update_dataset_links(dataset, experiments)
+    dataset.dataset_links.clear    
+    experiments.each do |experiment|
+      dataset.dataset_links.find_or_create_by(url: experiment[:url])
     end
   end
 end 

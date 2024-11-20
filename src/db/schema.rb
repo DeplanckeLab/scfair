@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
+ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
@@ -32,6 +32,15 @@ ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
     t.index ["dataset_id"], name: "index_cell_types_datasets_on_dataset_id"
   end
 
+  create_table "dataset_links", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.uuid "dataset_id", null: false
+    t.string "url", null: false
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dataset_id"], name: "index_dataset_links_on_dataset_id"
+  end
+
   create_table "datasets", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "collection_id", null: false
     t.string "source_reference_id", null: false
@@ -43,6 +52,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
     t.string "parser_hash", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "dataset_links_count", default: 0
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
     t.index ["doi"], name: "index_datasets_on_doi"
     t.index ["source_name"], name: "index_datasets_on_source_name"
@@ -146,8 +156,6 @@ ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
     t.string "id_regexp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "dataset_id", null: false
-    t.index ["dataset_id"], name: "index_ext_sources_on_dataset_id"
   end
 
   create_table "file_resources", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
@@ -248,6 +256,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_10_30_093207) do
 
   add_foreign_key "cell_types_datasets", "cell_types"
   add_foreign_key "cell_types_datasets", "datasets"
+  add_foreign_key "dataset_links", "datasets"
   add_foreign_key "datasets_developmental_stages", "datasets"
   add_foreign_key "datasets_developmental_stages", "developmental_stages"
   add_foreign_key "datasets_diseases", "datasets"

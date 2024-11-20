@@ -56,6 +56,40 @@
                 Article
               <% end %>
             <% end %>
+            
+            <% if dataset.dataset_links_count > 0 %>
+              <span class="text-gray-400">•</span>
+              <% if dataset.dataset_links_count == 1 %>
+                <%= link_to dataset.dataset_links.first.url,
+                    class: "text-brand-dark hover:text-brand-dark/80 max-w-[200px] truncate inline-block align-bottom",
+                    target: "_blank" do %>
+                  <%= dataset.dataset_links.first.name.presence || "External Link" %>
+                <% end %>
+              <% else %>
+                <div class="relative group" data-controller="dropdown">
+                  <button type="button" 
+                          class="text-brand-dark hover:text-brand-dark/80 flex items-center gap-1">
+                    <span class="max-w-[200px] truncate">
+                      <%= dataset.dataset_links.first.name.presence || "External Links" %>
+                    </span>
+                    <span class="text-xs text-gray-500 shrink-0">+<%= dataset.dataset_links_count - 1 %></span>
+                  </button>
+                  
+                  <div class="absolute hidden group-hover:block left-0 z-50"
+                       data-dropdown-target="dropdown">
+                    <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px] overflow-y-auto">
+                      <% dataset.dataset_links.each do |link| %>
+                        <%= link_to link.url,
+                            target: "_blank",
+                            class: "block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap" do %>
+                          <%= link.name.presence || "External Link" %>
+                        <% end %>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            <% end %>
           </div>
         </div>
       </div>

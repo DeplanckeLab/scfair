@@ -1,6 +1,6 @@
-Collection = Struct.new(:id, :url, :doi) do
-  def initialize(id:, url:, doi:)
-    super(id, url, doi)
+Collection = Struct.new(:id, :url, :doi, :links) do
+  def initialize(id:, url:, doi:, links:)
+    super(id, url, doi, links)
   end
 end
 
@@ -50,7 +50,8 @@ class CellxgeneParser
     Collection.new(
       id: data.fetch(:collection_id),
       url: data.fetch(:collection_url, ""),
-      doi: data.fetch(:doi, "")
+      doi: data.fetch(:doi, ""),
+      links: data.fetch(:links, [])
     )
   end
 
@@ -80,6 +81,7 @@ class CellxgeneParser
       update_diseases(dataset, data.fetch(:disease, []))
       update_technologies(dataset, data.fetch(:assay, []))
       update_file_resources(dataset, data.fetch(:assets))
+      update_dataset_links(dataset, collection.links)
 
       puts "Imported #{dataset.id}"
     else
@@ -177,6 +179,13 @@ class CellxgeneParser
         url: asset_hash.fetch(:url, ""),
         filetype: filetype
       )
+    end
+  end
+
+  def update_dataset_links(dataset, links_data)
+    dataset.dataset_links.clear
+    links_data.each do |link_hash|
+      dataset.dataset_links.create(url: link_hash.fetch(:link_url, ""))
     end
   end
 end

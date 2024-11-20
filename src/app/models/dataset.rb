@@ -7,6 +7,7 @@ class Dataset < ApplicationRecord
   has_and_belongs_to_many :diseases
   has_and_belongs_to_many :technologies
 
+  has_many :dataset_links
   has_many :file_resources
 
   belongs_to :study, primary_key: :doi, foreign_key: :doi, optional: true
