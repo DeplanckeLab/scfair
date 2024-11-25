@@ -2,16 +2,31 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["items", "item", "button", "content", "searchInput", "clearButton", "hiddenCounter", "hiddenCount"]
-  static values = { name: String, showingAll: Boolean }
+  static values = { 
+    name: String, 
+    showingAll: Boolean,
+    currentSearch: String 
+  }
 
   connect() {
     if (this.hasItemsTarget) {
       this.showingAllValue = false
       this.restoreOrder()
-      this.limitUnselectedItems()
+      
+      // Restore search state if exists
+      const facetId = this.element.id
+      const savedSearch = sessionStorage.getItem(`${facetId}-search`)
+      if (savedSearch) {
+        this.searchInputTarget.value = savedSearch
+        this.currentSearchValue = savedSearch
+        this.clearButtonTarget.style.display = 'block'
+        this.applySearch(savedSearch)
+      } else {
+        this.clearButtonTarget.style.display = 'none'
+        this.limitUnselectedItems()
+      }
       
       // Restore accordion state
-      const facetId = this.element.id
       const isExpanded = sessionStorage.getItem(`${facetId}-expanded`) === 'true'
       if (isExpanded) {
         this.expand()
@@ -116,9 +131,17 @@ export default class extends Controller {
     const searchTerm = event.target.value.toLowerCase()
     this.clearButtonTarget.style.display = searchTerm ? 'block' : 'none'
     
+    // Save search state
+    const facetId = this.element.id
+    sessionStorage.setItem(`${facetId}-search`, searchTerm)
+    this.currentSearchValue = searchTerm
+    
+    this.applySearch(searchTerm)
+  }
+
+  applySearch(searchTerm) {
     let hiddenCount = 0
     
-    // Show all items when searching
     this.itemTargets.forEach(item => {
       const value = item.dataset.value.toLowerCase()
       const isChecked = item.querySelector('input[type="checkbox"]').checked
@@ -146,6 +169,11 @@ export default class extends Controller {
   clearSearch(event) {
     this.searchInputTarget.value = ''
     this.clearButtonTarget.style.display = 'none'
+    
+    // Clear saved search state
+    const facetId = this.element.id
+    sessionStorage.removeItem(`${facetId}-search`)
+    this.currentSearchValue = ''
     
     // Reset showing all state
     this.showingAllValue = false
@@ -176,13 +204,13 @@ export default class extends Controller {
       this.moveToUnselected(checkbox)
     }
     
-    // Reset showing all state after form submission
-    this.showingAllValue = false
-    
-    // Update counter after selection changes
-    setTimeout(() => {
+    // Maintain current search if exists
+    if (this.currentSearchValue) {
+      this.applySearch(this.currentSearchValue)
+    } else {
+      this.showingAllValue = false
       this.limitUnselectedItems()
-    }, 0)
+    }
     
     // Store current expanded state
     sessionStorage.setItem(`${facetId}-expanded`, 'true')
