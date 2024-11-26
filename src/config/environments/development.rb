@@ -3,9 +3,6 @@ require "active_support/core_ext/integer/time"
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 
-  config.hosts << "sc-fair.org"
-  config.hosts << "biccsrv3.epfl.ch:32888"
-
   # Make code changes take effect immediately without server restart.
   config.enable_reloading = true
 
