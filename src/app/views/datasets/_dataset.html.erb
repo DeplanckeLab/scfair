@@ -37,7 +37,7 @@
                       class: "text-brand-dark hover:text-brand-dark/80",
                       data: { action: "click->dataset#stopPropagation" } do %>
                   <span class="truncate">
-                    <%= dataset.study.first_author %>, <%= dataset.study.year %>
+                    (<%= dataset.study.authors || dataset.study.first_author %>, <%= dataset.study.year %>)
                   </span>
                 <% end %>
                 <div class="absolute hidden group-hover:block -left-4 bottom-6 z-50">
