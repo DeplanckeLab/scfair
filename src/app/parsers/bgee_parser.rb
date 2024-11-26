@@ -77,7 +77,7 @@ class BgeeParser
 
       puts "Imported #{dataset.id}"
     else
-      @errors << "Failed to save dataset #{collection_data[:source_reference_id]}: #{dataset.errors.full_messages.join(', ')}"
+      @errors << "Failed to save dataset #{collection_data[:source_reference_id]}: #{dataset.errors.full_messages.join(", ")}"
     end
   end
 
@@ -87,7 +87,7 @@ class BgeeParser
     assets_data.each do |asset|
       next if asset.nil?
 
-      filetype = asset[:filetype].to_s.downcase
+      filetype = File.extname(asset[:fileName].to_s).delete(".").downcase
       next unless filetype.in?(FileResource::VALID_FILETYPES)
 
       dataset.file_resources.find_or_create_by(
