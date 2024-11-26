@@ -5,29 +5,39 @@ export default class extends Controller {
   static values = { 
     name: String, 
     showingAll: Boolean,
-    currentSearch: String 
+    currentSearch: String,
+    facetId: String 
   }
 
   connect() {
+    this.facetIdValue = this.element.id
+    
     if (this.hasItemsTarget) {
       this.showingAllValue = false
       this.restoreOrder()
       
-      // Restore search state if exists
-      const facetId = this.element.id
-      const savedSearch = sessionStorage.getItem(`${facetId}-search`)
-      if (savedSearch) {
-        this.searchInputTarget.value = savedSearch
-        this.currentSearchValue = savedSearch
-        this.clearButtonTarget.style.display = 'block'
-        this.applySearch(savedSearch)
+      // Restore search state if exists and if we have search input
+      if (this.hasSearchInputTarget) {
+        const savedSearch = sessionStorage.getItem(`${this.facetIdValue}-search`)
+        if (savedSearch) {
+          this.searchInputTarget.value = savedSearch
+          this.currentSearchValue = savedSearch
+          if (this.hasClearButtonTarget) {
+            this.clearButtonTarget.style.display = 'block'
+          }
+          this.applySearch(savedSearch)
+        } else {
+          if (this.hasClearButtonTarget) {
+            this.clearButtonTarget.style.display = 'none'
+          }
+          this.limitUnselectedItems()
+        }
       } else {
-        this.clearButtonTarget.style.display = 'none'
         this.limitUnselectedItems()
       }
       
       // Restore accordion state
-      const isExpanded = sessionStorage.getItem(`${facetId}-expanded`) === 'true'
+      const isExpanded = sessionStorage.getItem(`${this.facetIdValue}-expanded`) === 'true'
       if (isExpanded) {
         this.expand()
       }
@@ -129,7 +139,9 @@ export default class extends Controller {
 
   filter(event) {
     const searchTerm = event.target.value.toLowerCase()
-    this.clearButtonTarget.style.display = searchTerm ? 'block' : 'none'
+    if (this.hasClearButtonTarget) {
+      this.clearButtonTarget.style.display = searchTerm ? 'block' : 'none'
+    }
     
     // Save search state
     const facetId = this.element.id
@@ -167,8 +179,12 @@ export default class extends Controller {
   }
 
   clearSearch(event) {
-    this.searchInputTarget.value = ''
-    this.clearButtonTarget.style.display = 'none'
+    if (this.hasSearchInputTarget) {
+      this.searchInputTarget.value = ''
+    }
+    if (this.hasClearButtonTarget) {
+      this.clearButtonTarget.style.display = 'none'
+    }
     
     // Clear saved search state
     const facetId = this.element.id
