@@ -1,4 +1,4 @@
-<div class="container mx-auto px-4 mt-4">
+<div class="container mx-auto px-4 mt-4 mb-8">
   <%= turbo_frame_tag "datasets", 
     data: {
       turbo_action: "advance",
@@ -147,7 +147,6 @@
       <div class="bg-white rounded-lg shadow">
         <div class="p-4">
           <div class="flex justify-end mb-3 items-center gap-3">
-
             <div data-dataset-target="spinner" 
                  class="hidden transition-opacity duration-150 ease-in-out">
               <div class="flex items-center">
@@ -157,7 +156,6 @@
                 </svg>
               </div>
             </div>
-
             <h2 class="text-sm text-gray-600">
               <span class="text-brand-light font-medium"><%= @search.total %></span>
               <%= 'dataset'.pluralize(@search.total) %>
@@ -168,11 +166,9 @@
               <% end %>
             </h2>
           </div>
-
           <div class="space-y-3">
             <%= render partial: "dataset", collection: @datasets %>
           </div>
-          
           <div class="mt-4">
             <%= will_paginate @datasets, 
               class: "pagination",

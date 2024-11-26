@@ -1,17 +1,25 @@
-<main class="d-flex flex-column justify-content-evenly flex-grow-1 px-5 mx-5">
-        <h2 class="align-self-center">
-            Contact Us
-        </h2>
-        <div>
-            <h3>General Contact and Support</h3>
-            <p>
-                For any questions and suggestions related to scFAIR data, tools, standards, and events please <a href="mailto:contact@sc-fair.org?subject=General%20contact%20and%20support">contact us</a>.
-            </p>
-        </div>
-        <div>
-            <h3>Collaborate with Us</h3>
-            <p>
-                We are open to forming partnerships with individuals and resources that share our goal of making single-cell genomics data findable, accessible, interoperable, and reusable. If you wish to partner with us or have questions regarding how to make your data more FAIR, please <a href="mailto:contact@sc-fair.org?subject=Collaboration">contact us</a>.
-            </p>
-        </div>
+<main class="container mx-auto px-4 py-8">
+  <h2 class="text-3xl font-bold text-center mb-12">
+    Contact Us
+  </h2>
+  <div class="space-y-12 max-w-4xl mx-auto">
+    <div>
+      <h3 class="text-2xl font-bold mb-4">General Contact and Support</h3>
+      <p class="text-gray-700">
+        For any questions and suggestions related to scFAIR data, tools, standards, and events please 
+        <%= link_to 'contact us', 
+            "mailto:contact@sc-fair.org?subject=General%20contact%20and%20support", 
+            class: "text-red-500 hover:text-red-600" %>.
+      </p>
+    </div>
+    <div>
+      <h3 class="text-2xl font-bold mb-4">Collaborate with Us</h3>
+      <p class="text-gray-700">
+        We are open to forming partnerships with individuals and resources that share our goal of making single-cell genomics data findable, accessible, interoperable, and reusable. If you wish to partner with us or have questions regarding how to make your data more FAIR, please 
+        <%= link_to 'contact us', 
+            "mailto:contact@sc-fair.org?subject=Collaboration", 
+            class: "text-red-500 hover:text-red-600" %>.
+      </p>
+    </div>
+  </div>
 </main>

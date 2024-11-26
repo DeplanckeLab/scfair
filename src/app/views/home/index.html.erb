@@ -1,23 +1,31 @@
-<main class="container-fluid row align-items-center p-3 bg-light m-0">
-    <div class="col-12 col-lg-6 py-5">
-      <h1>scFAIR: an initiative to standardize single-cell genomics data and promote findable, accessible, interoperable, and reusable single-cell data.</h1>
-      <p>Single-cell genomics has emerged as a transformative field within molecular biology, revolutionizing our understanding of cellular heterogeneity and paving the way for unprecedented insights into complex biological systems. Single-cell data are rapidly increasing both in quantity and diversity, however clear standards of reporting have not been adopted across the field. This leads to multiple non-compatible standards across datasets, and limits reusability, which in turn presents challenges to make these data useful to an increasing community of specialists and non-specialists.</p>
-      <p>There is a need for a centralized, standardized repository where researchers can collaboratively upload, annotate, and access single-cell data and associated metadata. There is also a need for standards in the way single-cell data are stored and annotated, particularly what metadata must be captured to ensure accessible and reusable data.  This includes protocols, normalization and pipeline characteristics, cell type classifications and the methods used to classify cell types, the association between barcodes and annotations, and more. The adoption of systematic data-sharing practices and standards is integral to fostering transparency, reproducibility, and the effective utilization of single-cell genomics data across the scientific community.</p>
-      <p>Our goal is to build a collaborative platform supporting and disseminating ORD practices for the single-cell genomics community, both for sharing datasets and their metadata, and for standardizing the way data are shared across datasets. In addition to the applicants' single-cell community network, we also propose to promote communication and outreach, to increase relevance and implementation of these standards</p>
-      <div class="row gx-5">
-        <div class="col-6">
-          <%= link_to 'Explore single-cell data', datasets_path, class: "w-100 btn btn-primary text-light"%>
+<main class="flex-grow">
+  <div class="bg-pink-50 h-full">
+    <div class="container mx-auto px-4">
+      <div class="grid grid-cols-12 gap-8 h-full">
+        <div class="col-span-7 py-8">
+          <h1 class="text-4xl font-bold mb-6">
+            scFAIR: an initiative to standardize single-cell genomics data and promote findable, accessible, interoperable, and reusable single-cell data.
+          </h1>
+          <p class="mb-6">
+            Single-cell genomics has emerged as a transformative field within molecular biology, revolutionizing our understanding of cellular heterogeneity and paving the way for unprecedented insights into complex biological systems. Single-cell data are rapidly increasing both in quantity and diversity, however clear standards of reporting have not been adopted across the field. This leads to multiple non-compatible standards across datasets, and limits reusability, which in turn presents challenges to make these data useful to an increasing community of specialists and non-specialists.
+          </p>
+          <p class="mb-6">
+            There is a need for a centralized, standardized repository where researchers can collaboratively upload, annotate, and access single-cell data and associated metadata. There is also a need for standards in the way single-cell data are stored and annotated, particularly what metadata must be captured to ensure accessible and reusable data. This includes protocols, normalization and pipeline characteristics, cell type classifications and the methods used to classify cell types, the association between barcodes and annotations, and more. The adoption of systematic data-sharing practices and standards is integral to fostering transparency, reproducibility, and the effective utilization of single-cell genomics data across the scientific community.
+          </p>
+          <p class="mb-8">
+            Our goal is to build a collaborative platform supporting and disseminating ORD practices for the single-cell genomics community, both for sharing datasets and their metadata, and for standardizing the way data are shared across datasets. In addition to the applicants" single-cell community network, we also propose to promote communication and outreach, to increase relevance and implementation of these standards
+          </p>
+          <div class="flex gap-4">
+            <%= link_to "Explore single-cell data", datasets_path, 
+                class: "px-6 py-3 bg-red-400 text-white rounded hover:bg-red-500 transition-colors" %>
+            <%= link_to "View tools that support the FAIR initiative", tools_path, 
+                class: "px-6 py-3 border border-gray-800 rounded hover:bg-gray-100 transition-colors" %>
+          </div>
         </div>
-        <div class="col-6">
-          <%= link_to 'View tools that support the FAIR initiative', tools_path, class: "w-100 btn btn-outline-dark"%>        
+        <div class="col-span-5 flex items-center justify-center h-full">
+          <%= image_tag 'illustration.svg', class: "w-full h-full object-contain", alt: "illustration" %>
         </div>
       </div>
     </div>
-    <div class="col-6 d-none d-lg-flex justify-content-center align-items-center">
-      <%= image_tag 'illustration.svg', witdh:500, height: 500, alt: "illustration" %>
-    </div>
+  </div>
 </main>
-<%= javascript_tag do %>
-console.log('<%= request.env['HTTP_USER_AGENT'] %>')
-<%end%>
-

@@ -1,7 +1,6 @@
 <header class="bg-brand-dark">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <div class="container mx-auto px-4">
     <div class="flex justify-between items-center py-4">
-
       <div class="flex-shrink-0">
         <%= link_to root_path, class: "block" do %>
           <%= image_tag("scfair.png", 
@@ -9,71 +8,42 @@
               alt: "ScFair logo") %>
         <% end %>
       </div>
-
       <div class="flex md:hidden">
         <%= button_tag type: "button",
             class: "text-gray-300 hover:text-white focus:outline-none",
-            data: {
-              bs_toggle: "collapse",
-              bs_target: "#navbarNavDropdown"
-            },
-            aria: {
-              controls: "navbarNavDropdown",
-              expanded: false,
-              label: "Toggle navigation"
-            } do %>
+            data: { bs_toggle: "collapse", bs_target: "#navbarNavDropdown" },
+            aria: { controls: "navbarNavDropdown", expanded: false, label: "Toggle navigation" } do %>
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         <% end %>
       </div>
-
-      <nav class="hidden md:flex space-x-8" id="navbarNavDropdown">
+      <nav class="hidden md:flex space-x-6 flex-1 justify-end" id="navbarNavDropdown">
         <%= link_to "Home", root_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(root_path) ? "bg-gray-700 text-white" : ""}" %>
-        
         <%= link_to "Data", datasets_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(datasets_path) ? "bg-gray-700 text-white" : ""}" %>
-        
         <%= link_to "Resources", resources_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(resources_path) ? "bg-gray-700 text-white" : ""}" %>
-        
         <%= link_to "Metadata schema", metadata_schema_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(metadata_schema_path) ? "bg-gray-700 text-white" : ""}" %>
-        
         <%= link_to "Tools", tools_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(tools_path) ? "bg-gray-700 text-white" : ""}" %>
-        
         <%= link_to "Community", community_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(community_path) ? "bg-gray-700 text-white" : ""}" %>
-        
         <%= link_to "About", about_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(about_path) ? "bg-gray-700 text-white" : ""}" %>
-        
         <%= link_to "Contact us", contact_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(contact_path) ? "bg-gray-700 text-white" : ""}" %>
       </nav>
-    </div>
-  </div>
-
-  <div class="md:hidden collapse" id="navbarNavDropdown">
-    <div class="px-2 pt-2 pb-3 space-y-1">
-      <%= link_to "Home", root_path, 
-          class: "block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700
-                 #{current_page?(root_path) ? "bg-gray-700 text-white" : ""}" %>
-      
-      <%= link_to "Data", datasets_path, 
-          class: "block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700
-                 #{current_page?(datasets_path) ? "bg-gray-700 text-white" : ""}" %>
-
     </div>
   </div>
 </header>
