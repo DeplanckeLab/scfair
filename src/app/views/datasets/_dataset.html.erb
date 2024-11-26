@@ -1,43 +1,41 @@
-<div class="bg-white rounded-lg shadow p-4 mb-3" data-controller="dataset">
+<% tag_categories = {
+  organisms: { color: "blue", items: dataset.organisms, name_method: :name, category_name: "Organism" },
+  cell_types: { color: "green", items: dataset.cell_types, name_method: :name, category_name: "Cell Type" },
+  tissues: { color: "purple", items: dataset.tissues, name_method: :name, category_name: "Tissue" },
+  developmental_stages: { color: "orange", items: dataset.developmental_stages, name_method: :name, category_name: "Developmental Stage" },
+  diseases: { color: "red", items: dataset.diseases, name_method: :name, category_name: "Disease" },
+  sexes: { color: "pink", items: dataset.sexes, name_method: :name, category_name: "Sex" },
+  technologies: { color: "indigo", items: dataset.technologies, name_method: :protocol_name, category_name: "Technology" }
+} %>
+<div class="bg-white rounded-lg shadow p-4 mb-3 relative group/dataset cursor-pointer" 
+     data-controller="dataset" 
+     data-action="click->dataset#toggle">
   <div class="flex items-start justify-between">
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
-        <% logo_classes = "w-6 h-6" %>
-        <% container_classes = "flex items-center justify-center w-8 h-8 rounded bg-brand-dark hover:bg-brand-dark/90 cursor-pointer" %>
-        <%= link_to dataset.source_url, target: "_blank" do %>
-          <% case dataset.source_name.downcase %>
-          <% when /cellxgene/ %>
-            <div class="<%= container_classes %>">
-              <%= image_tag "cellxgene.svg", class: logo_classes, alt: "CellXGene logo" %>
-            </div>
-          <% when /bgee/ %>
-            <div class="<%= container_classes %>">
-              <%= image_tag "bgee.svg", class: logo_classes, alt: "Bgee logo" %>
-            </div>
-          <% when /asap/ %>
-            <div class="<%= container_classes %>">
-              <%= image_tag "asap.svg", class: logo_classes, alt: "ASAP logo" %>
-            </div>
-          <% else %>
-            <div class="<%= container_classes %>">
-              <%= image_tag "default_logo.svg", class: logo_classes, alt: "Default logo" %>
-            </div>
-          <% end %>
+        <%= link_to dataset.source_url, target: "_blank", data: { action: "click->dataset#stopPropagation" } do %>
+          <% logo_name = dataset.source_name.downcase.match?(/cellxgene|bgee|asap/) ? dataset.source_name.downcase : "default_logo" %>
+          <div class="flex items-center justify-center w-8 h-8 rounded bg-brand-dark hover:bg-brand-dark/90 cursor-pointer">
+            <%= image_tag "#{logo_name}.svg", class: "w-6 h-6", alt: "#{dataset.source_name} logo" %>
+          </div>
         <% end %>
       </div>
       <div class="flex flex-col h-8">
         <div class="flex flex-col justify-between h-full py-0.5">
-          <h2 class="text-xs font-medium text-gray-900 leading-none">
+          <h2 class="text-xs font-medium text-gray-900 leading-none" 
+              data-action="click->dataset#stopPropagation">
             <%= dataset.source_name %>
           </h2>
           <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
             <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>
             <span class="text-gray-400">•</span>
             <% if dataset.study.present? %>
-              <div class="relative group">
+              <div class="relative group" 
+                   data-action="click->dataset#stopPropagation">
                 <%= link_to "https://doi.org/#{dataset.study.doi}",
                       target: "_blank",
-                      class: "text-brand-dark hover:text-brand-dark/80" do %>
+                      class: "text-brand-dark hover:text-brand-dark/80",
+                      data: { action: "click->dataset#stopPropagation" } do %>
                   <span class="truncate">
                     <%= dataset.study.first_author %>, <%= dataset.study.year %>
                   </span>
@@ -52,20 +50,21 @@
             <% else %>
               <%= link_to "https://doi.org/#{dataset.doi}",
                     target: "_blank",
-                    class: "text-brand-dark hover:text-brand-dark/80" do %>
+                    class: "text-brand-dark hover:text-brand-dark/80",
+                    data: { action: "click->dataset#stopPropagation" } do %>
                 Article
               <% end %>
             <% end %>
-            
             <% if dataset.dataset_links_count > 0 %>
               <span class="text-gray-400">•</span>
               <% if dataset.dataset_links_count == 1 %>
                 <% link_text = dataset.dataset_links.first.name.presence || "External Link" %>
-                <div class="relative group inline-block" data-controller="tooltip">
+                <div class="relative group inline-block" data-controller="tooltip" 
+                     data-action="click->dataset#stopPropagation">
                   <%= link_to dataset.dataset_links.first.url,
                       class: "text-brand-dark hover:text-brand-dark/80 max-w-[200px] truncate inline-block align-bottom",
                       target: "_blank",
-                      data: { tooltip_target: "text" } do %>
+                      data: { tooltip_target: "text", action: "click->dataset#stopPropagation" } do %>
                     <span class="truncate">
                       <%= link_text %>
                     </span>
@@ -78,22 +77,24 @@
                   </div>
                 </div>
               <% else %>
-                <div class="relative group" data-controller="dropdown">
+                <div class="relative group" data-controller="dropdown" 
+                     data-action="click->dataset#stopPropagation">
                   <button type="button" 
-                          class="text-brand-dark hover:text-brand-dark/80 flex items-center gap-1">
+                          class="text-brand-dark hover:text-brand-dark/80 flex items-center gap-1"
+                          data-action="click->dataset#stopPropagation">
                     <span class="max-w-[200px] truncate">
                       <%= dataset.dataset_links.first.name.presence || "External Links" %>
                     </span>
                     <span class="text-xs text-gray-500 shrink-0">+<%= dataset.dataset_links_count - 1 %></span>
                   </button>
-                  
                   <div class="absolute hidden group-hover:block left-0 z-50"
                        data-dropdown-target="dropdown">
-                    <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px] overflow-y-auto">
+                    <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
                       <% dataset.dataset_links.each do |link| %>
                         <%= link_to link.url,
                             target: "_blank",
-                            class: "block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap" do %>
+                            class: "block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap",
+                            data: { action: "click->dataset#stopPropagation" } do %>
                           <%= link.name.presence || "External Link" %>
                         <% end %>
                       <% end %>
@@ -106,30 +107,37 @@
         </div>
       </div>
     </div>
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex items-center gap-2 shrink-0" 
+         data-action="click->dataset#stopPropagation">
       <% if dataset.explorer_url.present? %>
         <%= link_to "Explore", dataset.explorer_url,
             class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
-            target: "_blank" %>
+            target: "_blank",
+            data: { action: "click->dataset#stopPropagation" } %>
       <% end %>
-      
       <% if dataset.file_resources.any? %>
-        <div class="relative group">
+        <div class="relative group" 
+             data-action="click->dataset#stopPropagation">
           <button type="button" 
-                  class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors">
+                  class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
+                  data-action="click->dataset#stopPropagation">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+              <path fill-rule="evenodd" 
+                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
+                    clip-rule="evenodd"/>
             </svg>
           </button>
-          
           <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
             <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
               <% dataset.file_resources.each do |resource| %>
                 <%= link_to resource.url,
                     target: "_blank",
-                    class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50" do %>
+                    class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50",
+                    data: { action: "click->dataset#stopPropagation" } do %>
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    <path fill-rule="evenodd" 
+                          d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
+                          clip-rule="evenodd"/>
                   </svg>
                   <%= resource.filetype %>
                 <% end %>
@@ -142,20 +150,11 @@
   </div>
   <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" data-dataset-target="summary">
     <div class="flex flex-wrap gap-1.5 items-center">
-      <% tag_categories = {
-        organisms: { color: "blue", items: dataset.organisms, name_method: :name },
-        cell_types: { color: "green", items: dataset.cell_types, name_method: :name },
-        tissues: { color: "purple", items: dataset.tissues, name_method: :name },
-        developmental_stages: { color: "orange", items: dataset.developmental_stages, name_method: :name },
-        diseases: { color: "red", items: dataset.diseases, name_method: :name },
-        sexes: { color: "pink", items: dataset.sexes, name_method: :name },
-        technologies: { color: "indigo", items: dataset.technologies, name_method: :protocol_name }
-      } %>
       <% tag_categories.each do |category, data| %>
         <% if data[:items].any? %>
-          <div class="px-2 py-0.5 rounded-full text-xs bg-<%= data[:color] %>-100 text-<%= data[:color] %>-800 flex items-center max-w-[160px] cursor-pointer" 
+          <div class="px-2 py-0.5 rounded-full text-xs bg-<%= data[:color] %>-100 text-<%= data[:color] %>-800 flex items-center max-w-[160px] cursor-default" 
                title="<%= data[:items].first.send(data[:name_method]) %>"
-               data-action="click->dataset#toggle">
+               data-action="click->dataset#stopPropagation">
             <div class="truncate">
               <%= data[:items].first.send(data[:name_method]) %>
             </div>
@@ -173,120 +172,24 @@
   </div>
   <div class="hidden mt-4 space-y-4 relative" data-dataset-target="content">
     <div class="flex flex-wrap gap-6">
-      <% if dataset.organisms.any? %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
-            Organisms
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.organisms.each do |item| %>
-              <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
-                <%= item.name %>
-              </span>
-            <% end %>
+      <% tag_categories.each do |category, data| %>
+        <% if data[:items].any? %>
+          <div class="min-w-[200px]">
+            <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+              <span class="w-2 h-2 rounded-full bg-<%= data[:color] %>-500 mr-2"></span>
+              <%= data[:category_name] %>
+            </h3>
+            <div class="flex flex-wrap gap-1">
+              <% data[:items].each do |item| %>
+                <span class="px-2 py-0.5 rounded-full text-xs bg-<%= data[:color] %>-100 text-<%= data[:color] %>-800 cursor-default" 
+                      data-action="click->dataset#stopPropagation">
+                  <%= item.send(data[:name_method]) %>
+                </span>
+              <% end %>
+            </div>
           </div>
-        </div>
-      <% end %>
-      <% if dataset.cell_types.any? %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-            Cell Types
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.cell_types.each do |item| %>
-              <span class="px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
-                <%= item.name %>
-              </span>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-      <% if dataset.tissues.any? %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full bg-purple-500 mr-2"></span>
-            Tissues
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.tissues.each do |item| %>
-              <span class="px-2 py-0.5 rounded-full text-xs bg-purple-100 text-purple-800">
-                <%= item.name %>
-              </span>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-      <% if dataset.developmental_stages.any? %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full bg-orange-500 mr-2"></span>
-            Developmental Stages
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.developmental_stages.each do |item| %>
-              <span class="px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800">
-                <%= item.name %>
-              </span>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-      <% if dataset.diseases.any? %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
-            Diseases
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.diseases.each do |item| %>
-              <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-800">
-                <%= item.name %>
-              </span>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-      <% if dataset.sexes.any? %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full bg-pink-500 mr-2"></span>
-            Sex
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.sexes.each do |item| %>
-              <span class="px-2 py-0.5 rounded-full text-xs bg-pink-100 text-pink-800">
-                <%= item.name %>
-              </span>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
-      <% if dataset.technologies.any? %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full bg-indigo-500 mr-2"></span>
-            Technologies
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.technologies.each do |item| %>
-              <span class="px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-800">
-                <%= item.protocol_name %>
-              </span>
-            <% end %>
-          </div>
-        </div>
+        <% end %>
       <% end %>
     </div>
-    <button type="button"
-            class="absolute bottom-0 right-0 p-1 rounded-full text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-            data-action="click->dataset#toggle">
-      <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd"
-              d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-              clip-rule="evenodd" />
-      </svg>
-    </button>
   </div>
 </div>

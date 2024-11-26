@@ -21,6 +21,10 @@ export default class extends Controller {
     this.summaryTarget.classList.toggle("hidden")
   }
 
+  stopPropagation(event) {
+    event.stopPropagation()
+  }
+
   addTurboFrameListeners() {
     const frame = this.element.closest('turbo-frame')
     if (!frame) return
