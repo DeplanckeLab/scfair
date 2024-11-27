@@ -78,7 +78,7 @@ class DatasetsController < ApplicationController
         :technologies,
         :file_resources,
         :study,
-        :dataset_links
+        :links
       ]
     end
     

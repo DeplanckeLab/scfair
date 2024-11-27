@@ -7,7 +7,7 @@ class Dataset < ApplicationRecord
   has_and_belongs_to_many :diseases
   has_and_belongs_to_many :technologies
 
-  has_many :dataset_links
+  has_many :links, class_name: "DatasetLink"
   has_many :file_resources
 
   belongs_to :study, primary_key: :doi, foreign_key: :doi, optional: true
@@ -21,6 +21,7 @@ class Dataset < ApplicationRecord
     string :explorer_url
     string :doi
     integer :cell_count
+    string :source_name
 
     string :sexes, multiple: true do
       sexes.map(&:name)
@@ -58,8 +59,9 @@ class Dataset < ApplicationRecord
         developmental_stages.map(&:name),
         organisms.map(&:name),
         diseases.map(&:name),
-        technologies.map(&:protocol_name)
-      ].flatten.compact.join(' ')
+        technologies.map(&:protocol_name),
+        source_name
+      ].flatten.compact.join(" ")
     end
   end
 end

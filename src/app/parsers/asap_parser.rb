@@ -34,8 +34,8 @@ class AsapParser
     dataset_data = {
       collection_id: "ASAP000000",
       source_name: "ASAP",
-      source_url: "https://asap.epfl.ch/projects/#{data[:public_key]}",
-      explorer_url: "",
+      source_url: "https://asap.epfl.ch/projects.json",
+      explorer_url: "https://asap.epfl.ch/projects/#{data[:public_key]}",
       doi: data[:doi],
       cell_count: data[:nber_cols],
       parser_hash: parser_hash
@@ -48,7 +48,7 @@ class AsapParser
       update_organisms(dataset, [data[:organism]].compact)
       update_technologies(dataset, [data[:technology]].compact)
       update_file_resources(dataset, extract_files(data))
-      update_dataset_links(dataset, data.dig(:experiments))
+      update_links(dataset, data.dig(:experiments))
       
       puts "Imported #{dataset.id}"
     else
@@ -119,10 +119,10 @@ class AsapParser
     end
   end
 
-  def update_dataset_links(dataset, experiments)
-    dataset.dataset_links.clear    
+  def update_links(dataset, experiments)
+    dataset.links.clear    
     experiments.each do |experiment|
-      dataset.dataset_links.find_or_create_by(url: experiment[:url])
+      dataset.links.find_or_create_by(url: experiment[:url])
     end
   end
 end 

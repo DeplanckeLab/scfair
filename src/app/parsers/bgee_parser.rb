@@ -70,7 +70,7 @@ class BgeeParser
       update_developmental_stages(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :devStage, :name) }.compact.uniq)
       update_diseases(dataset, ["normal"])
       update_technologies(dataset, datasets.map { |d| d.dig(:library, :technology, :protocolName) }.compact.uniq)
-      update_dataset_links(dataset, datasets.map { |d| d.dig(:library, :experiment, :xRef, :xRefURL) }.compact.uniq)
+      update_links(dataset, datasets.map { |d| d.dig(:library, :experiment, :xRef, :xRefURL) }.compact.uniq)
 
       all_files = datasets.flat_map { |d| d.dig(:library, :experiment, :downloadFiles) }.compact
       update_file_resources(dataset, all_files)
@@ -167,13 +167,13 @@ class BgeeParser
     end
   end
 
-  def update_dataset_links(dataset, links)
-    dataset.dataset_links.clear
+  def update_links(dataset, links)
+    dataset.links.clear
 
     links.each do |url|
       next unless url.present?
       
-      dataset.dataset_links.find_or_create_by(url: url)
+      dataset.links.find_or_create_by(url: url)
     rescue => e
       @errors << "Error creating dataset link for URL #{url}: #{e.message}"
     end

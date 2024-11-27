@@ -5,8 +5,8 @@ task load_ext_sources: :environment do
   ext_sources = ExtSource.all
   broken_links = []
   
-  Dataset.includes(:dataset_links).find_each do |dataset|
-    dataset.dataset_links.each do |link|
+  Dataset.includes(:links).find_each do |dataset|
+    dataset.links.each do |link|
       es = nil
       id = nil
       

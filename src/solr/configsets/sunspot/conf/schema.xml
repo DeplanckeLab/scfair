@@ -65,6 +65,7 @@
     <field name="organisms_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="diseases_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="technologies_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="source_name_sm" type="string" indexed="true" stored="false" multiValued="true"/>
 
     <copyField source="*_text"  dest="textSpell" />
     <copyField source="*_s"  dest="textSpell" />

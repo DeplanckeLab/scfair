@@ -1,5 +1,12 @@
 module ApplicationHelper
 
+  def extract_domain(url)
+    return nil if url.blank?
+    URI.parse(url).host.gsub(/^www\./, "")
+  rescue URI::InvalidURIError
+    nil
+  end
+
   def ontology_link_generator(type, id)
     id = id.sub ":", "_" # necessary beacause the url uses _ instead of : in the id                  
     url = "https://www.ebi.ac.uk/ols4/ontologies/#{type}/classes/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252F#{id}"

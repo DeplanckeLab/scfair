@@ -1,5 +1,5 @@
 class DatasetLink < ApplicationRecord
-  belongs_to :dataset, counter_cache: true
+  belongs_to :dataset, counter_cache: :links_count
 
   validates :url, presence: true
   validates :url, uniqueness: { scope: :dataset_id }

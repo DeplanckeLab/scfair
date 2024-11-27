@@ -7,7 +7,7 @@
   sexes: { bg_color: "bg-pink-100", text_color: "text-pink-800", circle_color: "bg-pink-500", items: dataset.sexes, name_method: :name, category_name: "Sex" },
   technologies: { bg_color: "bg-indigo-100", text_color: "text-indigo-800", circle_color: "bg-indigo-500", items: dataset.technologies, name_method: :protocol_name, category_name: "Technology" }
 } %>
-<div class="bg-white rounded-lg shadow p-4 mb-3 relative group/dataset cursor-pointer" 
+<div class="bg-white rounded-lg shadow p-4 mb-3 relative group/dataset cursor-pointer hover:bg-gray-50 transition-colors" 
      data-controller="dataset" 
      data-action="click->dataset#toggle">
   <div class="flex items-start justify-between">
@@ -37,7 +37,7 @@
                       class: "text-brand-dark hover:text-brand-dark/80",
                       data: { action: "click->dataset#stopPropagation" } do %>
                   <span class="truncate">
-                    (<%= dataset.study.authors || dataset.study.first_author %>, <%= dataset.study.year %>)
+                    <%= dataset.study.authors || dataset.study.first_author %>, <%= dataset.study.year %>
                   </span>
                 <% end %>
                 <div class="absolute hidden group-hover:block -left-4 bottom-6 z-50">
@@ -53,54 +53,6 @@
                     class: "text-brand-dark hover:text-brand-dark/80",
                     data: { action: "click->dataset#stopPropagation" } do %>
                 Article
-              <% end %>
-            <% end %>
-            <% if dataset.dataset_links_count > 0 %>
-              <span class="text-gray-400">•</span>
-              <% if dataset.dataset_links_count == 1 %>
-                <% link_text = dataset.dataset_links.first.name.presence || "External Link" %>
-                <div class="relative group inline-block" data-controller="tooltip" 
-                     data-action="click->dataset#stopPropagation">
-                  <%= link_to dataset.dataset_links.first.url,
-                      class: "text-brand-dark hover:text-brand-dark/80 max-w-[200px] truncate inline-block align-bottom",
-                      target: "_blank",
-                      data: { tooltip_target: "text", action: "click->dataset#stopPropagation" } do %>
-                    <span class="truncate">
-                      <%= link_text %>
-                    </span>
-                  <% end %>
-                  <div class="absolute hidden -left-4 bottom-6 z-50"
-                       data-tooltip-target="tooltip">
-                    <div class="bg-gray-900 text-white text-xs rounded-md py-1.5 px-2 whitespace-normal max-w-xs">
-                      <%= link_text %>
-                    </div>
-                  </div>
-                </div>
-              <% else %>
-                <div class="relative group" data-controller="dropdown" 
-                     data-action="click->dataset#stopPropagation">
-                  <button type="button" 
-                          class="text-brand-dark hover:text-brand-dark/80 flex items-center gap-1"
-                          data-action="click->dataset#stopPropagation">
-                    <span class="max-w-[200px] truncate">
-                      <%= dataset.dataset_links.first.name.presence || "External Links" %>
-                    </span>
-                    <span class="text-xs text-gray-500 shrink-0">+<%= dataset.dataset_links_count - 1 %></span>
-                  </button>
-                  <div class="absolute hidden group-hover:block left-0 z-50"
-                       data-dropdown-target="dropdown">
-                    <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
-                      <% dataset.dataset_links.each do |link| %>
-                        <%= link_to link.url,
-                            target: "_blank",
-                            class: "block px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap",
-                            data: { action: "click->dataset#stopPropagation" } do %>
-                          <%= link.name.presence || "External Link" %>
-                        <% end %>
-                      <% end %>
-                    </div>
-                  </div>
-                </div>
               <% end %>
             <% end %>
           </div>
@@ -191,5 +143,28 @@
         <% end %>
       <% end %>
     </div>
+    <% if dataset.links_count > 0 %>
+      <div class="border-t pt-4">
+        <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+          </svg>
+          Related Links
+        </h3>
+        <div class="space-y-2">
+          <% dataset.links.each do |link| %>
+            <div class="block text-xs">
+              <%= link_to link.url,
+                  target: "_blank",
+                  class: "text-brand-dark hover:text-brand-dark/80",
+                  data: { action: "click->dataset#stopPropagation" } do %>
+                <%= link.name.presence || extract_domain(link.url) || "External Link" %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
   </div>
 </div>

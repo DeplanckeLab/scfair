@@ -52,7 +52,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
     t.string "parser_hash", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "dataset_links_count", default: 0
+    t.integer "links_count", default: 0
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
     t.index ["doi"], name: "index_datasets_on_doi"
     t.index ["source_name"], name: "index_datasets_on_source_name"

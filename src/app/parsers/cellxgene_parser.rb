@@ -81,7 +81,7 @@ class CellxgeneParser
       update_diseases(dataset, data.fetch(:disease, []))
       update_technologies(dataset, data.fetch(:assay, []))
       update_file_resources(dataset, data.fetch(:assets))
-      update_dataset_links(dataset, collection.links)
+      update_links(dataset, collection.links)
 
       puts "Imported #{dataset.id}"
     else
@@ -182,10 +182,10 @@ class CellxgeneParser
     end
   end
 
-  def update_dataset_links(dataset, links_data)
-    dataset.dataset_links.clear
+  def update_links(dataset, links_data)
+    dataset.links.clear
     links_data.each do |link_hash|
-      dataset.dataset_links.create(url: link_hash.fetch(:link_url, ""))
+      dataset.links.create(url: link_hash.fetch(:link_url, ""))
     end
   end
 end
