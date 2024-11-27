@@ -1,7 +1,13 @@
 class DatasetsController < ApplicationController
   def index
     @search = Dataset.search do
-      fulltext params[:search] if params[:search].present?
+      if params[:search].present?
+        search_term = params[:search].split.map { |term| 
+          term = Solr::Escape.escape(term.downcase) + "*"
+        }.join(" AND ")
+        
+        fulltext search_term
+      end
       
       adjust_solr_params do |params|
         facet_fields = %w[
@@ -17,7 +23,7 @@ class DatasetsController < ApplicationController
         if params[:q] && params[:q] != "*:*"
           search_query = params[:q]
           params[:fq] = Array(params[:fq])
-          params[:fq] << "{!tag=text}text_search_text:#{search_query}"
+          params[:fq] << "{!tag=text}text_search_text:(#{search_query})"
           params[:q] = "*:*"
         end
 
@@ -33,7 +39,7 @@ class DatasetsController < ApplicationController
         end
 
         params[:"facet.field"] = params[:"facet.field"].map do |field|
-          exclusions = (facet_fields + ['text']).join(',')
+          exclusions = (facet_fields + ["text"]).join(",")
           if field.include?("{!key=sex}")
             "{!ex=#{exclusions} key=sex}sexes_sm"
           else
