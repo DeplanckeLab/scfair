@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["content", "summary", "spinner"]
+  static targets = ["content", "summary", "spinner", "container"]
   static values = {
     minimumLoadingDuration: { type: Number, default: 200 },
     loadingDelay: { type: Number, default: 200 }
@@ -10,6 +10,12 @@ export default class extends Controller {
   connect() {
     this.addTurboFrameListeners()
     this.loadingStartTime = 0
+
+    // Set initial hover class based on expanded state
+    const isExpanded = this.containerTarget.dataset.datasetExpanded === 'true'
+    if (!isExpanded) {
+      this.containerTarget.classList.add('hover:bg-gray-50')
+    }
   }
 
   disconnect() {
@@ -17,8 +23,19 @@ export default class extends Controller {
   }
 
   toggle() {
-    this.contentTarget.classList.toggle("hidden")
-    this.summaryTarget.classList.toggle("hidden")
+    const isExpanded = this.containerTarget.dataset.datasetExpanded === 'true'
+    this.containerTarget.dataset.datasetExpanded = (!isExpanded).toString()
+    
+    // Toggle content visibility
+    this.contentTarget.classList.toggle('hidden')
+    this.summaryTarget.classList.toggle('hidden')
+    
+    // Toggle hover classes based on expanded state
+    if (!isExpanded) {
+      this.containerTarget.classList.remove('hover:bg-gray-50')
+    } else {
+      this.containerTarget.classList.add('hover:bg-gray-50')
+    }
   }
 
   stopPropagation(event) {
