@@ -9,37 +9,31 @@
     <fieldType name="text" class="solr.TextField" omitNorms="false">
       <analyzer>
         <tokenizer class="solr.StandardTokenizerFactory"/>
-        <filter class="solr.StandardFilterFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="solr.PorterStemFilterFactory"/>
       </analyzer>
     </fieldType>
 
-    <!-- Modify the text_search field type -->
+    <!-- text_search field type for Solr 9.7 -->
     <fieldType name="text_search" class="solr.TextField" omitNorms="false">
       <analyzer type="index">
         <tokenizer class="solr.StandardTokenizerFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>
         <filter class="solr.EdgeNGramFilterFactory"
                 minGramSize="1"
-                maxGramSize="25"
-                preserveOriginal="false"/>
-        <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
+                maxGramSize="25"/>
       </analyzer>
       <analyzer type="query">
         <tokenizer class="solr.StandardTokenizerFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>
-        <filter class="solr.EdgeNGramFilterFactory"
-                minGramSize="1"
-                maxGramSize="25"/>
-        <filter class="solr.RemoveDuplicatesTokenFilterFactory"/>
       </analyzer>
     </fieldType>
   </types>
 
   <fields>
-    <!-- Unique identifier -->
+    <!-- Required fields -->
     <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
+    <field name="type" type="string" indexed="true" stored="true" multiValued="true"/>
     
     <!-- Standard fields -->
     <field name="text" stored="true" type="text" multiValued="true" indexed="true"/>
@@ -58,6 +52,7 @@
     <!-- Text search field -->
     <field name="text_search_text" type="text_search" indexed="true" stored="false" multiValued="true"/>
 
+    <!-- Facet fields -->
     <field name="cell_types_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="sexes_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="tissues_sm" type="string" indexed="true" stored="false" multiValued="true"/>
@@ -67,13 +62,18 @@
     <field name="technologies_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="source_name_sm" type="string" indexed="true" stored="false" multiValued="true"/>
 
-    <copyField source="*_text"  dest="textSpell" />
-    <copyField source="*_s"  dest="textSpell" />
+    <!-- Spell checking field -->
+    <field name="textSpell" type="text" indexed="true" stored="false" multiValued="true"/>
   </fields>
+
+  <!-- Field to copy to spell check -->
+  <copyField source="*_text" dest="textSpell"/>
+  <copyField source="*_s" dest="textSpell"/>
 
   <!-- Uniqueness constraint -->
   <uniqueKey>id</uniqueKey>
 
+  <!-- Default search field -->
   <defaultSearchField>text</defaultSearchField>
   <solrQueryParser defaultOperator="AND"/>
 </schema>
