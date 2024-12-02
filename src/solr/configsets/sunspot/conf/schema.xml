@@ -72,8 +72,4 @@
 
   <!-- Uniqueness constraint -->
   <uniqueKey>id</uniqueKey>
-
-  <!-- Default search field -->
-  <defaultSearchField>text</defaultSearchField>
-  <solrQueryParser defaultOperator="AND"/>
 </schema>
