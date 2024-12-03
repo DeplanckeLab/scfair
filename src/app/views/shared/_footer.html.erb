@@ -1,21 +1,21 @@
 <footer class="bg-white border-t mt-auto">
-  <div class="container mx-auto px-4 py-6">
-    <div class="grid grid-cols-3 gap-4">
+  <div class="container mx-auto px-4 py-2">
+    <div class="grid grid-cols-3 gap-1">
       <div class="flex items-center">
-        <div class="text-sm text-gray-600">
+        <div class="text-xs text-gray-600">
           <a href="mailto:contact@sc-fair.org?subject=ScFAIR%20feedback" class="hover:text-gray-900">Feedback</a>
-          <span class="mx-2 text-gray-400">|</span>
+          <span class="mx-1 text-gray-400">|</span>
           <a href="https://www.epfl.ch/about/presidency/presidents-team/legal-affairs/epfl-privacy-policy/" class="hover:text-gray-900">Privacy policy</a>
         </div>
       </div>
       <div class="flex justify-center items-center">
-        <div class="text-sm text-gray-600">
+        <div class="text-xs text-gray-600">
           &copy; <%= Time.now.year %> SIB, 1015 Lausanne
         </div>
       </div>
       <div class="flex justify-end items-center">
         <%= link_to "https://sib.swiss", target: "_blank", class: "hover:opacity-80" do %>
-          <%= image_tag "sib_logo.svg", width: 100, height: 35, alt: "SIB Logo" %>
+          <%= image_tag "sib_logo.svg", width: 90, height: 30, alt: "SIB Logo" %>
         <% end %>
       </div>
     </div>
