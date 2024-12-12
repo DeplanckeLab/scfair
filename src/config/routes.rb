@@ -3,6 +3,7 @@ Rails.application.routes.draw do
   resources :studies
   resources :journals
   resources :datasets, only: :index, path: "explore"
+  resources :ontology_terms, only: [:show]
 
   devise_for :users
   

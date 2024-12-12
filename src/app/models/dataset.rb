@@ -1,4 +1,6 @@
 class Dataset < ApplicationRecord
+  CATEGORIES = %i[organisms cell_types tissues developmental_stages diseases sexes technologies]
+
   has_and_belongs_to_many :sexes
   has_and_belongs_to_many :cell_types
   has_and_belongs_to_many :tissues

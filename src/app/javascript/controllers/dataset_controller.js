@@ -1,10 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
+import { Turbo } from "@hotwired/turbo-rails"
 
 export default class extends Controller {
-  static targets = ["content", "summary", "spinner", "container"]
+  static targets = ["content", "summary", "spinner", "container", "tagModal"]
   static values = {
     minimumLoadingDuration: { type: Number, default: 200 },
-    loadingDelay: { type: Number, default: 200 }
+    loadingDelay: { type: Number, default: 200 },
+    expanded: { type: Boolean, default: false }
   }
 
   connect() {
@@ -12,8 +14,7 @@ export default class extends Controller {
     this.loadingStartTime = 0
 
     // Set initial hover class based on expanded state
-    const isExpanded = this.containerTarget.dataset.datasetExpanded === 'true'
-    if (!isExpanded) {
+    if (!this.expandedValue) {
       this.containerTarget.classList.add('hover:bg-gray-50')
     }
   }
@@ -22,22 +23,46 @@ export default class extends Controller {
     this.removeTurboFrameListeners()
   }
 
+  // Dataset expansion handling
   toggle() {
-    const isExpanded = this.containerTarget.dataset.datasetExpanded === 'true'
-    this.containerTarget.dataset.datasetExpanded = (!isExpanded).toString()
+    this.expandedValue = !this.expandedValue
     
     // Toggle content visibility
     this.contentTarget.classList.toggle('hidden')
     this.summaryTarget.classList.toggle('hidden')
     
     // Toggle hover classes based on expanded state
-    if (!isExpanded) {
+    if (this.expandedValue) {
       this.containerTarget.classList.remove('hover:bg-gray-50')
     } else {
       this.containerTarget.classList.add('hover:bg-gray-50')
     }
   }
 
+  // Tag modal handling
+  showTagModal(event) {
+    event.stopPropagation()
+    
+    const tag = event.currentTarget
+    const tagName = tag.dataset.datasetTagName
+    const bgColor = tag.dataset.datasetBgColor
+    const textColor = tag.dataset.datasetTextColor
+    const url = tag.dataset.datasetOntologyUrl
+
+    // First show the modal with the tag
+    this.tagModalTarget.classList.remove('hidden')
+    
+    // Then load ontology data if available
+    if (url) {
+      Turbo.visit(url, { frame: "modal_content" })
+    }
+  }
+
+  hideTagModal() {
+    this.tagModalTarget.classList.add('hidden')
+  }
+
+  // Loading state handling
   stopPropagation(event) {
     event.stopPropagation()
   }

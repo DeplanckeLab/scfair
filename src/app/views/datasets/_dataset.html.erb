@@ -10,10 +10,8 @@
 <div class="bg-white rounded-lg shadow p-3 mb-3 relative group/dataset cursor-pointer transition-all duration-200" 
      data-controller="dataset" 
      data-action="click->dataset#toggle"
-     data-dataset-expanded="false"
-     data-dataset-target="container"
-     data-class-expanded=""
-     data-class-collapsed="hover:bg-gray-50">
+     data-dataset-expanded-value="false"
+     data-dataset-target="container">
   <div class="flex items-start justify-between">
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
@@ -108,20 +106,15 @@
     <div class="flex flex-wrap gap-1.5 items-center">
       <% tag_categories.each do |category, data| %>
         <% if data[:items].any? %>
-          <div class="px-2 py-0.5 rounded-full text-xs <%= data[:bg_color] %> <%= data[:text_color] %> flex items-center max-w-[160px] cursor-default" 
-               title="<%= data[:items].first.send(data[:name_method]) %>"
-               data-action="click->dataset#stopPropagation">
-            <div class="truncate">
-              <%= data[:items].first.send(data[:name_method]) %>
-            </div>
-            <% if data[:items].length > 1 %>
-              <div class="ml-1 pl-1 flex items-center shrink-0">
-                <div class="font-semibold <%= data[:text_color] %>">
-                  +<%= data[:items].length - 1 %>
-                </div>
-              </div>
-            <% end %>
-          </div>
+          <%= render partial: "datasets/tag",
+             locals: {
+               name: data[:items].first.send(data[:name_method]),
+               bg_color: data[:bg_color],
+               text_color: data[:text_color],
+               count: data[:items].length,
+               ontology_url: data[:items].first.ontology_term_id ? 
+                 ontology_term_path(data[:items].first.ontology_term_id) : nil
+             } %>
         <% end %>
       <% end %>
     </div>
@@ -137,10 +130,14 @@
             </h3>
             <div class="flex flex-wrap gap-1">
               <% data[:items].each do |item| %>
-                <span class="px-2 py-0.5 rounded-full text-xs <%= data[:bg_color] %> <%= data[:text_color] %> cursor-default" 
-                      data-action="click->dataset#stopPropagation">
-                  <%= item.send(data[:name_method]) %>
-                </span>
+                <%= render partial: "datasets/tag",
+                   locals: {
+                     name: item.send(data[:name_method]),
+                     bg_color: data[:bg_color],
+                     text_color: data[:text_color],
+                     ontology_url: item.ontology_term_id ? 
+                       ontology_term_path(item.ontology_term_id) : nil
+                   } %>
               <% end %>
             </div>
           </div>

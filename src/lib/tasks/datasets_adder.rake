@@ -8,6 +8,11 @@ task update_cxg: :environment do
     puts "CELLxGENE parsing encountered errors:"
     puts parser.errors.join("\n")
   end
+
+  if parser.warnings.any?
+    puts "\nWarnings:"
+    puts parser.warnings.uniq.join("\n")
+  end
 end
 
 desc "UPDATE BGEE DATASETS"

@@ -1,0 +1,15 @@
+<%= link_to (ontology_url || "#"),
+      class: "px-2 py-0.5 rounded-full text-xs #{bg_color} #{text_color} hover:opacity-90",
+      data: {
+        controller: "tag",
+        action: "click->tag#showModal",
+        tag_bg_color_value: bg_color,
+        tag_text_color_value: text_color,
+        tag_name_value: name,
+        tag_ontology_url_value: ontology_url
+      } do %>
+  <%= name %>
+  <% if defined?(count) && count > 1 %>
+    <span class="ml-1 opacity-60">+<%= count - 1 %></span>
+  <% end %>
+<% end %>

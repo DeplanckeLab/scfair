@@ -1,0 +1,43 @@
+<turbo-frame id="tag-modal-content">
+  <div class="sm:flex sm:items-start" data-action="click->tag#stopPropagation">
+    <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="px-2 py-0.5 rounded-full text-xs" data-bg-color>
+          <%= @term.name %>
+        </div>
+        <div class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+          <%= @term.identifier %>
+        </div>
+      </div>
+      <% if @term %>
+        <div class="border-t border-gray-100 pt-6">
+          <dl class="space-y-4">
+            <% if @term.description.present? %>
+              <dd class="text-sm text-gray-600">
+                <%= @term.description %>
+              </dd>
+            <% else %>
+              <dd class="text-sm text-gray-500 italic">
+                No description available for this term.
+              </dd>
+            <% end %>
+            <dd>
+              <%= link_to "http://purl.obolibrary.org/obo/#{@term.identifier.sub(':', '_')}", 
+                    target: "_blank", 
+                    class: "inline-flex items-center px-2.5 py-1.5 text-xs font-medium rounded text-gray-700 bg-gray-100 hover:bg-gray-200" do %>
+                View in Ontology Tree
+                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              <% end if @term.identifier %>
+            </dd>
+          </dl>
+        </div>
+      <% else %>
+        <div>
+          <p class="text-sm text-gray-500">No ontology information available for this tag.</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</turbo-frame>

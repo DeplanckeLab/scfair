@@ -17,7 +17,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
 
   create_table "cell_types", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.string "ontology_term_id"
+    t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_cell_types_on_name", unique: true
@@ -133,7 +133,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
 
   create_table "developmental_stages", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.string "ontology_term_id"
+    t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_developmental_stages_on_name", unique: true
@@ -142,7 +142,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
 
   create_table "diseases", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.string "ontology_term_id"
+    t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_diseases_on_name", unique: true
@@ -173,14 +173,12 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "ontology_terms", force: :cascade do |t|
-    t.string "identifier"
+  create_table "ontology_terms", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.string "identifier", null: false
     t.string "name"
+    t.string "description"
     t.string "parents"
     t.string "children"
-    t.string "all_children"
-    t.string "all_parents"
-    t.string "exists_in_datasets"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_ontology_terms_on_identifier", unique: true
@@ -188,7 +186,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
 
   create_table "organisms", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.string "ontology_term_id"
+    t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_organisms_on_name", unique: true
@@ -197,7 +195,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
 
   create_table "sexes", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.string "ontology_term_id"
+    t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_sexes_on_name", unique: true
@@ -226,7 +224,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
 
   create_table "technologies", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "protocol_name", null: false
-    t.string "ontology_term_id"
+    t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ontology_term_id"], name: "index_technologies_on_ontology_term_id"
@@ -235,7 +233,7 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
 
   create_table "tissues", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.string "ontology_term_id"
+    t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_tissues_on_name", unique: true
@@ -270,4 +268,5 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
   add_foreign_key "datasets_tissues", "datasets"
   add_foreign_key "datasets_tissues", "tissues"
   add_foreign_key "file_resources", "datasets"
+  add_foreign_key "studies", "journals"
 end

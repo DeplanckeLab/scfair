@@ -7,10 +7,11 @@ end
 class CellxgeneParser
   BASE_URL = "https://api.cellxgene.cziscience.com/curation/v1/collections/".freeze
 
-  attr_reader :errors
+  attr_reader :errors, :warnings
 
   def initialize
     @errors = []
+    @warnings = []
   end
 
   def perform
@@ -27,6 +28,10 @@ class CellxgeneParser
   end
 
   private
+
+  def log_missing_ontology(type, identifier, dataset_id)
+    @warnings << "Missing ontology term for #{type}: #{identifier} in dataset #{dataset_id}"
+  end
 
   def fetch_collections
     response = HTTParty.get(BASE_URL)
@@ -92,8 +97,12 @@ class CellxgeneParser
   def update_sexes(dataset, sexes_data)
     dataset.sexes.clear
     sexes_data.each do |sex_hash|
+      ontology_identifier = sex_hash.fetch(:ontology_term_id)
+      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      log_missing_ontology("sex", ontology_identifier, dataset.id) unless ontology_term
+
       sex = Sex.find_or_create_by(name: sex_hash.fetch(:label, "")) do |s|
-        s.ontology_term_id = sex_hash.fetch(:ontology_term_id)
+        s.ontology_term = ontology_term
       end
 
       dataset.sexes << sex unless dataset.sexes.include?(sex)
@@ -103,8 +112,12 @@ class CellxgeneParser
   def update_cell_types(dataset, cell_types_data)
     dataset.cell_types.clear
     cell_types_data.each do |ct_hash|
+      ontology_identifier = ct_hash.fetch(:ontology_term_id)
+      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      log_missing_ontology("cell type", ontology_identifier, dataset.id) unless ontology_term
+
       cell_type = CellType.find_or_create_by(name: ct_hash.fetch(:label, "")) do |ct|
-       ct.ontology_term_id = ct_hash.fetch(:ontology_term_id)
+        ct.ontology_term = ontology_term
       end
 
       dataset.cell_types << cell_type unless dataset.cell_types.include?(cell_type)
@@ -114,8 +127,12 @@ class CellxgeneParser
   def update_tissues(dataset, tissues_data)
     dataset.tissues.clear
     tissues_data.each do |tissue_hash|
+      ontology_identifier = tissue_hash.fetch(:ontology_term_id)
+      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      log_missing_ontology("tissue", ontology_identifier, dataset.id) unless ontology_term
+
       tissue = Tissue.find_or_create_by(name: tissue_hash.fetch(:label, "")) do |t|
-        t.ontology_term_id = tissue_hash.fetch(:ontology_term_id)
+        t.ontology_term = ontology_term
       end
       
       dataset.tissues << tissue unless dataset.tissues.include?(tissue)
@@ -125,10 +142,12 @@ class CellxgeneParser
   def update_developmental_stages(dataset, stages_data)
     dataset.developmental_stages.clear
     stages_data.each do |stage_hash|
-      label = stage_hash.fetch(:label, "")
-      
-      stage = DevelopmentalStage.find_or_create_by(name: label) do |ds|
-        ds.ontology_term_id = stage_hash.fetch(:ontology_term_id)
+      ontology_identifier = stage_hash.fetch(:ontology_term_id)
+      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      log_missing_ontology("developmental stage", ontology_identifier, dataset.id) unless ontology_term
+
+      stage = DevelopmentalStage.find_or_create_by(name: stage_hash.fetch(:label, "")) do |ds|
+        ds.ontology_term = ontology_term
       end
       
       dataset.developmental_stages << stage unless dataset.developmental_stages.include?(stage)
@@ -138,8 +157,12 @@ class CellxgeneParser
   def update_organisms(dataset, organisms_data)
     dataset.organisms.clear
     organisms_data.each do |org_hash|
+      ontology_identifier = org_hash.fetch(:ontology_term_id)
+      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      log_missing_ontology("organism", ontology_identifier, dataset.id) unless ontology_term
+
       organism = Organism.find_or_create_by(name: org_hash.fetch(:label, "")) do |o|
-        o.ontology_term_id = org_hash.fetch(:ontology_term_id)
+        o.ontology_term = ontology_term
       end
 
       dataset.organisms << organism unless dataset.organisms.include?(organism)
@@ -149,8 +172,12 @@ class CellxgeneParser
   def update_diseases(dataset, diseases_data)
     dataset.diseases.clear
     diseases_data.each do |disease_hash|
+      ontology_identifier = disease_hash.fetch(:ontology_term_id)
+      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      log_missing_ontology("disease", ontology_identifier, dataset.id) unless ontology_term
+
       disease = Disease.find_or_create_by(name: disease_hash.fetch(:label, "")) do |d|
-        d.ontology_term_id = disease_hash.fetch(:ontology_term_id)
+        d.ontology_term = ontology_term
       end
 
       dataset.diseases << disease unless dataset.diseases.include?(disease)
@@ -158,16 +185,20 @@ class CellxgeneParser
   end
 
   def update_technologies(dataset, assay_data)
+    return unless assay_data
+    
     dataset.technologies.clear
     assay_data.each do |assay_hash|
-      protocol_name = assay_hash.fetch(:label, "")
+      ontology_identifier = assay_hash.fetch(:ontology_term_id)
+      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      log_missing_ontology("technology", ontology_identifier, dataset.id) unless ontology_term
 
-      technology = Technology.find_or_create_by(protocol_name: protocol_name) do |t|
-        t.ontology_term_id = assay_hash.fetch(:ontology_term_id)
+      technology = Technology.find_or_create_by(protocol_name: assay_hash.fetch(:label, "")) do |t|
+        t.ontology_term = ontology_term
       end
 
       dataset.technologies << technology unless dataset.technologies.include?(technology)
-    end if assay_data
+    end
   end
 
   def update_file_resources(dataset, assets_data)

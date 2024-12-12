@@ -1,8 +1,6 @@
 class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
-  def change
+  def up
     rename_table :datasets, :datasets_old
-
-    enable_extension "uuid-ossp"
 
     create_table :datasets, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :collection_id, null: false
@@ -18,7 +16,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :sexes, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :name, null: false
-      t.string :ontology_term_id, index: true
+      t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
       t.index :name, unique: true
@@ -33,7 +31,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :cell_types, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :name, null: false
-      t.string :ontology_term_id, index: true
+      t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
       t.index :name, unique: true
@@ -48,7 +46,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :tissues, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :name, null: false
-      t.string :ontology_term_id, index: true
+      t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
       t.index :name, unique: true
@@ -63,7 +61,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :developmental_stages, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :name, null: false
-      t.string :ontology_term_id, index: true
+      t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
       t.index :name, unique: true
@@ -78,7 +76,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :organisms, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :name, null: false
-      t.string :ontology_term_id, index: true
+      t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
       t.index :name, unique: true
@@ -93,7 +91,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :diseases, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :name, null: false
-      t.string :ontology_term_id, index: true
+      t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
       t.index :name, unique: true
@@ -108,7 +106,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :technologies, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :protocol_name, null: false
-      t.string :ontology_term_id, index: true
+      t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
       t.index :protocol_name, unique: true
@@ -129,6 +127,32 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
     end
 
-    add_reference :ext_sources, :dataset, null: false, index: true
+    add_reference :ext_sources, :dataset, index: true
+  end
+
+  def down
+    if column_exists?(:ext_sources, :dataset_id)
+      remove_reference :ext_sources, :dataset
+    end
+
+    drop_table :file_resources if table_exists?(:file_resources)
+    drop_table :datasets_technologies if table_exists?(:datasets_technologies)
+    drop_table :datasets_diseases if table_exists?(:datasets_diseases)
+    drop_table :datasets_organisms if table_exists?(:datasets_organisms)
+    drop_table :datasets_developmental_stages if table_exists?(:datasets_developmental_stages)
+    drop_table :datasets_tissues if table_exists?(:datasets_tissues)
+    drop_table :cell_types_datasets if table_exists?(:cell_types_datasets)
+    drop_table :datasets_sexes if table_exists?(:datasets_sexes)
+
+    drop_table :technologies if table_exists?(:technologies)
+    drop_table :diseases if table_exists?(:diseases)
+    drop_table :organisms if table_exists?(:organisms)
+    drop_table :developmental_stages if table_exists?(:developmental_stages)
+    drop_table :tissues if table_exists?(:tissues)
+    drop_table :cell_types if table_exists?(:cell_types)
+    drop_table :sexes if table_exists?(:sexes)
+    drop_table :datasets if table_exists?(:datasets)
+
+    rename_table :datasets_old, :datasets if table_exists?(:datasets_old)
   end
 end
