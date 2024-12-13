@@ -1,11 +1,11 @@
-<turbo-frame id="tag-modal-content">
+<%= turbo_frame_tag "tag-modal-content" do %>
   <div class="sm:flex sm:items-start" data-action="click->tag#stopPropagation">
     <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
       <div class="flex items-center gap-3 mb-4">
-        <div class="px-2 py-0.5 rounded-full text-xs" data-bg-color>
-          <%= @term.name %>
+        <div class="px-2 py-0.5 rounded-full !text-xs" data-bg-color>
+          <%= @term.name.capitalize %>
         </div>
-        <div class="bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+        <div class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full !text-xs">
           <%= @term.identifier %>
         </div>
       </div>
@@ -15,10 +15,6 @@
             <% if @term.description.present? %>
               <dd class="text-sm text-gray-600">
                 <%= @term.description %>
-              </dd>
-            <% else %>
-              <dd class="text-sm text-gray-500 italic">
-                No description available for this term.
               </dd>
             <% end %>
             <dd>
@@ -40,4 +36,4 @@
       <% end %>
     </div>
   </div>
-</turbo-frame>
+<% end %>

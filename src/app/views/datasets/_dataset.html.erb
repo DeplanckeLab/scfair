@@ -100,15 +100,29 @@
         <% tag = category_dataset_items.first %>
         <% if tag.present? %>
           <%= link_to (tag.ontology_term_id ? ontology_term_path(tag.ontology_term_id) :  "#"),
-                    class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]}",
+                    class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]} relative group",
                     data: {
                       controller: "tag",
-                      action: "click->tag#showModal"
+                      action: "click->tag#showModal",
+                      tag_name_value: tag.name.capitalize,
+                      tag_bg_color_value: tag.class.color_settings[:bg_text],
+                      tag_text_color_value: tag.class.color_settings[:text_color]
                     } do %>
-            <%= tag.name.capitalize %>
-            <% if category_dataset_items.size > 1 %>
-              <span class="ml-1 opacity-60">+<%= category_dataset_items.size - 1 %></span>
-            <% end %>
+            <span class="flex items-center">
+              <span class="truncate max-w-[180px]" data-tag-target="text">
+                <%= tag.name.capitalize %>
+              </span>
+              <% if category_dataset_items.size > 1 %>
+                <span class="ml-1 opacity-60 shrink-0">+<%= category_dataset_items.size - 1 %></span>
+              <% end %>
+            </span>
+            <div class="absolute hidden group-hover:block left-1/2 -translate-x-1/2 bottom-full mb-1 z-50" 
+                 data-tag-target="tooltip"
+                 data-show-if-truncated>
+              <div class="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                <%= tag.name.capitalize %>
+              </div>
+            </div>
           <% end %>
         <% end %>
       <% end %>
@@ -128,7 +142,10 @@
                     class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]}",
                     data: {
                       controller: "tag",
-                      action: "click->tag#showModal"
+                      action: "click->tag#showModal",
+                      tag_name_value: tag.name.capitalize,
+                      tag_bg_color_value: tag.class.color_settings[:bg_text],
+                      tag_text_color_value: tag.class.color_settings[:text_color]
                     } do %>
                 <%= tag.name.capitalize %>
               <% end %>

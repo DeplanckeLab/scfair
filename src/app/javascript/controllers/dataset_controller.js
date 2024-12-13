@@ -111,8 +111,8 @@ export default class extends Controller {
     const elapsedTime = Date.now() - this.loadingStartTime
     const remainingTime = Math.max(0, this.minimumLoadingDurationValue - elapsedTime)
     
-    // If loader was shown, ensure it stays visible for minimum duration
-    if (!this.spinnerTarget.classList.contains('hidden')) {
+    // Check if spinner target exists and is visible
+    if (this.hasSpinnerTarget && !this.spinnerTarget.classList.contains('hidden')) {
       this.hideTimeout = setTimeout(() => {
         this.hideSpinner()
       }, remainingTime)
