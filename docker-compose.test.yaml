@@ -7,8 +7,8 @@ services:
     ports:
       - "8080:3000"
     volumes:
-      - ./src:/opt/scfair-test:cached
-      - ./data:/data/scfair-test/
+      - ./src:/opt/scfair:cached
+      - ./data:/data/scfair/
     env_file: .env.test
     environment:
       - RAILS_ENV=production
