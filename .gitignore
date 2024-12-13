@@ -1,7 +1,6 @@
 docker-compose.yaml
 *.env*
 
-/data
 /postgres-data
 *.sql.gz
 src/tmp/**
