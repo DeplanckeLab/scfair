@@ -100,7 +100,7 @@ class AsapParser
     technologies.each do |technology|
       next if technology.blank?
       
-      technology_record = Technology.find_or_create_by(protocol_name: technology)
+      technology_record = Technology.find_or_create_by(name: technology)
       dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
     end
   end

@@ -67,7 +67,7 @@ RSpec.describe AsapParser do
       
       expect(dataset.cell_types.pluck(:name)).to contain_exactly("T cell", "B cell")
       expect(dataset.organisms.pluck(:name)).to contain_exactly("human")
-      expect(dataset.technologies.pluck(:protocol_name)).to contain_exactly("RNA-seq")
+      expect(dataset.technologies.pluck(:name)).to contain_exactly("RNA-seq")
       expect(dataset.file_resources.count).to eq(3) # 2 raw files + 1 processed
     end
 
@@ -84,7 +84,7 @@ RSpec.describe AsapParser do
       updated_dataset = Dataset.last
       expect(updated_dataset.id).to eq(initial_dataset.id)
       expect(updated_dataset.parser_hash).not_to eq(initial_hash)
-      expect(updated_dataset.technologies.pluck(:protocol_name)).to contain_exactly("ATAC-seq")
+      expect(updated_dataset.technologies.pluck(:name)).to contain_exactly("ATAC-seq")
     end
 
     it "skips processing when parser_hash hasn't changed" do

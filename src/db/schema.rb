@@ -223,12 +223,12 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
   end
 
   create_table "technologies", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "protocol_name", null: false
+    t.string "name", null: false
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_technologies_on_name", unique: true
     t.index ["ontology_term_id"], name: "index_technologies_on_ontology_term_id"
-    t.index ["protocol_name"], name: "index_technologies_on_protocol_name", unique: true
   end
 
   create_table "tissues", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|

@@ -105,11 +105,11 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     end
 
     create_table :technologies, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :protocol_name, null: false
+      t.string :name, null: false
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :protocol_name, unique: true
+      t.index :name, unique: true
     end
 
     create_table :datasets_technologies, id: false, force: :cascade do |t|

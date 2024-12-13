@@ -106,7 +106,7 @@ RSpec.describe BgeeParser do
       expect(dataset.tissues.pluck(:name)).to contain_exactly("brain")
       expect(dataset.developmental_stages.pluck(:name)).to contain_exactly("adult")
       expect(dataset.diseases.pluck(:name)).to contain_exactly("normal")
-      expect(dataset.technologies.pluck(:protocol_name)).to contain_exactly("RNA-Seq")
+      expect(dataset.technologies.pluck(:name)).to contain_exactly("RNA-Seq")
     end
 
     it "updates existing dataset when parser_hash changes" do
@@ -172,7 +172,7 @@ RSpec.describe BgeeParser do
 
     it "updates technologies" do
       parser.send(:update_technologies, dataset, ["RNA-Seq", "ATAC-Seq"])
-      expect(dataset.technologies.pluck(:protocol_name)).to contain_exactly("RNA-Seq", "ATAC-Seq")
+      expect(dataset.technologies.pluck(:name)).to contain_exactly("RNA-Seq", "ATAC-Seq")
     end
   end
 end

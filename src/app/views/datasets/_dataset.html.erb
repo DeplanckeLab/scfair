@@ -1,17 +1,8 @@
-<% tag_categories = {
-  organisms: { bg_color: "bg-blue-100", text_color: "text-blue-800", circle_color: "bg-blue-500", items: dataset.organisms, name_method: :name, category_name: "Organism" },
-  cell_types: { bg_color: "bg-green-100", text_color: "text-green-800", circle_color: "bg-green-500", items: dataset.cell_types, name_method: :name, category_name: "Cell Type" },
-  tissues: { bg_color: "bg-purple-100", text_color: "text-purple-800", circle_color: "bg-purple-500", items: dataset.tissues, name_method: :name, category_name: "Tissue" },
-  developmental_stages: { bg_color: "bg-orange-100", text_color: "text-orange-800", circle_color: "bg-orange-500", items: dataset.developmental_stages, name_method: :name, category_name: "Developmental Stage" },
-  diseases: { bg_color: "bg-red-100", text_color: "text-red-800", circle_color: "bg-red-500", items: dataset.diseases, name_method: :name, category_name: "Disease" },
-  sexes: { bg_color: "bg-pink-100", text_color: "text-pink-800", circle_color: "bg-pink-500", items: dataset.sexes, name_method: :name, category_name: "Sex" },
-  technologies: { bg_color: "bg-indigo-100", text_color: "text-indigo-800", circle_color: "bg-indigo-500", items: dataset.technologies, name_method: :protocol_name, category_name: "Technology" }
-} %>
 <div class="bg-white rounded-lg shadow p-3 mb-3 relative group/dataset cursor-pointer transition-all duration-200" 
      data-controller="dataset" 
      data-action="click->dataset#toggle"
-     data-dataset-expanded-value="false"
-     data-dataset-target="container">
+  data-dataset-expanded-value="false"
+  data-dataset-target="container">
   <div class="flex items-start justify-between">
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
@@ -104,44 +95,46 @@
   </div>
   <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" data-dataset-target="summary">
     <div class="flex flex-wrap gap-1.5 items-center">
-      <% tag_categories.each do |category, data| %>
-        <% if data[:items].any? %>
-          <%= render partial: "datasets/tag",
-             locals: {
-               name: data[:items].first.send(data[:name_method]),
-               bg_color: data[:bg_color],
-               text_color: data[:text_color],
-               count: data[:items].length,
-               ontology_url: data[:items].first.ontology_term_id ? 
-                 ontology_term_path(data[:items].first.ontology_term_id) : nil
-             } %>
+      <% Dataset::CATEGORIES.each do |category| %>
+        <% category_dataset_items = dataset.associated_category_items_for(category) %>
+        <% tag = category_dataset_items.first %>
+        <% if tag.present? %>
+          <%= link_to (tag.ontology_term_id ? ontology_term_path(tag.ontology_term_id) :  "#"),
+                    class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]}",
+                    data: {
+                      controller: "tag",
+                      action: "click->tag#showModal"
+                    } do %>
+            <%= tag.name.capitalize %>
+            <% if category_dataset_items.size > 1 %>
+              <span class="ml-1 opacity-60">+<%= category_dataset_items.size - 1 %></span>
+            <% end %>
+          <% end %>
         <% end %>
       <% end %>
     </div>
   </div>
   <div class="hidden mt-4 space-y-4 relative" data-dataset-target="content">
     <div class="flex flex-wrap gap-6">
-      <% tag_categories.each do |category, data| %>
-        <% if data[:items].any? %>
-          <div class="min-w-[200px]">
-            <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-              <span class="w-2 h-2 rounded-full <%= data[:circle_color] %> mr-2"></span>
-              <%= data[:category_name] %>
-            </h3>
-            <div class="flex flex-wrap gap-1">
-              <% data[:items].each do |item| %>
-                <%= render partial: "datasets/tag",
-                   locals: {
-                     name: item.send(data[:name_method]),
-                     bg_color: data[:bg_color],
-                     text_color: data[:text_color],
-                     ontology_url: item.ontology_term_id ? 
-                       ontology_term_path(item.ontology_term_id) : nil
-                   } %>
+      <% Dataset::CATEGORIES.each do |category| %>
+        <div class="min-w-[200px]">
+          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+            <span class="w-2 h-2 rounded-full <%= category.color_settings[:bg_circle] %> mr-2"></span>
+            <%= category.to_s.underscore.humanize %>
+          </h3>
+          <div class="flex flex-wrap gap-1">
+            <% dataset.associated_category_items_for(category).each do |tag| %>
+              <%= link_to (tag.ontology_term_id ? ontology_term_path(tag.ontology_term_id) :  "#"),
+                    class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]}",
+                    data: {
+                      controller: "tag",
+                      action: "click->tag#showModal"
+                    } do %>
+                <%= tag.name.capitalize %>
               <% end %>
-            </div>
+            <% end %>
           </div>
-        <% end %>
+        </div>
       <% end %>
     </div>
     <% if dataset.links_count > 0 %>
