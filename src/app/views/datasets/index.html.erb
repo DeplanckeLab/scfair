@@ -101,11 +101,11 @@
                               nil %>
                           <%= form.label checkbox_id, 
                               class: "ml-2 block text-sm text-gray-600 truncate group relative", 
-                              title: row.value do %>
+                              title: row.value.capitalize do %>
                             <span class="font-medium"><%= row.value.capitalize %></span>
                             <div class="hidden group-hover:block absolute left-0 bottom-full mb-1 z-10">
                               <div class="bg-gray-900 text-white text-xs rounded-md py-1 px-2 whitespace-nowrap">
-                                <%= row.value %>
+                                <%= row.value.capitalize %>
                               </div>
                               <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-2 -translate-y-1"></div>
                             </div>
