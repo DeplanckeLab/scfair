@@ -55,14 +55,7 @@ export default class extends Controller {
       }
     }
 
-    // Initialize originalText
-    this.originalText = ''
-
-    // Add event listeners if selectedCountTarget exists
-    if (this.hasSelectedCountTarget) {
-      this.selectedCountTarget.addEventListener('mouseover', this.showClearAll.bind(this))
-      this.selectedCountTarget.addEventListener('mouseout', this.restoreSelectedCount.bind(this))
-    }
+    // No need to add event listeners here since they are handled via data-action
   }
 
   restoreOrder() {
@@ -279,8 +272,7 @@ export default class extends Controller {
     // Update the count next to the category name
     if (this.hasSelectedCountTarget) {
       if (selectedCount > 0) {
-        this.originalText = `${selectedCount} selected`
-        this.selectedCountTarget.textContent = this.originalText
+        this.selectedCountTarget.textContent = `${selectedCount} selected`
         this.selectedCountTarget.classList.remove('hidden')
       } else {
         this.selectedCountTarget.textContent = ''
@@ -344,16 +336,20 @@ export default class extends Controller {
 
   showClearAll(event) {
     if (this.hasSelectedCountTarget) {
-      this.originalText = this.selectedCountTarget.textContent
-      this.selectedCountTarget.textContent = 'clear all'
-      this.selectedCountTarget.classList.add('text-red-500', 'cursor-pointer')
+      const target = this.selectedCountTarget
+      if (!target.dataset.originalText) {
+        target.dataset.originalText = target.textContent
+      }
+      target.textContent = 'clear all'
+      target.classList.add('cursor-pointer')
     }
   }
 
   restoreSelectedCount(event) {
-    if (this.hasSelectedCountTarget && this.originalText) {
-      this.selectedCountTarget.textContent = this.originalText
-      this.selectedCountTarget.classList.remove('text-red-500', 'cursor-pointer')
+    if (this.hasSelectedCountTarget && this.selectedCountTarget.dataset.originalText) {
+      this.selectedCountTarget.textContent = this.selectedCountTarget.dataset.originalText
+      this.selectedCountTarget.classList.remove('cursor-pointer')
+      delete this.selectedCountTarget.dataset.originalText
     }
   }
 
