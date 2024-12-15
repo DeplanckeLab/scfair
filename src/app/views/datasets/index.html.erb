@@ -32,14 +32,14 @@
                    data-controller="facet"
                    id="facet-<%= facet.name %>">
                 <% dot_color = case facet.name.to_s
-                   when "organisms" then "blue"
-                   when "cell_types" then "green"
-                   when "tissues" then "purple"
-                   when "developmental_stages" then "orange"
-                   when "diseases" then "red"
-                   when "sex" then "pink"
-                   when "technologies" then "indigo"
-                   else "gray"
+                   when "organisms" then "bg-blue-500"
+                   when "cell_types" then "bg-green-500"
+                   when "tissues" then "bg-purple-500"
+                   when "developmental_stages" then "bg-orange-500"
+                   when "diseases" then "bg-red-500"
+                   when "sex" then "bg-pink-500"
+                   when "technologies" then "bg-indigo-500"
+                   else "bg-gray-500"
                    end %>
                 <% selected_count = params[facet.name]&.size || 0 %>
                 <%= button_tag type: "button",
@@ -50,7 +50,7 @@
                   },
                   id: "facet-button-#{facet.name}" do %>
                   <div class="flex items-center">
-                    <span class="w-2 h-2 rounded-full bg-<%= dot_color %>-500 mr-2"></span>
+                    <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
                     <%= facet.name.to_s.singularize.titleize %>
                     <% if selected_count > 0 %>
                       <%= link_to "#",
