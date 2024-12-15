@@ -51,7 +51,7 @@
                   id: "facet-button-#{facet.name}" do %>
                   <div class="flex items-center">
                     <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
-                    <%= facet.name.to_s.singularize.titleize %>
+                    <%= facet.name.to_s.singularize.titleize.capitalize %>
                     <% if selected_count > 0 %>
                       <%= link_to "#",
                         class: "ml-2 text-sm text-gray-500 hover:text-brand-light group",
