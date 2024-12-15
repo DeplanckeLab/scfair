@@ -1,6 +1,6 @@
 <div class="bg-white rounded-lg shadow p-3 mb-3 relative group/dataset cursor-pointer transition-all duration-200 hover:bg-gray-50"
-     data-action="click->dataset#toggle"
-  data-dataset-expanded-value="false">
+     data-controller="card"
+     data-action="click->card#toggle">
   <div class="flex items-start justify-between">
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
@@ -91,7 +91,8 @@
       <% end %>
     </div>
   </div>
-  <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" data-dataset-target="summary">
+  <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" 
+     data-card-target="summary">
     <div class="flex flex-wrap gap-1.5 items-center">
       <% Dataset::CATEGORIES.each do |category| %>
         <% category_dataset_items = dataset.associated_category_items_for(category) %>
@@ -125,7 +126,8 @@
       <% end %>
     </div>
   </div>
-  <div class="hidden mt-4 space-y-4 relative" data-dataset-target="content">
+  <div class="hidden mt-4 space-y-4 relative" 
+     data-card-target="content">
     <div class="flex flex-wrap gap-6">
       <% Dataset::CATEGORIES.each do |category| %>
         <div class="min-w-[200px]">
