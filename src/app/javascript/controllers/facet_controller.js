@@ -11,9 +11,11 @@ export default class extends Controller {
 
   connect() {
     this.facetIdValue = this.element.id
+    this.form = this.element.closest('form')
     
     if (this.hasItemsTarget) {
       this.showingAllValue = false
+      this.updateSelectedCount()
       this.restoreOrder()
       
       // Restore search state if exists and if we have search input
@@ -201,79 +203,68 @@ export default class extends Controller {
   submitForm(event) {
     event.preventDefault()
     const checkbox = event.target
-    const facetId = this.element.id
-    const orderKey = `${facetId}-order`
-    
     if (checkbox.checked) {
-      // Add new selection to the end of the order
-      const selectedOrder = JSON.parse(sessionStorage.getItem(orderKey) || '[]')
-      selectedOrder.push(checkbox.value)
-      sessionStorage.setItem(orderKey, JSON.stringify(selectedOrder))
-      
       this.appendToSelectedItems(checkbox)
     } else {
-      // Remove from order when unchecked
-      const selectedOrder = JSON.parse(sessionStorage.getItem(orderKey) || '[]')
-      const updatedOrder = selectedOrder.filter(value => value !== checkbox.value)
-      sessionStorage.setItem(orderKey, JSON.stringify(updatedOrder))
-      
       this.moveToUnselected(checkbox)
     }
-    
-    // Maintain current search if exists
-    if (this.currentSearchValue) {
-      this.applySearch(this.currentSearchValue)
-    } else {
-      this.showingAllValue = false
-      this.limitUnselectedItems()
+    this.updateSelectedCount()
+
+    if (this.form) {
+      this.form.setAttribute('data-turbo-frame', 'datasets')
+      this.form.requestSubmit()
     }
-    
-    // Store current expanded state
-    sessionStorage.setItem(`${facetId}-expanded`, 'true')
-    this.expand()
-    
-    setTimeout(() => {
-      event.target.closest('form').requestSubmit()
-    }, 0)
   }
 
   appendToSelectedItems(checkbox) {
     const item = checkbox.closest('[data-facet-target="item"]')
     const itemsContainer = this.itemsTarget
-    
-    // Get all checked items
-    const checkedItems = Array.from(this.itemTargets).filter(i => 
-      i.querySelector('input[type="checkbox"]').checked && i !== item
-    )
-    
-    // Always append to the end of checked items
-    if (checkedItems.length > 0) {
-      checkedItems[checkedItems.length - 1].after(item)
-    } else {
-      itemsContainer.prepend(item)
-    }
+
+    // Remove item from its current position
+    itemsContainer.removeChild(item)
+
+    // Insert item at the top
+    itemsContainer.insertBefore(item, itemsContainer.firstChild)
   }
 
   moveToUnselected(checkbox) {
     const item = checkbox.closest('[data-facet-target="item"]')
     const itemValue = item.dataset.value.toLowerCase()
-    
-    // Find all unselected items
-    const unselectedItems = Array.from(this.itemTargets).filter(i => 
-      !i.querySelector('input[type="checkbox"]').checked && i !== item
+
+    // Remove item from its current position
+    this.itemsTarget.removeChild(item)
+
+    // Find the correct position to insert alphabetically among unchecked items
+    const uncheckedItems = this.itemTargets.filter(i => 
+      !i.querySelector('input[type="checkbox"]').checked
     )
-    
-    // Find the correct alphabetical position
-    const insertPosition = unselectedItems.find(unselected => 
+
+    const insertBeforeItem = uncheckedItems.find(unselected => 
       unselected.dataset.value.toLowerCase() > itemValue
     )
-    
-    if (insertPosition) {
-      insertPosition.before(item)
-    } else if (unselectedItems.length > 0) {
-      unselectedItems[unselectedItems.length - 1].after(item)
+
+    if (insertBeforeItem) {
+      this.itemsTarget.insertBefore(item, insertBeforeItem)
     } else {
       this.itemsTarget.appendChild(item)
+    }
+  }
+
+  updateSelectedCount() {
+    const checkedCheckboxes = this.itemTargets
+      .map(item => item.querySelector('input[type="checkbox"]'))
+      .filter(checkbox => checkbox.checked)
+
+    const selectedCount = checkedCheckboxes.length
+
+    // Update the count next to the category name
+    const selectedCountSpan = this.buttonTarget.querySelector('.selected-count')
+    if (selectedCount > 0) {
+      selectedCountSpan.textContent = `${selectedCount} selected`
+      selectedCountSpan.classList.remove('hidden')
+    } else {
+      selectedCountSpan.textContent = ''
+      selectedCountSpan.classList.add('hidden')
     }
   }
 

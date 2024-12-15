@@ -1,19 +1,12 @@
 <div class="container mx-auto px-4 mt-4 mb-8">
-  <%= turbo_frame_tag "datasets", 
-    data: {
-      turbo_action: "advance",
-      turbo_frame: "datasets",
-      turbo_preserve_scroll: true,
-      turbo_morphing_permanent_attributes: "style"
-    }, 
-    class: "flex" do %>
+  <div class="flex">
     <div class="w-1/4 pr-6">
       <%= form_with(
               url: datasets_path, 
               method: :get,
               data: { 
-                turbo_frame: "datasets",
-                controller: "facet"
+                controller: "facet",
+                turbo_frame: "datasets"
               },
               class: "space-y-6",
               id: :search_form
@@ -26,160 +19,158 @@
                 data: { turbo_permanent: true } %>
         </div>
         <div class="space-y-4 bg-white rounded-lg shadow p-4">
-          <%= turbo_frame_tag "facets" do %>
-            <% @search.facets.each do |facet| %>
-              <div class="facet-group" 
-                   data-controller="facet"
-                   id="facet-<%= facet.name %>">
-                <% dot_color = case facet.name.to_s
-                   when "organisms" then "bg-blue-500"
-                   when "cell_types" then "bg-green-500"
-                   when "tissues" then "bg-purple-500"
-                   when "developmental_stages" then "bg-orange-500"
-                   when "diseases" then "bg-red-500"
-                   when "sex" then "bg-pink-500"
-                   when "technologies" then "bg-indigo-500"
-                   else "bg-gray-500"
-                   end %>
-                <% selected_count = params[facet.name]&.size || 0 %>
-                <%= button_tag type: "button",
-                  class: "w-full flex items-center justify-between text-left font-semibold text-gray-700 mb-2 group",
-                  data: {
-                    action: "click->facet#toggle",
-                    facet_target: "button"
-                  },
-                  id: "facet-button-#{facet.name}" do %>
-                  <div class="flex items-center">
-                    <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
-                    <%= facet.name.to_s.singularize.titleize.capitalize %>
-                    <% if selected_count > 0 %>
-                      <%= link_to "#",
-                        class: "ml-2 text-sm text-gray-500 hover:text-brand-light group",
+          <% @search.facets.each do |facet| %>
+            <div class="facet-group" 
+                 data-controller="facet"
+                 id="facet-<%= facet.name %>">
+              <% dot_color = case facet.name.to_s
+                 when "organisms" then "bg-blue-500"
+                 when "cell_types" then "bg-green-500"
+                 when "tissues" then "bg-purple-500"
+                 when "developmental_stages" then "bg-orange-500"
+                 when "diseases" then "bg-red-500"
+                 when "sex" then "bg-pink-500"
+                 when "technologies" then "bg-indigo-500"
+                 else "bg-gray-500"
+                 end %>
+              <% selected_count = params[facet.name]&.size || 0 %>
+              <%= button_tag type: "button",
+                class: "w-full flex items-center justify-between text-left font-semibold text-gray-700 mb-2 group",
+                data: {
+                  action: "click->facet#toggle",
+                  facet_target: "button"
+                },
+                id: "facet-button-#{facet.name}" do %>
+                <div class="flex items-center">
+                  <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
+                  <%= facet.name.to_s.singularize.titleize.capitalize %>
+                  <span class="ml-2 text-sm text-gray-500 selected-count <%= selected_count > 0 ? '' : 'hidden' %>"><%= selected_count > 0 ? "#{selected_count} selected" : "" %></span>
+                </div>
+                <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150 <%= selected_count > 0 ? 'rotate-180' : '' %>" 
+                     viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" 
+                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" 
+                        clip-rule="evenodd" />
+                </svg>
+              <% end %>
+              <div class="space-y-2 overflow-hidden transition-all duration-200"
+                   data-facet-target="content"
+                   id="facet-content-<%= facet.name %>"
+                   style="max-height: <%= selected_count > 0 ? 'none' : '0px' %>">
+                <div class="py-1">
+                  <% if facet.rows.length > 10 %>
+                    <div class="mb-3 px-1 relative">
+                      <%= text_field_tag nil, nil,
+                        class: "w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md pr-8 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500",
+                        placeholder: "Filter #{facet.name.to_s.titleize.downcase}...",
                         data: {
-                          action: "click->facet#clearAllSelected"
+                          action: "input->facet#filter",
+                          facet_target: "searchInput"
+                        }
+                      %>
+                      <%= button_tag type: "button",
+                        class: "absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600",
+                        style: "display: none;",
+                        data: {
+                          action: "click->facet#clearSearch",
+                          facet_target: "clearButton"
                         } do %>
-                        <span class="group-hover:hidden"><%= selected_count %> selected</span>
-                        <span class="hidden group-hover:inline">Clear all</span>
-                      <% end %>
-                    <% end %>
-                  </div>
-                  <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150 <%= 'rotate-180' if selected_count > 0 %>" 
-                       viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" 
-                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" 
-                          clip-rule="evenodd" />
-                  </svg>
-                <% end %>
-                <div class="space-y-2 overflow-hidden transition-all duration-200"
-                     data-facet-target="content"
-                     id="facet-content-<%= facet.name %>"
-                     style="max-height: <%= selected_count > 0 ? 'none' : '0px' %>">
-                  <div class="py-1">
-                    <% if facet.rows.length > 10 %>
-                      <div class="mb-3 px-1 relative">
-                        <%= text_field_tag nil, nil,
-                          class: "w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md pr-8 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500",
-                          placeholder: "Filter #{facet.name.to_s.titleize.downcase}...",
-                          data: {
-                            action: "input->facet#filter",
-                            facet_target: "searchInput"
-                          }
-                        %>
-                        <%= button_tag type: "button",
-                          class: "absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600",
-                          style: "display: none;",
-                          data: {
-                            action: "click->facet#clearSearch",
-                            facet_target: "clearButton"
-                          } do %>
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        <% end %>
-                      </div>
-                    <% end %>
-                    <div class="space-y-1.5" data-facet-target="items">
-                      <% facet.rows.each do |row| %>
-                        <div class="relative flex items-start py-0.5 px-1 rounded-md hover:bg-gray-50" 
-                             data-facet-target="item" 
-                             data-value="<%= row.value.downcase %>">
-                          <div class="min-w-0 flex items-center">
-                            <% checkbox_id = "#{facet.name}_#{row.value.parameterize}" %>
-                            <%= form.check_box "#{facet.name}[]", 
-                                { 
-                                  id: checkbox_id,
-                                  checked: params[facet.name]&.include?(row.value),
-                                  class: "h-4 w-4 rounded border-gray-300 focus:ring-brand-light text-brand-light",
-                                  onchange: "this.form.requestSubmit()"
-                                },
-                                row.value,
-                                nil %>
-                            <%= form.label checkbox_id, 
-                                class: "ml-2 block text-sm text-gray-600 truncate group relative", 
-                                title: row.value do %>
-                              <span class="font-medium"><%= row.value %></span>
-                              <div class="hidden group-hover:block absolute left-0 bottom-full mb-1 z-10">
-                                <div class="bg-gray-900 text-white text-xs rounded-md py-1 px-2 whitespace-nowrap">
-                                  <%= row.value %>
-                                </div>
-                                <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-2 -translate-y-1"></div>
-                              </div>
-                            <% end %>
-                          </div>
-                        </div>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                       <% end %>
                     </div>
-                    <button type="button"
-                            class="text-xs text-gray-500 hover:text-gray-700 mt-2 hidden"
-                            data-facet-target="hiddenCounter"
-                            data-action="click->facet#toggleShowAll">
-                      <span data-facet-target="hiddenCount"></span>
-                    </button>
+                  <% end %>
+                  <div class="space-y-1.5" data-facet-target="items">
+                    <% facet.rows.each do |row| %>
+                      <div class="relative flex items-start py-0.5 px-1 rounded-md hover:bg-gray-50" 
+                           data-facet-target="item" 
+                           data-value="<%= row.value.downcase %>">
+                        <div class="min-w-0 flex items-center">
+                          <% checkbox_id = "#{facet.name}_#{row.value.parameterize}" %>
+                          <%= form.check_box "#{facet.name}[]", 
+                              { 
+                                id: checkbox_id,
+                                checked: params[facet.name]&.include?(row.value),
+                                class: "h-4 w-4 rounded border-gray-300 focus:ring-brand-light text-brand-light",
+                                data: {
+                                  action: "change->facet#submitForm"
+                                }
+                              },
+                              row.value,
+                              nil %>
+                          <%= form.label checkbox_id, 
+                              class: "ml-2 block text-sm text-gray-600 truncate group relative", 
+                              title: row.value do %>
+                            <span class="font-medium"><%= row.value %></span>
+                            <div class="hidden group-hover:block absolute left-0 bottom-full mb-1 z-10">
+                              <div class="bg-gray-900 text-white text-xs rounded-md py-1 px-2 whitespace-nowrap">
+                                <%= row.value %>
+                              </div>
+                              <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-2 -translate-y-1"></div>
+                            </div>
+                          <% end %>
+                        </div>
+                      </div>
+                    <% end %>
                   </div>
+                  <button type="button"
+                          class="text-xs text-gray-500 hover:text-gray-700 mt-2 hidden"
+                          data-facet-target="hiddenCounter"
+                          data-action="click->facet#toggleShowAll">
+                    <span data-facet-target="hiddenCount"></span>
+                  </button>
                 </div>
               </div>
-            <% end %>
+            </div>
           <% end %>
         </div>
       <% end %>
     </div>
-    <div class="w-3/4" data-controller="dataset-list">
-      <div class="bg-white rounded-lg shadow">
-        <div class="p-4">
-          <div class="flex justify-end mb-3 items-center gap-3">
-            <div data-dataset-target="spinner" 
-                 class="hidden transition-opacity duration-150 ease-in-out">
-              <div class="flex items-center">
-                <svg class="animate-spin h-4 w-4 text-brand-dark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+    <div class="w-3/4">
+      <%= turbo_frame_tag "datasets", 
+        data: {
+          turbo_action: "advance",
+          turbo_frame: "datasets",
+          turbo_preserve_scroll: true,
+          turbo_morphing_permanent_attributes: "style"
+        } do %>
+        <div class="bg-white rounded-lg shadow">
+          <div class="p-4">
+            <div class="flex justify-end mb-3 items-center gap-3">
+              <div data-controller="dataset" data-dataset-target="spinner" class="hidden transition-opacity duration-150 ease-in-out">
+                <div class="flex items-center">
+                  <svg class="animate-spin h-4 w-4 text-brand-dark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                </div>
               </div>
+              <h2 class="text-sm text-gray-600">
+                <span class="text-brand-light font-medium"><%= @search.total %></span>
+                <%= 'dataset'.pluralize(@search.total) %>
+                <% if params[:search].present? %>
+                  <span class="text-gray-500">
+                    for "<span class="text-gray-600"><%= params[:search] %></span>"
+                  </span>
+                <% end %>
+              </h2>
             </div>
-            <h2 class="text-sm text-gray-600">
-              <span class="text-brand-light font-medium"><%= @search.total %></span>
-              <%= 'dataset'.pluralize(@search.total) %>
-              <% if params[:search].present? %>
-                <span class="text-gray-500">
-                  for "<span class="text-gray-600"><%= params[:search] %></span>"
-                </span>
-              <% end %>
-            </h2>
-          </div>
-          <div class="space-y-3">
-            <%= render @datasets %>
-          </div>
-          <div class="mt-4">
-            <%= will_paginate @datasets, 
-              class: "pagination",
-              inner_window: 2,
-              outer_window: 1,
-              previous_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>',
-              next_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>',
-              renderer: WillPaginate::ActionView::LinkRenderer %>
+            <div class="space-y-3">
+              <%= render @datasets %>
+            </div>
+            <div class="mt-4">
+              <%= will_paginate @datasets, 
+                class: "pagination",
+                inner_window: 2,
+                outer_window: 1,
+                previous_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>',
+                next_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>',
+                renderer: WillPaginate::ActionView::LinkRenderer %>
+            </div>
           </div>
         </div>
-      </div>
+      <% end %>
       <!-- Modal -->
       <%= tag.div id: "tag-modal", 
                   class: "fixed inset-0 bg-gray-500 bg-opacity-75 z-50 hidden", 
@@ -213,5 +204,5 @@
         </div>
       <% end %>
     </div>
-  <% end %>
+  </div>
 </div>

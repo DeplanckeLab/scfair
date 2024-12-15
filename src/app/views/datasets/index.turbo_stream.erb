@@ -1,0 +1,20 @@
+<%= turbo_stream.replace "datasets" do %>
+  <div class="bg-white rounded-lg shadow">
+    <div class="p-4">
+      <div class="flex justify-end mb-3 items-center gap-3">
+      </div>
+      <div class="space-y-3">
+        <%= render @datasets %>
+      </div>
+      <div class="mt-4">
+        <%= will_paginate @datasets, 
+          class: "pagination",
+          inner_window: 2,
+          outer_window: 1,
+          previous_label: "<svg class="w-4 h-4" ...></svg>",
+          next_label: "<svg class="w-4 h-4" ...></svg>",
+          renderer: WillPaginate::ActionView::LinkRenderer %>
+      </div>
+    </div>
+  </div>
+<% end %>
