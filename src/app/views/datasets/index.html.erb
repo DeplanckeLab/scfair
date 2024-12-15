@@ -44,7 +44,11 @@
                 <div class="flex items-center">
                   <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
                   <%= facet.name.to_s.singularize.titleize.capitalize %>
-                  <span class="ml-2 text-sm text-gray-500 selected-count <%= selected_count > 0 ? '' : 'hidden' %>"><%= selected_count > 0 ? "#{selected_count} selected" : "" %></span>
+                  <span class="ml-2 text-sm text-gray-500 selected-count <%= selected_count > 0 ? '' : 'hidden' %>"
+                        data-action="mouseover->facet#showClearAll mouseout->facet#restoreSelectedCount click->facet#clearAllSelected click->facet#stopPropagation"
+                        data-facet-target="selectedCount">
+                    <%= selected_count > 0 ? "#{selected_count} selected" : "" %>
+                  </span>
                 </div>
                 <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150 <%= selected_count > 0 ? 'rotate-180' : '' %>" 
                      viewBox="0 0 20 20" fill="currentColor">

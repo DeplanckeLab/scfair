@@ -1,7 +1,17 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["items", "item", "button", "content", "searchInput", "clearButton", "hiddenCounter", "hiddenCount"]
+  static targets = [
+    "items", 
+    "item", 
+    "button", 
+    "content", 
+    "searchInput", 
+    "clearButton", 
+    "hiddenCounter", 
+    "hiddenCount",
+    "selectedCount"
+  ]
   static values = { 
     name: String, 
     showingAll: Boolean,
@@ -43,6 +53,15 @@ export default class extends Controller {
       if (isExpanded) {
         this.expand()
       }
+    }
+
+    // Initialize originalText
+    this.originalText = ''
+
+    // Add event listeners if selectedCountTarget exists
+    if (this.hasSelectedCountTarget) {
+      this.selectedCountTarget.addEventListener('mouseover', this.showClearAll.bind(this))
+      this.selectedCountTarget.addEventListener('mouseout', this.restoreSelectedCount.bind(this))
     }
   }
 
@@ -258,13 +277,15 @@ export default class extends Controller {
     const selectedCount = checkedCheckboxes.length
 
     // Update the count next to the category name
-    const selectedCountSpan = this.buttonTarget.querySelector('.selected-count')
-    if (selectedCount > 0) {
-      selectedCountSpan.textContent = `${selectedCount} selected`
-      selectedCountSpan.classList.remove('hidden')
-    } else {
-      selectedCountSpan.textContent = ''
-      selectedCountSpan.classList.add('hidden')
+    if (this.hasSelectedCountTarget) {
+      if (selectedCount > 0) {
+        this.originalText = `${selectedCount} selected`
+        this.selectedCountTarget.textContent = this.originalText
+        this.selectedCountTarget.classList.remove('hidden')
+      } else {
+        this.selectedCountTarget.textContent = ''
+        this.selectedCountTarget.classList.add('hidden')
+      }
     }
   }
 
@@ -295,26 +316,48 @@ export default class extends Controller {
 
   clearAllSelected(event) {
     event.preventDefault()
-    event.stopPropagation() // Prevent accordion toggle
+    event.stopPropagation() // Prevent parent click handlers
 
-    // Get all checked checkboxes
-    const checkedCheckboxes = this.itemTargets
-      .map(item => item.querySelector('input[type="checkbox"]'))
-      .filter(checkbox => checkbox.checked)
-
-    // Uncheck all selected checkboxes
-    checkedCheckboxes.forEach(checkbox => {
-      checkbox.checked = false
+    // Uncheck all checkboxes within this facet
+    this.itemTargets.forEach(item => {
+      const checkbox = item.querySelector('input[type="checkbox"]')
+      if (checkbox.checked) {
+        checkbox.checked = false
+        // Trigger change event to ensure any listeners are notified
+        checkbox.dispatchEvent(new Event('change', { bubbles: true }))
+      }
     })
 
-    // Update the selection order in sessionStorage
-    const facetId = this.element.id
-    const orderKey = `${facetId}-order`
+    // Update selected count display
+    this.updateSelectedCount()
+
+    // Remove facet selection from sessionStorage
+    const orderKey = `${this.facetIdValue}-order`
     sessionStorage.setItem(orderKey, JSON.stringify([]))
 
-    // Submit the form after unchecking
-    setTimeout(() => {
-      this.element.closest('form').requestSubmit()
-    }, 0)
+    // Submit the form to refresh datasets
+    if (this.form) {
+      this.form.setAttribute('data-turbo-frame', 'datasets')
+      this.form.requestSubmit()
+    }
+  }
+
+  showClearAll(event) {
+    if (this.hasSelectedCountTarget) {
+      this.originalText = this.selectedCountTarget.textContent
+      this.selectedCountTarget.textContent = 'clear all'
+      this.selectedCountTarget.classList.add('text-red-500', 'cursor-pointer')
+    }
+  }
+
+  restoreSelectedCount(event) {
+    if (this.hasSelectedCountTarget && this.originalText) {
+      this.selectedCountTarget.textContent = this.originalText
+      this.selectedCountTarget.classList.remove('text-red-500', 'cursor-pointer')
+    }
+  }
+
+  stopPropagation(event) {
+    event.stopPropagation()
   }
 } 
