@@ -13,12 +13,13 @@
           ) do |form| %>
         <div class="search-box mb-6">
           <%= form.search_field :search, 
+                value: params[:search],
                 class: "w-full rounded-lg border-gray-300 bg-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500",
                 placeholder: "Search datasets...",
                 oninput: "this.form.requestSubmit()",
                 data: { turbo_permanent: true } %>
         </div>
-        <div class="space-y-4 bg-white rounded-lg shadow p-4">
+        <div class="space-y-1 bg-white rounded-lg shadow p-4">
           <% @search.facets.each do |facet| %>
             <div class="facet-group" 
                  data-controller="facet"
@@ -46,7 +47,7 @@
                   <%= facet.name.to_s.singularize.titleize.capitalize %>
                   <span class="ml-2 text-sm text-gray-500 selected-count <%= selected_count > 0 ? '' : 'hidden' %>"
                         data-action="mouseover->facet#showClearAll mouseout->facet#restoreSelectedCount click->facet#clearAllSelected click->facet#stopPropagation"
-                        data-facet-target="selectedCount">
+                    data-facet-target="selectedCount">
                     <%= selected_count > 0 ? "#{selected_count} selected" : "" %>
                   </span>
                 </div>
@@ -96,7 +97,7 @@
                               { 
                                 id: checkbox_id,
                                 checked: params[facet.name]&.include?(row.value),
-                                class: "h-4 w-4 rounded border-gray-300 focus:ring-brand-light text-brand-light",
+                                class: "h-4 w-4 rounded border-gray-300 focus:ring-brand-light text-brand-light cursor-pointer",
                                 data: {
                                   action: "change->facet#submitForm"
                                 }
@@ -104,7 +105,7 @@
                               row.value,
                               nil %>
                           <%= form.label checkbox_id, 
-                              class: "ml-2 block text-sm text-gray-600 truncate group relative", 
+                              class: "ml-2 block text-sm text-gray-600 truncate group relative cursor-pointer", 
                               title: row.value.capitalize do %>
                             <span class="font-medium"><%= row.value.capitalize %></span>
                             <div class="hidden group-hover:block absolute left-0 bottom-full mb-1 z-10">
