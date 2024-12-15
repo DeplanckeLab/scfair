@@ -89,19 +89,27 @@ export default class extends Controller {
   }
 
   startLoading() {
-    clearTimeout(this.loadingTimeout)
-    clearTimeout(this.hideTimeout)
+    console.log("startLoading called");
+    console.log("hasSpinnerTarget:", this.hasSpinnerTarget);
+    console.log("hasContainerTarget:", this.hasContainerTarget);
     
-    // Record the start time
-    this.loadingStartTime = Date.now()
+    clearTimeout(this.loadingTimeout);
+    clearTimeout(this.hideTimeout);
     
-    // Show loader only if request takes longer than loadingDelay
+    this.loadingStartTime = Date.now();
+    
     this.loadingTimeout = setTimeout(() => {
-      if (this.hasSpinnerTarget) {
-        this.spinnerTarget.classList.remove('hidden')
-        this.spinnerTarget.classList.add('opacity-100')
-      }
-    }, this.loadingDelayValue)
+        console.log("Loading timeout triggered");
+        if (this.hasContainerTarget) {
+            console.log("Showing container");
+            this.containerTarget.classList.remove('hidden');
+        }
+        if (this.hasSpinnerTarget) {
+            console.log("Showing spinner");
+            this.spinnerTarget.classList.remove('hidden');
+            this.spinnerTarget.classList.add('opacity-100');
+        }
+    }, this.loadingDelayValue);
   }
 
   stopLoading() {
@@ -124,14 +132,16 @@ export default class extends Controller {
 
   hideSpinner() {
     if (this.hasSpinnerTarget) {
-      // Fade out then hide
-      this.spinnerTarget.classList.remove('opacity-100')
-      this.spinnerTarget.classList.add('opacity-0')
-      
-      setTimeout(() => {
-        this.spinnerTarget.classList.add('hidden')
-        this.spinnerTarget.classList.remove('opacity-0')
-      }, 150) // Match this with CSS transition duration
+        this.spinnerTarget.classList.remove('opacity-100');
+        this.spinnerTarget.classList.add('opacity-0');
+        
+        setTimeout(() => {
+            this.spinnerTarget.classList.add('hidden');
+            this.spinnerTarget.classList.remove('opacity-0');
+            if (this.hasContainerTarget) {
+                this.containerTarget.classList.add('hidden');
+            }
+        }, 150);
     }
   }
 } 

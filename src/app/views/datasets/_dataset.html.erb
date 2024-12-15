@@ -1,181 +1,181 @@
-<div class="bg-white rounded-lg shadow p-3 mb-3 relative group/dataset cursor-pointer transition-all duration-200" 
-     data-controller="dataset" 
+<div class="bg-white rounded-lg shadow p-3 mb-3 relative group/dataset cursor-pointer transition-all duration-200 hover:bg-gray-50"
+     data-controller="dataset"
      data-action="click->dataset#toggle"
-  data-dataset-expanded-value="false"
-  data-dataset-target="container">
-  <div class="flex items-start justify-between">
-    <div class="flex gap-2 flex-grow">
-      <div class="shrink-0">
-        <%= link_to dataset.source_url, target: "_blank", data: { action: "click->dataset#stopPropagation" } do %>
-          <% logo_name = dataset.source_name.downcase.match?(/cellxgene|bgee|asap/) ? dataset.source_name.downcase : "default_logo" %>
-          <div class="flex items-center justify-center w-8 h-8 rounded bg-brand-dark hover:bg-brand-dark/90 cursor-pointer">
-            <%= image_tag "#{logo_name}.svg", class: "w-6 h-6", alt: "#{dataset.source_name} logo" %>
-          </div>
-        <% end %>
-      </div>
-      <div class="flex flex-col h-8">
-        <div class="flex flex-col justify-between h-full py-0.5">
-          <h2 class="text-xs font-medium text-gray-900 leading-none" 
-              data-action="click->dataset#stopPropagation">
-            <%= dataset.source_name %>
-          </h2>
-          <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
-            <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>
-            <span class="text-gray-400">•</span>
-            <% if dataset.study.present? %>
-              <div class="relative group" 
-                   data-action="click->dataset#stopPropagation">
-                <%= link_to "https://doi.org/#{dataset.study.doi}",
+     data-dataset-expanded-value="false">
+  <div data-dataset-target="container">
+    <div class="flex items-start justify-between">
+      <div class="flex gap-2 flex-grow">
+        <div class="shrink-0">
+          <%= link_to dataset.source_url, target: "_blank", data: { action: "click->dataset#stopPropagation" } do %>
+            <% logo_name = dataset.source_name.downcase.match?(/cellxgene|bgee|asap/) ? dataset.source_name.downcase : "default_logo" %>
+            <div class="flex items-center justify-center w-8 h-8 rounded bg-brand-dark hover:bg-brand-dark/90 cursor-pointer">
+              <%= image_tag "#{logo_name}.svg", class: "w-6 h-6", alt: "#{dataset.source_name} logo" %>
+            </div>
+          <% end %>
+        </div>
+        <div class="flex flex-col h-8">
+          <div class="flex flex-col justify-between h-full py-0.5">
+            <h2 class="text-xs font-medium text-gray-900 leading-none" 
+                data-action="click->dataset#stopPropagation">
+              <%= dataset.source_name %>
+            </h2>
+            <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
+              <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>
+              <span class="text-gray-400">•</span>
+              <% if dataset.study.present? %>
+                <div class="relative group" 
+                     data-action="click->dataset#stopPropagation">
+                  <%= link_to "https://doi.org/#{dataset.study.doi}",
+                        target: "_blank",
+                        class: "text-brand-dark hover:text-brand-dark/80",
+                        data: { action: "click->dataset#stopPropagation" } do %>
+                    <span class="truncate">
+                      <%= dataset.study.authors || dataset.study.first_author %>, <%= dataset.study.year %>
+                    </span>
+                  <% end %>
+                  <div class="absolute hidden group-hover:block -left-4 bottom-6 z-50">
+                    <div class="bg-gray-900 text-white text-xs rounded-md py-1.5 px-2 whitespace-normal w-80">
+                      <%= dataset.study.title %>
+                    </div>
+                    <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-6 -translate-y-1"></div>
+                  </div>
+                </div>
+              <% else %>
+                <%= link_to "https://doi.org/#{dataset.doi}",
                       target: "_blank",
                       class: "text-brand-dark hover:text-brand-dark/80",
                       data: { action: "click->dataset#stopPropagation" } do %>
-                  <span class="truncate">
-                    <%= dataset.study.authors || dataset.study.first_author %>, <%= dataset.study.year %>
-                  </span>
+                  Article
                 <% end %>
-                <div class="absolute hidden group-hover:block -left-4 bottom-6 z-50">
-                  <div class="bg-gray-900 text-white text-xs rounded-md py-1.5 px-2 whitespace-normal w-80">
-                    <%= dataset.study.title %>
-                  </div>
-                  <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-6 -translate-y-1"></div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0" 
+           data-action="click->dataset#stopPropagation">
+        <% if dataset.explorer_url.present? %>
+          <%= link_to "Explore", dataset.explorer_url,
+              class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
+              target: "_blank",
+              data: { action: "click->dataset#stopPropagation" } %>
+        <% end %>
+        <% if dataset.file_resources.any? %>
+          <div class="relative group" 
+               data-action="click->dataset#stopPropagation">
+            <button type="button" 
+                    class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
+                    data-action="click->dataset#stopPropagation">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" 
+                      d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
+                      clip-rule="evenodd"/>
+              </svg>
+            </button>
+            <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
+              <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
+                <% dataset.file_resources.each do |resource| %>
+                  <%= link_to resource.url,
+                      target: "_blank",
+                      class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50",
+                      data: { action: "click->dataset#stopPropagation" } do %>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                      <path fill-rule="evenodd" 
+                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
+                            clip-rule="evenodd"/>
+                    </svg>
+                    <%= resource.filetype %>
+                  <% end %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" data-dataset-target="summary">
+      <div class="flex flex-wrap gap-1.5 items-center">
+        <% Dataset::CATEGORIES.each do |category| %>
+          <% category_dataset_items = dataset.associated_category_items_for(category) %>
+          <% tag = category_dataset_items.first %>
+          <% if tag.present? %>
+            <%= link_to (tag.ontology_term_id ? ontology_term_path(tag.ontology_term_id) : "#"),
+                      class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]} relative group",
+                      data: {
+                        controller: "tag",
+                        action: "click->tag#showModal click->dataset#stopPropagation",
+                        tag_name_value: tag.name.capitalize,
+                        tag_bg_color_value: tag.class.color_settings[:bg_text],
+                        tag_text_color_value: tag.class.color_settings[:text_color]
+                      } do %>
+              <span class="flex items-center" data-tag-target="colorTag">
+                <span class="truncate max-w-[180px]" data-tag-target="text">
+                  <%= tag.name.capitalize %>
+                </span>
+                <% if category_dataset_items.size > 1 %>
+                  <span class="ml-1 opacity-60 shrink-0">+<%= category_dataset_items.size - 1 %></span>
+                <% end %>
+              </span>
+              <div class="absolute hidden group-hover:block left-1/2 -translate-x-1/2 bottom-full mb-1 z-50"
+                   data-tag-target="tooltip">
+                <div class="bg-gray-900 text-white text-xs rounded-md py-1.5 px-2 whitespace-normal w-80">
+                  <%= tag.name.capitalize %>
                 </div>
               </div>
-            <% else %>
-              <%= link_to "https://doi.org/#{dataset.doi}",
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+    <div class="hidden mt-4 space-y-4 relative" data-dataset-target="content">
+      <div class="flex flex-wrap gap-6">
+        <% Dataset::CATEGORIES.each do |category| %>
+          <div class="min-w-[200px]">
+            <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+              <span class="w-2 h-2 rounded-full <%= category.color_settings[:bg_circle] %> mr-2"></span>
+              <%= category.to_s.underscore.humanize %>
+            </h3>
+            <div class="flex flex-wrap gap-1">
+              <% dataset.associated_category_items_for(category).each do |tag| %>
+                <%= link_to (tag.ontology_term_id ? ontology_term_path(tag.ontology_term_id) :  "#"),
+                      class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]}",
+                      data: {
+                        controller: "tag",
+                        action: "click->tag#showModal",
+                        tag_name_value: tag.name.capitalize,
+                        tag_bg_color_value: tag.class.color_settings[:bg_text],
+                        tag_text_color_value: tag.class.color_settings[:text_color]
+                      } do %>
+                  <%= tag.name.capitalize %>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+      <% if dataset.links_count > 0 %>
+        <div class="border-t pt-4">
+          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+              <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+            </svg>
+            Related Links
+          </h3>
+          <div class="space-y-2">
+            <% dataset.links.each do |link| %>
+              <div class="block text-xs">
+                <%= link_to link.url,
                     target: "_blank",
                     class: "text-brand-dark hover:text-brand-dark/80",
                     data: { action: "click->dataset#stopPropagation" } do %>
-                Article
-              <% end %>
-            <% end %>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="flex items-center gap-2 shrink-0" 
-         data-action="click->dataset#stopPropagation">
-      <% if dataset.explorer_url.present? %>
-        <%= link_to "Explore", dataset.explorer_url,
-            class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
-            target: "_blank",
-            data: { action: "click->dataset#stopPropagation" } %>
-      <% end %>
-      <% if dataset.file_resources.any? %>
-        <div class="relative group" 
-             data-action="click->dataset#stopPropagation">
-          <button type="button" 
-                  class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
-                  data-action="click->dataset#stopPropagation">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" 
-                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
-                    clip-rule="evenodd"/>
-            </svg>
-          </button>
-          <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
-            <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
-              <% dataset.file_resources.each do |resource| %>
-                <%= link_to resource.url,
-                    target: "_blank",
-                    class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50",
-                    data: { action: "click->dataset#stopPropagation" } do %>
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" 
-                          d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
-                          clip-rule="evenodd"/>
-                  </svg>
-                  <%= resource.filetype %>
+                  <%= link.name.presence || extract_domain(link.url) || "External Link" %>
                 <% end %>
-              <% end %>
-            </div>
-          </div>
-        </div>
-      <% end %>
-    </div>
-  </div>
-  <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" data-dataset-target="summary">
-    <div class="flex flex-wrap gap-1.5 items-center">
-      <% Dataset::CATEGORIES.each do |category| %>
-        <% category_dataset_items = dataset.associated_category_items_for(category) %>
-        <% tag = category_dataset_items.first %>
-        <% if tag.present? %>
-          <%= link_to (tag.ontology_term_id ? ontology_term_path(tag.ontology_term_id) :  "#"),
-                    class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]} relative group",
-                    data: {
-                      controller: "tag",
-                      action: "click->tag#showModal",
-                      tag_name_value: tag.name.capitalize,
-                      tag_bg_color_value: tag.class.color_settings[:bg_text],
-                      tag_text_color_value: tag.class.color_settings[:text_color]
-                    } do %>
-            <span class="flex items-center">
-              <span class="truncate max-w-[180px]" data-tag-target="text">
-                <%= tag.name.capitalize %>
-              </span>
-              <% if category_dataset_items.size > 1 %>
-                <span class="ml-1 opacity-60 shrink-0">+<%= category_dataset_items.size - 1 %></span>
-              <% end %>
-            </span>
-            <div class="absolute hidden group-hover:block left-1/2 -translate-x-1/2 bottom-full mb-1 z-50" 
-                 data-tag-target="tooltip"
-                 data-show-if-truncated>
-              <div class="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                <%= tag.name.capitalize %>
               </div>
-            </div>
-          <% end %>
-        <% end %>
-      <% end %>
-    </div>
-  </div>
-  <div class="hidden mt-4 space-y-4 relative" data-dataset-target="content">
-    <div class="flex flex-wrap gap-6">
-      <% Dataset::CATEGORIES.each do |category| %>
-        <div class="min-w-[200px]">
-          <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-            <span class="w-2 h-2 rounded-full <%= category.color_settings[:bg_circle] %> mr-2"></span>
-            <%= category.to_s.underscore.humanize %>
-          </h3>
-          <div class="flex flex-wrap gap-1">
-            <% dataset.associated_category_items_for(category).each do |tag| %>
-              <%= link_to (tag.ontology_term_id ? ontology_term_path(tag.ontology_term_id) :  "#"),
-                    class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]}",
-                    data: {
-                      controller: "tag",
-                      action: "click->tag#showModal",
-                      tag_name_value: tag.name.capitalize,
-                      tag_bg_color_value: tag.class.color_settings[:bg_text],
-                      tag_text_color_value: tag.class.color_settings[:text_color]
-                    } do %>
-                <%= tag.name.capitalize %>
-              <% end %>
             <% end %>
           </div>
         </div>
       <% end %>
     </div>
-    <% if dataset.links_count > 0 %>
-      <div class="border-t pt-4">
-        <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-            <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-          </svg>
-          Related Links
-        </h3>
-        <div class="space-y-2">
-          <% dataset.links.each do |link| %>
-            <div class="block text-xs">
-              <%= link_to link.url,
-                  target: "_blank",
-                  class: "text-brand-dark hover:text-brand-dark/80",
-                  data: { action: "click->dataset#stopPropagation" } do %>
-                <%= link.name.presence || extract_domain(link.url) || "External Link" %>
-              <% end %>
-            </div>
-          <% end %>
-        </div>
-      </div>
-    <% end %>
   </div>
 </div>

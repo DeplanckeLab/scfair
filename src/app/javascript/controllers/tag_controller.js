@@ -14,7 +14,9 @@ export default class extends Controller {
     if (modal) {
       modal.addEventListener('click', this.handleBackdropClick.bind(this))
     }
-    this.checkTruncation()
+    if (this.hasTextTarget && this.hasTooltipTarget) {
+      this.checkTruncation()
+    }
   }
 
   disconnect() {
