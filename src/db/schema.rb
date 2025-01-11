@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_11_120600) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
@@ -173,12 +173,20 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_20_220918) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "ontology_term_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "parent_id", null: false
+    t.uuid "child_id", null: false
+    t.string "relationship_type", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["child_id"], name: "index_ontology_term_relationships_on_child_id"
+    t.index ["parent_id", "child_id"], name: "index_ontology_term_relationships_on_parent_id_and_child_id", unique: true
+  end
+
   create_table "ontology_terms", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "identifier", null: false
     t.string "name"
     t.string "description"
-    t.string "parents"
-    t.string "children"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_ontology_terms_on_identifier", unique: true

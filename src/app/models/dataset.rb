@@ -35,43 +35,35 @@ class Dataset < ApplicationRecord
     integer :cell_count
     string :source_name
 
-    string :sexes, multiple: true do
-      sexes.map(&:name)
+    # Basic string fields for direct name matches
+    ASSOCIATION_METHODS.each do |category, method|
+      string method, multiple: true do
+        send(method).map(&:name)
+      end
     end
-    
-    string :cell_types, multiple: true do
-      cell_types.map(&:name)
-    end
-    
-    string :tissues, multiple: true do
-      tissues.map(&:name)
-    end
-    
-    string :developmental_stages, multiple: true do
-      developmental_stages.map(&:name)
-    end
-    
-    string :organisms, multiple: true do
-      organisms.map(&:name)
-    end
-    
-    string :diseases, multiple: true do
-      diseases.map(&:name)
-    end
-    
-    string :technologies, multiple: true do
-      technologies.map(&:name)
+
+    # Ontology-aware fields with identifiers and ancestors
+    ASSOCIATION_METHODS.each do |category, method|
+      string "#{method}_ontology".to_sym, multiple: true do
+        send(method).includes(:ontology_term).flat_map do |item|
+          terms = [item.ontology_term&.identifier]
+          terms += item.ontology_term&.all_ancestors&.map(&:identifier) || []
+          terms.compact
+        end
+      end
     end
 
     text :text_search do
       [
-        sexes.map(&:name),
-        cell_types.map(&:name),
-        tissues.map(&:name),
-        developmental_stages.map(&:name),
-        organisms.map(&:name),
-        diseases.map(&:name),
-        technologies.map(&:name),
+        ASSOCIATION_METHODS.values.flat_map do |method|
+          send(method).includes(:ontology_term).map do |item|
+            [
+              item.name, # Original term (highest boost)
+              item.ontology_term&.name, # Direct ontology term (medium boost)
+              item.ontology_term&.all_ancestors&.map(&:name) # Ancestor terms (lowest boost)
+            ]
+          end
+        end,
         source_name
       ].flatten.compact.join(" ")
     end
