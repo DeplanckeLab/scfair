@@ -44,7 +44,7 @@ class Dataset < ApplicationRecord
 
     # Ontology-aware fields with identifiers and ancestors
     ASSOCIATION_METHODS.each do |category, method|
-      string "#{method}_ontology".to_sym, multiple: true do
+      string "#{method}_ontology", multiple: true do
         send(method).includes(:ontology_term).flat_map do |item|
           terms = [item.ontology_term&.identifier]
           terms += item.ontology_term&.all_ancestors&.map(&:identifier) || []
@@ -58,14 +58,21 @@ class Dataset < ApplicationRecord
         ASSOCIATION_METHODS.values.flat_map do |method|
           send(method).includes(:ontology_term).map do |item|
             [
-              item.name, # Original term (highest boost)
-              item.ontology_term&.name, # Direct ontology term (medium boost)
-              item.ontology_term&.all_ancestors&.map(&:name) # Ancestor terms (lowest boost)
+              item.name,
+              item.ontology_term&.name
             ]
           end
         end,
         source_name
       ].flatten.compact.join(" ")
+    end
+
+    text :ancestor_ontology_terms, boost: 0.3 do
+      ASSOCIATION_METHODS.values.flat_map do |method|
+        send(method).includes(:ontology_term).flat_map do |item|
+          item.ontology_term&.all_ancestors&.map(&:name)
+        end
+      end.compact
     end
   end
 

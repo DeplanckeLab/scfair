@@ -51,6 +51,7 @@
     
     <!-- Text search field -->
     <field name="text_search_text" type="text_search" indexed="true" stored="false" multiValued="true"/>
+    <field name="ancestor_ontology_terms_text" type="text_search" indexed="true" stored="false" multiValued="true"/>
 
     <!-- Facet fields -->
     <field name="cell_types_sm" type="string" indexed="true" stored="false" multiValued="true"/>
@@ -64,6 +65,15 @@
 
     <!-- Spell checking field -->
     <field name="textSpell" type="text" indexed="true" stored="false" multiValued="true"/>
+
+    <!-- Ontology fields -->
+    <field name="organisms_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="cell_types_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="tissues_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="developmental_stages_ontology_sm" type="string" indexed="false" stored="true" multiValued="true"/>
+    <field name="diseases_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="sexes_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="technologies_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
   </fields>
 
   <!-- Field to copy to spell check -->
