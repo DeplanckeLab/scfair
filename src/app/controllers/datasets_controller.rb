@@ -6,7 +6,12 @@ class DatasetsController < ApplicationController
           term = Solr::Escape.escape(term.downcase) + "*"
         }.join(" AND ")
         
-        fulltext search_term
+        fulltext search_term  do
+          fields(
+            text_search: 2.0,
+            ancestor_ontology_terms: 0.3
+          )
+        end
       end
       
       adjust_solr_params do |params|
@@ -23,7 +28,7 @@ class DatasetsController < ApplicationController
         if params[:q] && params[:q] != "*:*"
           search_query = params[:q]
           params[:fq] = Array(params[:fq])
-          params[:fq] << "{!tag=text}text_search_text:(#{search_query})"
+          params[:fq] << "{!tag=text}((text_search_text:(#{search_query})) OR (ancestor_ontology_terms_text:(#{search_query})))"
           params[:q] = "*:*"
         end
 
