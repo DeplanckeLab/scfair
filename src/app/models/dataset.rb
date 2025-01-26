@@ -21,6 +21,7 @@ class Dataset < ApplicationRecord
 
   has_many :links, class_name: "DatasetLink"
   has_many :file_resources
+  has_many :parsing_issues
 
   belongs_to :study, primary_key: :doi, foreign_key: :doi, optional: true
 
