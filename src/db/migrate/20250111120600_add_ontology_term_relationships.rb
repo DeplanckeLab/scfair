@@ -11,7 +11,7 @@ class AddOntologyTermRelationships < ActiveRecord::Migration[7.0]
     add_index :ontology_term_relationships, :child_id
     
     # Remove the string columns we no longer need
-    remove_column :ontology_terms, :parents
-    remove_column :ontology_terms, :children
+    remove_column :ontology_terms, :parents, :string
+    remove_column :ontology_terms, :children, :string
   end
 end 

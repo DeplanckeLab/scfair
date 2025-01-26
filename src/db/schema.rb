@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_11_120600) do
+ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
@@ -72,31 +72,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_11_120600) do
     t.index ["dataset_id", "disease_id"], name: "index_datasets_diseases_on_dataset_id_and_disease_id", unique: true
     t.index ["dataset_id"], name: "index_datasets_diseases_on_dataset_id"
     t.index ["disease_id"], name: "index_datasets_diseases_on_disease_id"
-  end
-
-  create_table "datasets_old", force: :cascade do |t|
-    t.string "collection_id"
-    t.string "dataset_id"
-    t.string "source"
-    t.string "doi"
-    t.string "cell_types", default: [], array: true
-    t.string "tissue", default: [], array: true
-    t.string "tissue_uberon", default: [], array: true
-    t.string "developmental_stage", default: [], array: true
-    t.string "developmental_stage_id", default: [], array: true
-    t.string "sex", default: [], array: true
-    t.string "organisms", default: [], array: true
-    t.string "disease", default: [], array: true
-    t.string "assay_info", default: [], array: true
-    t.integer "number_of_cells", default: [], array: true
-    t.string "processed_data", default: [], array: true
-    t.string "link_to_dataset"
-    t.string "link_to_explore_data", default: [], array: true
-    t.string "link_to_raw_data", default: [], array: true
-    t.string "dataset_hash"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "ext_source_ids", default: [], array: true
   end
 
   create_table "datasets_organisms", id: false, force: :cascade do |t|
@@ -194,11 +169,27 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_11_120600) do
 
   create_table "organisms", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "name", null: false
+    t.string "short_name", null: false
     t.uuid "ontology_term_id"
+    t.integer "tax_id", null: false
+    t.integer "external_reference_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_organisms_on_name", unique: true
     t.index ["ontology_term_id"], name: "index_organisms_on_ontology_term_id"
+    t.index ["short_name"], name: "index_organisms_on_short_name", unique: true
+    t.index ["tax_id"], name: "index_organisms_on_tax_id"
+  end
+
+  create_table "parsing_issues", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.uuid "dataset_id", null: false
+    t.string "resource"
+    t.string "value"
+    t.string "message"
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["dataset_id"], name: "index_parsing_issues_on_dataset_id"
   end
 
   create_table "sexes", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|

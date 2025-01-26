@@ -13,4 +13,18 @@ class Organism < ApplicationRecord
       text_color: "text-blue-800",
     }
   end
+
+  def self.search_by_name(term)
+    records = where("name ILIKE ?", "%#{term}%").limit(2)
+    raise MultipleMatchesError.new(term) if records.size > 1
+
+    records.first
+  end
+
+  def self.search_by_short_name(term)
+    records = where("short_name ILIKE ?", "%#{term}%").limit(2)
+    raise MultipleMatchesError.new(term) if records.size > 1
+
+    records.first
+  end
 end

@@ -1,6 +1,6 @@
 class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
   def up
-    rename_table :datasets, :datasets_old
+    drop_table :datasets if table_exists?(:datasets)
 
     create_table :datasets, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :collection_id, null: false
@@ -76,10 +76,15 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
 
     create_table :organisms, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :name, null: false
+      t.string :short_name, null: false
       t.references :ontology_term, type: :uuid, null: true
+      t.integer :tax_id, null: false
+      t.integer :external_reference_id, null: true
       t.timestamps
 
       t.index :name, unique: true
+      t.index :short_name, unique: true
+      t.index :tax_id
     end
 
     create_table :datasets_organisms, id: false, force: :cascade do |t|
@@ -152,7 +157,5 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     drop_table :cell_types if table_exists?(:cell_types)
     drop_table :sexes if table_exists?(:sexes)
     drop_table :datasets if table_exists?(:datasets)
-
-    rename_table :datasets_old, :datasets if table_exists?(:datasets_old)
   end
 end

@@ -87,11 +87,37 @@ class AsapParser
 
   def update_organisms(dataset, organisms)
     dataset.organisms.clear
-    organisms.each do |organism|
-      next if organism.blank?
-      
-      organism_record = Organism.find_or_create_by(name: organism)
-      dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
+    organisms.each do |organism_name|
+      next if organism_name.blank?
+
+      begin
+        organism = Organism.search_by_name(organism_name)
+
+        if organism.nil?
+          organism = Organism.search_by_short_name(organism_name)
+          if organism.nil?
+            ParsingIssue.create!(
+              dataset:  dataset,
+              resource: Organism.name,
+              value:    organism_name,
+              message:  "No organism found",
+              status:   :pending
+            )
+            next
+          end
+        end
+
+        dataset.organisms << organism unless dataset.organisms.include?(organism)
+      rescue MultipleMatchesError => e
+        ParsingIssue.create!(
+          dataset:  dataset,
+          resource: Organism.name,
+          value:    organism_name,
+          message:  e.message,
+          status:   :pending
+        )
+        next
+      end
     end
   end
 

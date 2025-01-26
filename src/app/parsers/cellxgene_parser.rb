@@ -161,11 +161,38 @@ class CellxgeneParser
       ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
       log_missing_ontology("organism", ontology_identifier, dataset.id) unless ontology_term
 
-      organism = Organism.find_or_create_by(name: org_hash.fetch(:label, "")) do |o|
-        o.ontology_term = ontology_term
-      end
+      organism_name = org_hash.fetch(:label, "")
+      next unless organism_name.present?
 
-      dataset.organisms << organism unless dataset.organisms.include?(organism)
+      begin
+        organism = Organism.search_by_name(organism_name)
+
+        if organism.nil?
+          organism = Organism.search_by_short_name(organism_name)
+          if organism.nil?
+            ParsingIssue.create!(
+              dataset:  dataset,
+              resource: Organism.name,
+              value:    organism_name,
+              message:  "No organism found",
+              status:   :pending
+            )
+            next
+          end
+        end
+
+        organism.update!(ontology_term: ontology_term)
+        dataset.organisms << organism unless dataset.organisms.include?(organism)
+      rescue MultipleMatchesError => e
+        ParsingIssue.create!(
+          dataset:  dataset,
+          resource: Organism.name,
+          value:    organism_name,
+          message:  e.message,
+          status:   :pending
+        )
+        next
+      end
     end
   end
 
