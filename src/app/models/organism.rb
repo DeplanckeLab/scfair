@@ -4,6 +4,7 @@ class Organism < ApplicationRecord
   has_and_belongs_to_many :datasets
 
   validates :name, uniqueness: true
+  validates :short_name, uniqueness: true
 
   def self.color_settings
     {
@@ -14,16 +15,22 @@ class Organism < ApplicationRecord
   end
 
   def self.search_by_name(term)
-    records = where("name ILIKE ?", "%#{term}%").limit(2)
-    raise MultipleMatchesError.new(term) if records.size > 1
+    exact_match = where("name = ?", term).first
+    return exact_match if exact_match
 
-    records.first
+    fuzzy_matches = where("name ILIKE ?", "%#{term}%").limit(2)
+    raise MultipleMatchesError.new(term) if fuzzy_matches.size > 1
+
+    fuzzy_matches.first
   end
 
   def self.search_by_short_name(term)
-    records = where("short_name ILIKE ?", "%#{term}%").limit(2)
-    raise MultipleMatchesError.new(term) if records.size > 1
+    exact_match = where("short_name = ?", term).first
+    return exact_match if exact_match
 
-    records.first
+    fuzzy_matches = where("short_name ILIKE ?", "%#{term}%").limit(2)
+    raise MultipleMatchesError.new(term) if fuzzy_matches.size > 1
+
+    fuzzy_matches.first
   end
 end
