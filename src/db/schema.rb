@@ -131,6 +131,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.string "id_regexp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "dataset_id"
+    t.index ["dataset_id"], name: "index_ext_sources_on_dataset_id"
   end
 
   create_table "file_resources", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
@@ -175,9 +177,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.integer "external_reference_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_organisms_on_name", unique: true
+    t.index ["external_reference_id"], name: "index_organisms_on_external_reference_id", unique: true
+    t.index ["name"], name: "index_organisms_on_name"
     t.index ["ontology_term_id"], name: "index_organisms_on_ontology_term_id"
-    t.index ["short_name"], name: "index_organisms_on_short_name", unique: true
+    t.index ["short_name"], name: "index_organisms_on_short_name"
     t.index ["tax_id"], name: "index_organisms_on_tax_id"
   end
 

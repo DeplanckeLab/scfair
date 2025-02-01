@@ -3,8 +3,7 @@ class Organism < ApplicationRecord
 
   has_and_belongs_to_many :datasets
 
-  validates :name, uniqueness: true
-  validates :short_name, uniqueness: true
+  validates :external_reference_id, presence: true, uniqueness: true
 
   def self.color_settings
     {

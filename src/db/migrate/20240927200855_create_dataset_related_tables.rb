@@ -82,9 +82,10 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.integer :external_reference_id, null: true
       t.timestamps
 
-      t.index :name, unique: true
-      t.index :short_name, unique: true
+      t.index :name
+      t.index :short_name
       t.index :tax_id
+      t.index :external_reference_id, unique: true
     end
 
     create_table :datasets_organisms, id: false, force: :cascade do |t|
