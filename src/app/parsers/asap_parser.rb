@@ -45,7 +45,7 @@ class AsapParser
 
     if dataset.save
       update_cell_types(dataset, extract_cell_types(data))
-      update_organisms(dataset, [data[:organism]].compact)
+      update_organisms(dataset, [{ label: data[:organism], tax_id: data[:tax_id] }].compact)
       update_technologies(dataset, [data[:technology]].compact)
       update_file_resources(dataset, extract_files(data))
       update_links(dataset, data.dig(:experiments))
@@ -85,34 +85,22 @@ class AsapParser
     end
   end
 
-  def update_organisms(dataset, organisms)
+  def update_organisms(dataset, organisms_data)
     dataset.organisms.clear
-    organisms.each do |organism_name|
+    organisms_data.each do |organism_data|
+      organism_name = organism_data[:label]
+      taxonomy_id = organism_data[:tax_id]
       next if organism_name.blank?
-
+      
       begin
-        organism = Organism.search_by_name(organism_name)
-
-        if organism.nil?
-          organism = Organism.search_by_short_name(organism_name)
-          if organism.nil?
-            ParsingIssue.create!(
-              dataset:  dataset,
-              resource: Organism.name,
-              value:    organism_name,
-              message:  "No organism found",
-              status:   :pending
-            )
-            next
-          end
-        end
-
+        organism = Organism.search_by_data(organism_name, taxonomy_id)
         dataset.organisms << organism unless dataset.organisms.include?(organism)
-      rescue MultipleMatchesError => e
+      rescue ActiveRecord::RecordNotFound, MultipleMatchesError => e
         ParsingIssue.create!(
           dataset:  dataset,
           resource: Organism.name,
           value:    organism_name,
+          external_reference_id: taxonomy_id.to_s,
           message:  e.message,
           status:   :pending
         )

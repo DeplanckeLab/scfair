@@ -188,6 +188,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "dataset_id", null: false
     t.string "resource"
     t.string "value"
+    t.string "external_reference_id"
     t.string "message"
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false

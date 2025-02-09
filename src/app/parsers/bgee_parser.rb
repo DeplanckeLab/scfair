@@ -64,7 +64,7 @@ class BgeeParser
       puts "Importing #{dataset.id}"
       
       update_sexes(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :sex) }.compact.uniq)
-      update_organisms(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :species, :name) }.compact.uniq)
+      update_organisms(dataset, datasets.map { |d| { name: d.dig(:annotation, :rawDataCondition, :species, :name), id: d.dig(:annotation, :rawDataCondition, :species, :id) } }.compact)
       update_cell_types(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :cellType, :name) }.compact.uniq)
       update_tissues(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :anatEntity, :name) }.compact.uniq)
       update_developmental_stages(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :devStage, :name) }.compact.uniq)
@@ -109,32 +109,20 @@ class BgeeParser
 
   def update_organisms(dataset, organisms_data)
     dataset.organisms.clear
-    organisms_data.each do |organism_name|
-      next if organism_name.blank?
+    organisms_data.each do |org_data|
+      name = org_data[:name]
+      taxonomy_id = org_data[:id]
+      next if name.blank?
 
       begin
-        organism = Organism.search_by_name(organism_name)
-
-        if organism.nil?
-          organism = Organism.search_by_short_name(organism_name)
-          if organism.nil?
-            ParsingIssue.create!(
-              dataset:  dataset,
-              resource: Organism.name,
-              value:    organism_name,
-              message:  "No organism found",
-              status:   :pending
-            )
-            next
-          end
-        end
-
+        organism = Organism.search_by_data(name, taxonomy_id)
         dataset.organisms << organism unless dataset.organisms.include?(organism)
-      rescue MultipleMatchesError => e
+      rescue MultipleMatchesError, ActiveRecord::RecordNotFound => e
         ParsingIssue.create!(
           dataset:  dataset,
           resource: Organism.name,
-          value:    organism_name,
+          value:    name,
+          external_reference_id: taxonomy_id.to_s,
           message:  e.message,
           status:   :pending
         )
