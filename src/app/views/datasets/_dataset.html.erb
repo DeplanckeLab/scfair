@@ -5,7 +5,7 @@
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
         <%= link_to dataset.source_url, target: "_blank", data: { action: "click->dataset#stopPropagation" } do %>
-          <% logo_name = dataset.source_name.downcase.match?(/cellxgene|bgee|asap/) ? dataset.source_name.downcase : "default_logo" %>
+          <% logo_name = dataset.source_name.downcase.match?(/cellxgene|bgee|asap|singlecell/) ? dataset.source_name.downcase : "not_found" %>
           <div class="flex items-center justify-center w-8 h-8 rounded bg-brand-dark hover:bg-brand-dark/90 cursor-pointer">
             <%= image_tag "#{logo_name}.svg", class: "w-6 h-6", alt: "#{dataset.source_name} logo" %>
           </div>
