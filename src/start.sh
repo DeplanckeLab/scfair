@@ -2,8 +2,10 @@
 
 rm -f ./tmp/pids/server.pid
 
+bundle install
+
 # Precompile assets
 bundle exec rails assets:precompile
 
 # Start Rails server
-bundle exec rails server -b "0.0.0.0"
+./bin/thrust ./bin/rails server -b "0.0.0.0"
