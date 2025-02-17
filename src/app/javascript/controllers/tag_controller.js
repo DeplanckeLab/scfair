@@ -31,12 +31,12 @@ export default class extends Controller {
     event.stopPropagation()
 
     const ontologyUrl = event.currentTarget.getAttribute('href')
-    
+
     const modal = document.getElementById("tag-modal")
     if (modal) {
       modal.classList.remove('hidden')
     }
-    
+
     const frame = document.getElementById("tag-modal-content")
     if (frame) {
       if (ontologyUrl && ontologyUrl != "#") {
@@ -50,7 +50,7 @@ export default class extends Controller {
             </div>
           </div>
         `
-        
+
         fetch(ontologyUrl, {
           headers: {
             'Accept': 'text/vnd.turbo-stream.html'
@@ -87,7 +87,7 @@ export default class extends Controller {
     const tagDiv = document.querySelector('#tag-modal-content [data-bg-color]')
     if (tagDiv) {
       tagDiv.classList.remove(
-        ...Array.from(tagDiv.classList).filter(cls => 
+        ...Array.from(tagDiv.classList).filter(cls =>
           cls.startsWith('bg-') || cls.startsWith('text-')
         )
       )

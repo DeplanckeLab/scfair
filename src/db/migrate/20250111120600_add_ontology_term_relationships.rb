@@ -14,4 +14,4 @@ class AddOntologyTermRelationships < ActiveRecord::Migration[7.0]
     remove_column :ontology_terms, :parents, :string
     remove_column :ontology_terms, :children, :string
   end
-end 
+end

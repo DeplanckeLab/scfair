@@ -37,9 +37,9 @@ To set up the project, follow these steps:
 After setting up the /data folder and placing the ontology file, run the following Rake commands in sequence:
 
     rake db:create && rake db:migrate && rake db:seed
+    rake fix:organisms
     rake 'obo:parse[/data/scfair/collected-metazoan.obo]'
     rake api_updates
-    rake fix:organisms
     rake load_studies
     rake load_ext_sources
 

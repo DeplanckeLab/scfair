@@ -13,4 +13,4 @@ class DatasetLink < ApplicationRecord
   rescue URI::InvalidURIError
     errors.add(:url, "must be a valid URL")
   end
-end 
+end

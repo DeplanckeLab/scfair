@@ -14,4 +14,4 @@ export default class extends Controller {
     const textElement = this.textTarget
     return textElement.scrollWidth > textElement.clientWidth
   }
-} 
+}
