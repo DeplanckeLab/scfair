@@ -1,8 +1,6 @@
-docker-compose.yaml
-.env.dev
+*.env*
 
-data
-postgres-data
+/postgres-data
 *.sql.gz
 src/tmp/**
 src/log/**
@@ -13,7 +11,6 @@ src/public/assets/*
 
 */node_modules
 .env.prod
-src/Gemfile.lock
 src/package-lock.json
 
 solr/**/*
@@ -27,7 +24,10 @@ solr/**/*
 *.bak
 *.bak.*
 
+*.DS_Store
+
 # Ignore Byebug command history file.
 #.byebug_history
 
 
+src/.vscode/settings.json

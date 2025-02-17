@@ -1,15 +1,24 @@
-<main class="d-flex flex-column justify-content-evenly flex-grow-1 px-5 mx-5">
-        <h2 class="align-self-center">
-            CELLxGENE metadata schema
-        </h2>
-        <p>
-          We use the CELLxGENE metadata schema due to its inclusion of necessary metadata, use of controlled vocabularies, and flexibility. The latest release of the schema (v.5.1.0) can be found <%# link_to 'in this github repo', "https://github.com/chanzuckerberg/single-cell-curation/blob/2c53d2b77a9b76c14955484ae5f378515fe5e72f/schema/4.0.0/schema.md"%><%= link_to 'in this github repo', "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.1.0/schema.md" %>, and it's development version (v.5.2.0) <%= link_to 'in this github repo', "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.2.0/schema.md" %>.
-        </p>
-
-	<h2 class="align-self-center">                                      
-          scFAIR metadata schema                                                                                                                                           
-        </h2>
-        <p>
-          A fork of the CELLxGENE schema (v.5.1.0) adapted to the scFAIR project that can be found <%# link_to 'in this github repo', "https://github.com/chanzuckerberg/single-cell-curation/blob/2c53d2b77a9b76c14955484ae5f378515fe5e72f/schema/4.0.0/schema.md"%><%= link_to 'in this github repo', "https://github.com/dosumis/single-cell-curation/blob/broadening-species-specificity/schema/5.1.0-broad/schema.md" %>.
-        </p>
+<main class="container mx-auto px-4 py-8">
+  <div class="space-y-16 max-w-4xl mx-auto">
+    <div>
+      <h2 class="text-3xl font-bold text-center mb-8">
+        CELLxGENE metadata schema
+      </h2>
+      <p class="text-gray-700">
+        We use the CELLxGENE metadata schema due to its inclusion of necessary metadata, use of controlled vocabularies, and flexibility. The latest release of the schema (v.5.1.0) can be found 
+        <%= link_to "in this github repo", "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.1.0/schema.md", class: "text-red-500 hover:text-red-600" %>, 
+        and it's development version (v.5.2.0) 
+        <%= link_to "in this github repo", "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/5.2.0/schema.md", class: "text-red-500 hover:text-red-600" %>.
+      </p>
+    </div>
+    <div>
+      <h2 class="text-3xl font-bold text-center mb-8">
+        scFAIR metadata schema
+      </h2>
+      <p class="text-gray-700">
+        A fork of the CELLxGENE schema (v.5.1.0) adapted to the scFAIR project that can be found 
+        <%= link_to "in this github repo", "#", class: "text-red-500 hover:text-red-600" %>.
+      </p>
+    </div>
+  </div>
 </main>

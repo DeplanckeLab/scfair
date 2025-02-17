@@ -1,11 +1,3 @@
-// Entry point for the build script in your package.json
+// Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 import "@hotwired/turbo-rails"
-import "./controllers"
-import * as bootstrap from "bootstrap"
-
-import "./src/jquery"
-import "./src/jquery-ui"
-import "./src/jquery.ui.autocomplete.html"
-import "datatables.net"
-
-import "./src/custom"
+import "controllers"

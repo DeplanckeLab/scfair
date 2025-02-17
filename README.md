@@ -31,14 +31,17 @@ Adopting systematic data-sharing practices and standards is integral to fosterin
 To set up the project, follow these steps:
 
 1. Create a `/data` folder in the root directory of the project.
-2. Download the composite metazoan ontology file from the following link: [http://purl.obolibrary.org/obo/uberon/composite-metazoan.obo](http://purl.obolibrary.org/obo/uberon/composite-metazoan.obo).
-3. Place the downloaded file in the `/data` folder.
+2. Download the composite metazoan ontology file from the following link: [http://purl.obolibrary.org/obo/uberon/collected-metazoan.obo](http://purl.obolibrary.org/obo/uberon/collected-metazoan.obo).
+3. Place the downloaded file in the `/data/scfair` folder.
 
 After setting up the /data folder and placing the ontology file, run the following Rake commands in sequence:
 
-    rake obo:parse[/data/composite-metazoan.obo]
-    rake obo:update_adjacency_lists
+    rake db:create && rake db:migrate && rake db:seed
+    rake fix:organisms
+    rake 'obo:parse[/data/scfair/collected-metazoan.obo]'
     rake api_updates
+    rake load_studies
+    rake load_ext_sources
 
 These commands will parse the ontology file, update the adjacency lists, and finally, update the API.
 

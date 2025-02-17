@@ -1,27 +1,35 @@
-<main class="d-flex flex-column justify-content-evenly flex-grow-1 px-5 mx-5">
-        <h2 class="align-self-center">
-            Resources
-        </h2>
-        <p>
-            The following single-cell resources provide curated single-cell data in accordance with FAIR principles:
-        </p>
-        <div>
-            <h3>CELLxGENE </h3>
-            <p>
-                <%= link_to 'CELLxGENE', "https://cellxgene.cziscience.com/", target: "_blank" %> is a suite of tools that help scientists to find, download, explore, analyze, annotate, and publish single-cell datasets. It includes several powerful tools with various features to help you engage with single-cell data.
-            </p>
-        </div>
-        <div>
-            <h3>Bgee</h3>
-            <p>
-                <%= link_to 'Bgee', "https://www.bgee.org/", target: "_blank" %>  is a database for retrieval and comparison of gene expression patterns across multiple animal species, produced from multiple data types including bulk RNA-Seq, scRNA-Seq, Affymetrix, in situ hybridization, and EST data. Bgee is based exclusively on curated wild-type expression data to provide a comparable reference of gene expression. Bgee produces calls of presence/absence of expression, and of differential over-/under-expression, integrated along with information on gene orthology, and homology between organs. This allows comparisons of expression patterns between species.
-            </p>
-        </div>
-        <div>
-            <h3>ASAP</h3>
-            <p>
-                <%= link_to 'ASAP', "https://asap.epfl.ch/", target: "_blank" %>  (Automated Single-cell Analysis Portal) is an innovative collaborative platform designed for the comprehensive analysis of single-cell transcriptomics data. This user-friendly portal brings together researchers and bioinformaticians, providing a centralized space to delve into single-cell gene expression profiles. ASAP empowers users with the complete single-cell analysis pipeline, running fully online with step-by-step parametrization and interactive visualization of results. Additionally, ASAP features crowd-annotation, fostering collaboration between researchers and tissue experts. It has already been utilized to annotate ~500k cells in the Fly Cell Atlas, promoting better reproducibility, as the entire pipeline run on ASAP is executed within a downloadable Docker container.
-            </p>
-        </div>
-        <p>Do you want your data included? <%= link_to 'Contact us', contact_path %> !</p>
+<main class="container mx-auto px-4 py-8">
+  <div class="space-y-12 max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-12">
+      Resources
+    </h2>
+    <p class="mb-8">
+      The following single-cell resources provide curated single-cell data in accordance with FAIR principles:
+    </p>
+    <div>
+      <h3 class="text-2xl font-bold mb-4">CELLxGENE</h3>
+      <p>
+        <%= link_to "CELLxGENE", "https://cellxgene.cziscience.com/", class: "text-red-500 hover:text-red-600" %>
+        is a suite of tools that help scientists to find, download, explore, analyze, annotate, and publish single-cell datasets. It includes several powerful tools with various features to help you engage with single-cell data.
+      </p>
+    </div>
+    <div>
+      <h3 class="text-2xl font-bold mb-4">Bgee</h3>
+      <p>
+        <%= link_to "Bgee", "https://www.bgee.org/", class: "text-red-500 hover:text-red-600" %>
+        is a database for retrieval and comparison of gene expression patterns across multiple animal species, produced from multiple data types including bulk RNA-Seq, scRNA-Seq, Affymetrix, in situ hybridization, and EST data. Bgee is based exclusively on curated wild-type expression data to provide a comparable reference of gene expression. Bgee produces calls of presence/absence of expression, and of differential over-/under-expression, integrated along with information on gene orthology, and homology between organs. This allows comparisons of expression patterns between species.
+      </p>
+    </div>
+    <div>
+      <h3 class="text-2xl font-bold mb-4">ASAP</h3>
+      <p>
+        <%= link_to "ASAP", "https://asap.epfl.ch/", class: "text-red-500 hover:text-red-600" %>
+        (Automated Single-cell Analysis Portal) is an innovative collaborative platform designed for the comprehensive analysis of single-cell transcriptomics data. This user-friendly portal brings together researchers and bioinformaticians, providing a centralized space to delve into single-cell gene expression profiles. ASAP empowers users with the complete single-cell analysis pipeline, running fully online with step-by-step parametrization and interactive visualization of results. Additionally, ASAP features crowd-annotation, fostering collaboration between researchers and tissue experts. It has already been utilized to annotate ~500k cells in the Fly Cell Atlas, promoting better reproducibility, as the entire pipeline run on ASAP is executed within a downloadable Docker container.
+      </p>
+    </div>
+    <p class="mt-12">
+      Do you want your data included? 
+      <%= link_to "Contact us", contact_path, class: "text-red-500 hover:text-red-600" %>!
+    </p>
+  </div>
 </main>
