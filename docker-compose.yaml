@@ -5,7 +5,7 @@ services:
   website:
     build: .
     ports:
-      - "8080:3000"
+      - "32735:3000"
     volumes:
       - ./src:/opt/scfair:cached
       - ./data:/data/scfair:rw,z
