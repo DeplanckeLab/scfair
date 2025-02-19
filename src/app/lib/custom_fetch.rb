@@ -1,23 +1,24 @@
 class CustomFetch
   class << self
 
-    def format_author e
-      if e['family']
-        fname = (e['family'].upcase == e['family']) ? e['family'].downcase.split(" ").map{|e| e.capitalize}.join(" ") : e['family']
-        if m = fname.match(/^(O\'|Ma?c|Fitz)(.+)/) #or  m = fname.match(/^(Fitz)(.+)/) or  m = fname.match(/^(Ma?c)(.+)/)                                                                                                
-          fname = m[1] + m[2].capitalize
-        end
-        
-        h_author = {
-          'initials' => e['given'] ? e['given'].force_encoding(Encoding::ISO_8859_1).encode(Encoding::UTF_8).gsub(/[a-z]+/, "") : nil,
-          'fname' => e['given'] ? e['given'].force_encoding(Encoding::ISO_8859_1).encode(Encoding::UTF_8) : nil,
-          'lname' => fname.force_encoding(Encoding::ISO_8859_1).encode(Encoding::UTF_8), #(e['family'].upcase == e['family']) ? e['family'].downcase.capitalize : e['family'],                                           
-          'aff_ids' => []
-        }
-      end
-      return h_author
-    end
+    def format_author(e)
+      return unless e['family']
 
+      fname = e['family']
+      fname = fname.downcase.split.map(&:capitalize).join(' ') if fname == fname.upcase
+        
+      if m = fname.match(/^(O'|Ma?c|Fitz)(.+)/)
+        fname = m[1] + m[2].capitalize
+      end
+
+      given_encoded = e['given']&.encode("UTF-8", invalid: :replace, undef: :replace)
+
+      {
+        'initials' => given_encoded ? given_encoded.gsub(/[a-z]+/, "") : nil,
+        'fname' => given_encoded,
+        'lname' => fname.encode("UTF-8", invalid: :replace, undef: :replace),
+      }
+    end
     
     def doi_info doi
       
