@@ -43,7 +43,7 @@ services:
     ports:
       - "8984:8984"
     volumes:
-      - ./src/solr/configsets/sunspot/conf/scripts-test.conf:/opt/solr/server/solr/configsets/sunspot/conf/scripts.conf:ro
+      - ./src/solr/configsets/sunspot/conf/scripts-test.conf:/opt/solr/server/solr/configsets/sunspot/conf/scripts.conf:ro,Z
       - solr_data:/var/solr
     command: solr-precreate test /opt/solr/server/solr/configsets/sunspot
     healthcheck:
