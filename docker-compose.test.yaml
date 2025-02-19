@@ -47,15 +47,15 @@ services:
       - solr_data:/var/solr
     command: solr-precreate test /opt/solr/server/solr/configsets/sunspot
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8984/solr/"]
+      test: ["CMD", "curl", "-f", "http://localhost:8984/solr/admin/info/system"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 90s
     environment:
       - SOLR_HEAP=2g
       - SOLR_JAVA_MEM=-Xms512m -Xmx2g
-      - jetty.port=8984
+      - SOLR_OPTS=-Djetty.port=8984
     networks:
       - scfair_test_network
     restart: always
