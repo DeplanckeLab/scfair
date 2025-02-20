@@ -41,6 +41,7 @@ After setting up the /data folder and placing the ontology file, run the followi
     rake 'obo:parse[/data/scfair/collected-metazoan.obo]'
     rake 'obo:parse[/data/scfair/efo.obo]'
     rake 'obo:parse[/data/scfair/hsapdv.obo]'
+    rake 'obo:parse[/data/scfair/mondo.obo]'
     rake api_updates
     rake load_studies
     rake load_ext_sources
