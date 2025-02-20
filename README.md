@@ -39,6 +39,8 @@ After setting up the /data folder and placing the ontology file, run the followi
     rake db:create && rake db:migrate && rake db:seed
     rake fix:organisms
     rake 'obo:parse[/data/scfair/collected-metazoan.obo]'
+    rake 'obo:parse[/data/scfair/efo.obo]'
+    rake 'obo:parse[/data/scfair/hsapdv.obo]'
     rake api_updates
     rake load_studies
     rake load_ext_sources
