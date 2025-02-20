@@ -32,9 +32,12 @@ class Dataset < ApplicationRecord
     string :source_name
     string :source_url
     string :explorer_url
-    string :doi
     integer :cell_count
     string :source_name
+
+    string :authors, multiple: true do
+      study&.authors || []
+    end
 
     # Basic string fields for direct name matches
     ASSOCIATION_METHODS.each do |category, method|
