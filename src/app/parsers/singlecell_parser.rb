@@ -49,13 +49,16 @@ class SinglecellParser
     dataset = Dataset.find_or_initialize_by(source_reference_id: study_id)
     return if dataset.parser_hash == parser_hash
 
+    cell_count = study_data[:cell_count]
+    return if cell_count.blank? || !cell_count.to_s.match?(/\A[0-9]+\z/) || cell_count.to_i.zero?
+
     dataset_data = {
       collection_id: study_id,
       source_name:   "SINGLECELL",
       source_url:    "#{BASE_URL_ANNOTATIONS}#{study_id}/annotations",
       explorer_url:  explore_url,
       doi:           nil,
-      cell_count:    study_data[:cell_count] || 0,
+      cell_count:    cell_count,
       parser_hash:   parser_hash
     }
 
