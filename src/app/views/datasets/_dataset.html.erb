@@ -46,11 +46,13 @@
                 </div>
               </div>
             <% else %>
-              <%= link_to "https://doi.org/#{dataset.doi}",
-                      target: "_blank",
-                      class: "text-brand-dark hover:text-brand-dark/80",
-                      data: { action: "click->dataset#stopPropagation" } do %>
-                Article
+              <% if dataset.doi.present? && dataset.doi != "www.doi.org" %>
+                <%= link_to "https://doi.org/#{dataset.doi}",
+                        target: "_blank",
+                        class: "text-brand-dark hover:text-brand-dark/80",
+                        data: { action: "click->dataset#stopPropagation" } do %>
+                  Article
+                <% end %>
               <% end %>
             <% end %>
           </div>
