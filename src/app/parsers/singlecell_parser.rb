@@ -1,6 +1,6 @@
 class SinglecellParser
-  BASE_URL_STUDIES     = "https://singlecell.broadinstitute.org/single_cell/api/v1/site/studies".freeze
-  BASE_URL_ANNOTATIONS = "https://singlecell.broadinstitute.org/single_cell/api/v1/studies/".freeze
+  BASE_URL_ALL_STUDIES = "https://singlecell.broadinstitute.org/single_cell/api/v1/site/studies".freeze
+  BASE_URL_STUDIES     = "https://singlecell.broadinstitute.org/single_cell/api/v1/studies/".freeze
   BASE_URL_EXPLORE     = "https://singlecell.broadinstitute.org/single_cell/study/".freeze
 
   attr_reader :errors
@@ -21,7 +21,7 @@ class SinglecellParser
   private
 
   def fetch_studies
-    response = HTTParty.get(BASE_URL_STUDIES, verify: false)
+    response = HTTParty.get(BASE_URL_ALL_STUDIES, verify: false)
     JSON.parse(response.body, symbolize_names: true)
   rescue => e
     @errors << "Error fetching studies: #{e.message}"
@@ -29,7 +29,7 @@ class SinglecellParser
   end
 
   def fetch_annotations(study_id)
-    url = "#{BASE_URL_ANNOTATIONS}#{study_id}/annotations"
+    url = "#{BASE_URL_STUDIES}#{study_id}/annotations"
     response = HTTParty.get(url, verify: false)
     JSON.parse(response.body, symbolize_names: true)
   rescue => e
@@ -37,14 +37,30 @@ class SinglecellParser
     {}
   end
 
+  def fetch_publications(study_id)
+    url = "#{BASE_URL_STUDIES}#{study_id}/publications"
+    response = HTTParty.get(url, verify: false)
+    JSON.parse(response.body, symbolize_names: true)
+  rescue => e
+    @errors << "Error fetching publications for study #{study_id}: #{e.message}"
+    []
+  end
+
+  def extract_doi_from_url(url)
+    return nil if url.blank?
+
+    url.match(%r{doi\.org/(.+)})&.captures&.first
+  end
+
   def process_dataset(study_data)
     study_id = study_data[:accession]
     return if study_id.blank?
 
     annotations_data = fetch_annotations(study_id)
+    publications_data = fetch_publications(study_id)
 
     explore_url = "#{BASE_URL_EXPLORE}#{study_id}"
-    parser_hash = Digest::SHA256.hexdigest(study_data.to_s + annotations_data.to_s)
+    parser_hash = Digest::SHA256.hexdigest(study_data.to_s + annotations_data.to_s + publications_data.to_s)
 
     dataset = Dataset.find_or_initialize_by(source_reference_id: study_id)
     return if dataset.parser_hash == parser_hash
@@ -52,12 +68,14 @@ class SinglecellParser
     cell_count = study_data[:cell_count]
     return if cell_count.blank? || !cell_count.to_s.match?(/\A[0-9]+\z/) || cell_count.to_i.zero?
 
+    doi = publications_data.first&.dig(:url)&.then { |url| extract_doi_from_url(url) }
+
     dataset_data = {
       collection_id: study_id,
-      source_name:   "SINGLECELL",
-      source_url:    "#{BASE_URL_ANNOTATIONS}#{study_id}/annotations",
+      source_name:   "SINGLE CELL PORTAL",
+      source_url:    "#{BASE_URL_EXPLORE}#{study_id}#study-summary",
       explorer_url:  explore_url,
-      doi:           nil,
+      doi:           doi,
       cell_count:    cell_count,
       parser_hash:   parser_hash
     }
@@ -188,7 +206,7 @@ class SinglecellParser
   end
 
   def fetch_external_resources(study_id)
-    url = "#{BASE_URL_ANNOTATIONS}#{study_id}/external_resources"
+    url = "#{BASE_URL_STUDIES}#{study_id}/external_resources"
     response = HTTParty.get(url, verify: false)
     JSON.parse(response.body, symbolize_names: true)
   rescue => e
