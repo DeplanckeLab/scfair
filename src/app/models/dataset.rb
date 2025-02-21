@@ -39,6 +39,10 @@ class Dataset < ApplicationRecord
       study&.authors || []
     end
 
+    text :author_text do
+      study&.authors || ''
+    end
+
     # Basic string fields for direct name matches
     ASSOCIATION_METHODS.each do |category, method|
       string method, multiple: true do
@@ -67,7 +71,8 @@ class Dataset < ApplicationRecord
             ]
           end
         end,
-        source_name
+        source_name,
+        study&.authors
       ].flatten.compact.join(" ")
     end
 
