@@ -26,8 +26,8 @@
           </h2>
           <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
             <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>
-            <span class="text-gray-400">•</span>
             <% if dataset.study.present? %>
+              <span class="text-gray-400">•</span>
               <div class="relative group" 
                      data-action="click->dataset#stopPropagation">
                 <%= link_to "https://doi.org/#{dataset.study.doi}",
@@ -45,14 +45,13 @@
                   <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-6 -translate-y-1"></div>
                 </div>
               </div>
-            <% else %>
-              <% if dataset.doi.present? && dataset.doi != "www.doi.org" %>
-                <%= link_to "https://doi.org/#{dataset.doi}",
-                        target: "_blank",
-                        class: "text-brand-dark hover:text-brand-dark/80",
-                        data: { action: "click->dataset#stopPropagation" } do %>
-                  Article
-                <% end %>
+            <% elsif dataset.doi.present? %>
+              <span class="text-gray-400">•</span>
+              <%= link_to "https://doi.org/#{dataset.doi}",
+                      target: "_blank",
+                      class: "text-brand-dark hover:text-brand-dark/80",
+                      data: { action: "click->dataset#stopPropagation" } do %>
+                Article
               <% end %>
             <% end %>
           </div>
