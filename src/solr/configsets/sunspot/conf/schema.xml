@@ -74,6 +74,10 @@
     <field name="diseases_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="sexes_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="technologies_ontology_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+
+    <!-- Author fields -->
+    <field name="authors_text" type="text_search" indexed="true" stored="false" multiValued="true"/>
+    <field name="authors_sm" type="string" indexed="true" stored="false" multiValued="true"/>
   </fields>
 
   <!-- Field to copy to spell check -->

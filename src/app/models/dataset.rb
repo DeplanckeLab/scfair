@@ -39,8 +39,8 @@ class Dataset < ApplicationRecord
       study&.authors || []
     end
 
-    text :author_text do
-      study&.authors || ''
+    text :authors do
+      study&.authors || []
     end
 
     # Basic string fields for direct name matches
