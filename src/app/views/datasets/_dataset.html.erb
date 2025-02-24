@@ -66,18 +66,19 @@
               target: "_blank",
               data: { action: "click->dataset#stopPropagation" } %>
       <% end %>
-      <% if dataset.file_resources.any? %>
-        <div class="relative group" 
-               data-action="click->dataset#stopPropagation">
-          <button type="button" 
-                    class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded text-gray-700 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
-                    data-action="click->dataset#stopPropagation">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" 
-                      d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
-                      clip-rule="evenodd"/>
-            </svg>
-          </button>
+      <div class="relative group" 
+              data-action="click->dataset#stopPropagation">
+        <button type="button" 
+                  class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded text-gray-700 <%= dataset.file_resources.any? ? 'bg-gray-50 hover:bg-gray-100' : 'bg-gray-100 cursor-not-allowed opacity-60' %> border border-gray-200 transition-colors"
+                  data-action="click->dataset#stopPropagation"
+          <%= 'disabled' unless dataset.file_resources.any? %>>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" 
+                    d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
+                    clip-rule="evenodd"/>
+          </svg>
+        </button>
+        <% if dataset.file_resources.any? %>
           <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
             <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
               <% dataset.file_resources.each do |resource| %>
@@ -95,8 +96,8 @@
               <% end %>
             </div>
           </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     </div>
   </div>
   <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" 
