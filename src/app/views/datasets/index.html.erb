@@ -32,6 +32,7 @@
                  when "diseases" then "bg-red-500"
                  when "sex" then "bg-pink-500"
                  when "technologies" then "bg-indigo-500"
+                 when "source_name" then "bg-yellow-500"
                  else "bg-gray-500"
                  end %>
               <% selected_count = params[facet.name]&.size || 0 %>
@@ -44,7 +45,7 @@
                 id: "facet-button-#{facet.name}" do %>
                 <div class="flex items-center">
                   <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
-                  <%= facet.name.to_s.singularize.titleize.capitalize %>
+                  <%= facet.name == :source_name ? "Data Source" : facet.name.to_s.singularize.titleize.capitalize %>
                   <span class="ml-2 text-sm text-gray-500 selected-count <%= selected_count > 0 ? '' : 'hidden' %>"
                         data-action="mouseover->facet#showClearAll mouseout->facet#restoreSelectedCount click->facet#clearAllSelected click->facet#stopPropagation"
                     data-facet-target="selectedCount">
