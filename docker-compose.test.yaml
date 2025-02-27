@@ -19,6 +19,12 @@ services:
         condition: service_healthy
     networks:
       - scfair_test_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
     restart: always
 
   postgres:
@@ -33,6 +39,12 @@ services:
       retries: 5
     networks:
       - scfair_test_network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
     restart: always
 
   solr:
@@ -53,9 +65,15 @@ services:
       retries: 5
       start_period: 90s
     environment:
-      - SOLR_HEAP=2g
-      - SOLR_JAVA_MEM=-Xms512m -Xmx2g
+      - SOLR_HEAP=512m
+      - SOLR_JAVA_MEM=-Xms256m -Xmx512m
       - SOLR_OPTS=-Djetty.port=8984
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 384M
     networks:
       - scfair_test_network
     restart: always
