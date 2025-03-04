@@ -142,7 +142,7 @@ class SinglecellParser
     cell_types = cell_annotation[:values].uniq.compact
     dataset.cell_types.clear
     cell_types.each do |cell_type|
-      next if cell_type.blank?
+      next if cell_type.blank? || cell_type == "--unspecified--"
       cell_type_record = CellType.where("name ILIKE ?", cell_type).first_or_create(name: cell_type)
       dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
     end
