@@ -23,6 +23,7 @@ class DatasetsController < ApplicationController
           diseases_sm 
           sexes_sm 
           technologies_sm
+          source_name_sm
         ]
 
         if params[:q] && params[:q] != "*:*"

@@ -43,7 +43,6 @@
     <field name="id_s" type="string" indexed="true" stored="true"/>
     <field name="collection_id_s" type="string" indexed="true" stored="true"/>
     <field name="source_reference_id_s" type="string" indexed="true" stored="true"/>
-    <field name="source_name_s" type="string" indexed="true" stored="true"/>
     <field name="source_url_s" type="string" indexed="true" stored="true"/>
     <field name="explorer_url_s" type="string" indexed="true" stored="true"/>
     <field name="doi_s" type="string" indexed="true" stored="true"/>

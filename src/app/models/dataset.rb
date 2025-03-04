@@ -29,11 +29,10 @@ class Dataset < ApplicationRecord
     string :id
     string :collection_id
     string :source_reference_id
-    string :source_name
+    string :source_name, multiple: true
     string :source_url
     string :explorer_url
     integer :cell_count
-    string :source_name
 
     string :authors, multiple: true do
       study&.authors || []
