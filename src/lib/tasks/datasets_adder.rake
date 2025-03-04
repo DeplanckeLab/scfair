@@ -39,6 +39,19 @@ task update_asap: :environment do
   end
 end
 
+desc "UPDATE SINGLECELL DATASETS"
+task update_singlecell: :environment do
+  parser = SinglecellParser.new
+
+  if parser.perform
+    puts "SINGLECELL parsing completed successfully!"
+  else
+    puts "SINGLECELL parsing encountered errors:"
+    puts parser.errors.join("\n")
+  end
+end
+
+
 desc "INDEX DB WITH SOLR"
 task index_db: :environment do
   Rake::Task["sunspot:reindex"].invoke
@@ -51,6 +64,7 @@ task api_updates: :environment do
     "update_cxg",
     "update_bgee",
     "update_asap",
+    "update_singlecell",
     "index_db",
   ]
 

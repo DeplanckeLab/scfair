@@ -23,6 +23,7 @@ class DatasetsController < ApplicationController
           diseases_sm 
           sexes_sm 
           technologies_sm
+          source_name_sm
         ]
 
         if params[:q] && params[:q] != "*:*"
@@ -62,6 +63,7 @@ class DatasetsController < ApplicationController
       facet :diseases, sort: :index
       facet :sexes, name: "sex", sort: :index
       facet :technologies, sort: :index
+      facet :source_name, sort: :index
 
       with(:sexes, params[:sex]) if params[:sex].present?
       with(:cell_types, params[:cell_types]) if params[:cell_types].present?
@@ -70,6 +72,7 @@ class DatasetsController < ApplicationController
       with(:organisms, params[:organisms]) if params[:organisms].present?
       with(:diseases, params[:diseases]) if params[:diseases].present?
       with(:technologies, params[:technologies]) if params[:technologies].present?
+      with(:source_name, params[:source_name]) if params[:source_name].present?
       
       paginate page: params[:page] || 1, per_page: 6
 

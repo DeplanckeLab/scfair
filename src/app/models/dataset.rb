@@ -29,12 +29,18 @@ class Dataset < ApplicationRecord
     string :id
     string :collection_id
     string :source_reference_id
-    string :source_name
+    string :source_name, multiple: true
     string :source_url
     string :explorer_url
-    string :doi
     integer :cell_count
-    string :source_name
+
+    string :authors, multiple: true do
+      study&.authors || []
+    end
+
+    text :authors do
+      study&.authors || []
+    end
 
     # Basic string fields for direct name matches
     ASSOCIATION_METHODS.each do |category, method|
@@ -64,7 +70,8 @@ class Dataset < ApplicationRecord
             ]
           end
         end,
-        source_name
+        source_name,
+        study&.authors
       ].flatten.compact.join(" ")
     end
 
