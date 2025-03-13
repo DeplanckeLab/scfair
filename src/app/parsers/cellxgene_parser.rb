@@ -207,7 +207,10 @@ class CellxgeneParser
       ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
       log_missing_ontology("technology", ontology_identifier, dataset.id) unless ontology_term
 
-      technology = Technology.find_or_create_by(name: assay_hash.fetch(:label, "")) do |t|
+      normalized_tech = assay_hash.fetch(:label, "").gsub(/\b10X\b/, '10x')
+      next if normalized_tech.blank?
+
+      technology = Technology.find_or_create_by(name: normalized_tech) do |t|
         t.ontology_term = ontology_term
       end
 

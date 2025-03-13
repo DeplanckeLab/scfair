@@ -45,6 +45,7 @@ After setting up the /data folder and placing the ontology file, run the followi
     rake api_updates
     rake load_studies
     rake load_ext_sources
+    rake index_db
 
 These commands will parse the ontology file, update the adjacency lists, and finally, update the API.
 

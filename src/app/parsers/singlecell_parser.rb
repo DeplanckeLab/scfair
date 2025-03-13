@@ -142,7 +142,11 @@ class SinglecellParser
     cell_types = cell_annotation[:values].uniq.compact
     dataset.cell_types.clear
     cell_types.each do |cell_type|
-      next if cell_type.blank? || cell_type == "--unspecified--"
+      next if cell_type.blank? || 
+              cell_type.downcase == "--unspecified--" || 
+              cell_type.downcase == "n/a" ||
+              cell_type.downcase == "na"
+
       cell_type_record = CellType.where("name ILIKE ?", cell_type).first_or_create(name: cell_type)
       dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
     end
@@ -158,7 +162,19 @@ class SinglecellParser
     dataset.sexes.clear
     sexes.each do |sex|
       next if sex.blank?
-      sex_record = Sex.where("name ILIKE ?", sex).first_or_create(name: sex)
+      
+      standardized_sex = case sex.to_s.strip.downcase
+                         when "f"
+                           "female"
+                         when "m"
+                           "male"
+                         when "mixed"
+                           "mixed"
+                         else
+                           next
+                         end
+      
+      sex_record = Sex.where("name ILIKE ?", standardized_sex).first_or_create(name: standardized_sex)
       dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
     end
   end
@@ -188,7 +204,10 @@ class SinglecellParser
     dataset.technologies.clear
     technologies.each do |tech|
       next if tech.blank?
-      tech_record = Technology.where("name ILIKE ?", tech).first_or_create(name: tech)
+
+      normalized_tech = tech.gsub(/\b10X\b/, '10x')
+      
+      tech_record = Technology.where("name ILIKE ?", normalized_tech).first_or_create(name: normalized_tech)
       dataset.technologies << tech_record unless dataset.technologies.include?(tech_record)
     end
   end

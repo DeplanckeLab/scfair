@@ -113,8 +113,11 @@ class AsapParser
     dataset.technologies.clear
     technologies.each do |technology|
       next if technology.blank?
+
+      normalized_tech = technology.gsub(/\b10X\b/, '10x')
+      next if normalized_tech.blank?
       
-      technology_record = Technology.find_or_create_by(name: technology)
+      technology_record = Technology.find_or_create_by(name: normalized_tech)
       dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
     end
   end
