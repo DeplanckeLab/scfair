@@ -100,7 +100,7 @@ class BgeeParser
   def update_sexes(dataset, sexes_data)
     dataset.sexes.clear
     sexes_data.each do |sex|
-      next if sex.blank?
+      next if sex.blank? || sex.strip.downcase == "na"
 
       sex_record = Sex.find_or_create_by(name: sex)
       dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
