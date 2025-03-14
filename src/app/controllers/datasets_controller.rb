@@ -65,17 +65,21 @@ class DatasetsController < ApplicationController
       facet :technologies, sort: :index
       facet :source_name, sort: :index
 
+      with(:organism_ancestors, params[:organisms]) if params[:organisms].present?
+      
       with(:sexes, params[:sex]) if params[:sex].present?
       with(:cell_types, params[:cell_types]) if params[:cell_types].present?
       with(:tissues, params[:tissues]) if params[:tissues].present?
       with(:developmental_stages, params[:developmental_stages]) if params[:developmental_stages].present?
-      with(:organisms, params[:organisms]) if params[:organisms].present?
       with(:diseases, params[:diseases]) if params[:diseases].present?
       with(:technologies, params[:technologies]) if params[:technologies].present?
       with(:source_name, params[:source_name]) if params[:source_name].present?
       
       paginate page: params[:page] || 1, per_page: 6
 
+      # Request the stored fields we need using string syntax
+      field_list :organism_hierarchy
+      
       data_accessor_for(Dataset).include = [
         :sexes,
         :cell_types,
@@ -91,6 +95,37 @@ class DatasetsController < ApplicationController
     end
     
     @datasets = @search.results
+    
+    # Process organism hierarchy info for display
+    @organism_hierarchy = {}
+    
+    if @search.results.any?
+      @search.hits.each do |hit|
+        hierarchy_data = Array(hit.stored("organism_hierarchy_ss"))
+        
+        hierarchy_data.each do |data|
+          level_part = data.match(/level:(\d+)/)[1].to_i rescue 0
+          name_part = data.match(/name:(.*)/)[1] rescue nil
+          
+          next unless name_part
+          
+          @organism_hierarchy[name_part] ||= {level: level_part}
+        end
+      end
+    end
+    
+    @organism_facet_rows = []
+    if @search.facet(:organisms).present?
+      @search.facet(:organisms).rows.each do |row|
+        @organism_facet_rows << {
+          name: row.value,
+          count: row.count,
+          level: @organism_hierarchy[row.value]&.dig(:level) || 0
+        }
+      end
+      
+      @organism_facet_rows.sort_by! { |row| [row[:level], row[:name]] }
+    end
 
     respond_to do |format|
       format.html

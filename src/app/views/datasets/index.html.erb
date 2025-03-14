@@ -20,12 +20,13 @@
                 data: { turbo_permanent: true } %>
         </div>
         <div class="space-y-1 bg-white rounded-lg shadow p-4">
+          <%= render "organism_facet", form: form if @organism_facet_rows.present? %>
           <% @search.facets.each do |facet| %>
+            <% next if facet.name.to_s == "organisms" %>
             <div class="facet-group" 
                  data-controller="facet"
                  id="facet-<%= facet.name %>">
               <% dot_color = case facet.name.to_s
-                 when "organisms" then "bg-blue-500"
                  when "cell_types" then "bg-green-500"
                  when "tissues" then "bg-purple-500"
                  when "developmental_stages" then "bg-orange-500"
