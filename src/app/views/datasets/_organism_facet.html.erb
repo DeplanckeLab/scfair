@@ -1,50 +1,118 @@
 <div class="facet-group" 
      data-controller="hierarchical-facet"
      id="facet-organisms">
-  <!-- Facet header -->
-  <%= button_tag type: "button",
-    class: "w-full flex items-center justify-between text-left font-semibold text-gray-700 mb-2 group",
-    data: { action: "click->hierarchical-facet#toggle" } do %>
+  <% dot_color = "bg-blue-500" %>
+  <% selected_count = params[:organisms]&.size || 0 %>
+  <% is_open = selected_count > 0 %>
+  <button type="button" 
+         class="w-full flex items-center justify-between text-left font-semibold text-gray-700 mb-2 group"
+         data-action="click->hierarchical-facet#toggle"
+    data-hierarchical-facet-target="button">
     <div class="flex items-center">
-      <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
+      <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
       Organism
-      <!-- Selected count badge -->
+      <span class="ml-2 text-sm text-gray-500 selected-count <%= selected_count > 0 ? '' : 'hidden' %>"
+            data-action="mouseover->hierarchical-facet#showClearAll mouseout->hierarchical-facet#restoreSelectedCount click->hierarchical-facet#clearAllSelected click->hierarchical-facet#stopPropagation"
+        data-hierarchical-facet-target="selectedCount">
+        <%= selected_count > 0 ? "#{selected_count} selected" : "" %>
+      </span>
     </div>
-    <!-- Expand/collapse arrow -->
-  <% end %>
+    <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150 <%= is_open ? 'rotate-180' : '' %>" 
+         viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" 
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" 
+            clip-rule="evenodd" />
+    </svg>
+  </button>
   <div class="space-y-2 overflow-hidden transition-all duration-200"
-       data-hierarchical-facet-target="content">
-    <!-- Filter input -->
-    <div class="space-y-1.5" data-hierarchical-facet-target="items">
-      <% @organism_facet_rows.each do |row| %>
-        <div class="relative flex items-start py-0.5 px-1 rounded-md hover:bg-gray-50" 
-             data-hierarchical-facet-target="item" 
-             data-value="<%= row[:name].downcase %>"
-             data-level="<%= row[:level] %>">
-          <div class="min-w-0 flex items-center" style="padding-left: <%= row[:level] * 16 %>px">
-            <!-- Checkbox -->
-            <% checkbox_id = "organisms_#{row[:name].parameterize}" %>
-            <%= form.check_box "organisms[]", 
-                { 
-                  id: checkbox_id,
-                  checked: params[:organisms]&.include?(row[:name]),
-                  class: "h-4 w-4 rounded border-gray-300 focus:ring-brand-light text-brand-light cursor-pointer",
-                  data: {
-                    action: "change->hierarchical-facet#handleSelection",
-                    level: row[:level]
-                  }
-                },
-                row[:name],
-                nil %>
-            <!-- Label -->
-            <%= form.label checkbox_id, class: "ml-2 block text-sm text-gray-600" do %>
-              <span class="font-medium"><%= row[:name].capitalize %></span>
-              <span class="ml-1 text-xs text-gray-400">(<%= row[:count] %>)</span>
+       data-hierarchical-facet-target="content"
+       id="facet-content-organisms"
+       style="max-height: <%= is_open ? 'none' : '0px' %>">
+    <div class="py-1">
+      <% if @organism_facet_rows.present? %>
+        <% if @organism_facet_rows.length > 10 %>
+          <div class="mb-3 px-1 relative">
+            <%= text_field_tag nil, nil,
+              class: "w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md pr-8 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500",
+              placeholder: "Filter organisms...",
+              data: {
+                action: "input->hierarchical-facet#filter",
+                "hierarchical-facet-target": "searchInput"
+              }
+            %>
+            <%= button_tag type: "button",
+              class: "absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600",
+              style: "display: none;",
+              data: {
+                action: "click->hierarchical-facet#clearSearch",
+                "hierarchical-facet-target": "clearButton"
+              } do %>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             <% end %>
           </div>
+        <% end %>
+        <div class="space-y-1" data-hierarchical-facet-target="items">
+          <% @organism_facet_rows.each do |row| %>
+            <div class="relative flex items-start py-0.5 px-1 rounded-md hover:bg-gray-50 <%= row[:level] == 0 ? 'mt-1' : '' %>" 
+                 data-hierarchical-facet-target="item" 
+                 data-value="<%= row[:name].downcase %>"
+                 data-level="<%= row[:level] %>"
+                 <% if row[:lowercase_ancestors].present? %>
+                 data-ancestors="<%= row[:lowercase_ancestors].join(',') %>"
+                 <% end %>>
+              <div class="min-w-0 flex items-center" style="padding-left: <%= row[:level] * 12 %>px">
+                <% checkbox_id = "organisms_#{row[:name].parameterize}" %>
+                <%= form.check_box "organisms[]", 
+                    { 
+                      id: checkbox_id,
+                      checked: params[:organisms]&.include?(row[:name]),
+                      class: "h-4 w-4 rounded border-gray-300 focus:ring-brand-light text-brand-light cursor-pointer",
+                      data: {
+                        action: "change->hierarchical-facet#handleSelection",
+                        "hierarchical-facet-target": "checkbox",
+                        level: row[:level],
+                        ancestors: row[:lowercase_ancestors]&.join(',')
+                      }
+                    },
+                    row[:name],
+                    nil %>
+                <%= form.label checkbox_id, 
+                    class: "ml-2 block text-sm text-gray-600 truncate group relative cursor-pointer", 
+                    title: row[:name] do %>
+                  <% if row[:is_leaf] %>
+                    <span class="font-medium text-gray-600">
+                      <%= row[:name] %>
+                    </span>
+                    <span class="ml-1 text-xs text-gray-400">(<%= row[:count] %>)</span>
+                  <% else %>
+                    <span class="font-semibold <%= row[:level] == 0 ? 'text-gray-900' : 'text-gray-700' %>">
+                      <%= row[:name] %>
+                    </span>
+                    <% if row[:count] > 0 %>
+                      <span class="ml-1 text-xs text-gray-400">(<%= row[:count] %>)</span>
+                    <% end %>
+                  <% end %>
+                  <div class="hidden group-hover:block absolute left-0 bottom-full mb-1 z-10">
+                    <div class="bg-gray-900 text-white text-xs rounded-md py-1 px-2 whitespace-nowrap">
+                      <%= row[:name] %>
+                      <% if row[:ancestors].present? %>
+                        <span class="ml-1 text-xs text-blue-300">
+                          (<%= row[:ancestors].join(' > ') %>)
+                        </span>
+                      <% end %>
+                    </div>
+                    <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-2 -translate-y-1"></div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
         </div>
+      <% else %>
+        <div class="text-sm text-gray-500 italic px-2">No organisms available</div>
       <% end %>
     </div>
   </div>
 </div>
- 

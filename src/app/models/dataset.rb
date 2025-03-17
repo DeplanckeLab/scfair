@@ -63,18 +63,6 @@ class Dataset < ApplicationRecord
       end.uniq
     end
 
-    # Store hierarchy level information for UI display
-    string :organism_hierarchy, multiple: true, stored: true do
-      organisms.includes(:ontology_term).map do |organism|
-        if organism.ontology_term.present?
-          depth = organism.ontology_term.all_ancestors.size
-          "level:#{depth}||name:#{organism.name}"
-        else
-          "level:0||name:#{organism.name}"
-        end
-      end
-    end
-
     # Ontology-aware fields with identifiers and ancestors (excluding Organism)
     ASSOCIATION_METHODS.except(Organism).each do |category, method|
       string "#{method}_ontology", multiple: true do
@@ -99,14 +87,6 @@ class Dataset < ApplicationRecord
         source_name,
         study&.authors
       ].flatten.compact.join(" ")
-    end
-
-    text :ancestor_ontology_terms, boost: 0.3 do
-      ASSOCIATION_METHODS.values.flat_map do |method|
-        send(method).includes(:ontology_term).flat_map do |item|
-          item.ontology_term&.all_ancestors&.map(&:name)
-        end
-      end.compact
     end
   end
 

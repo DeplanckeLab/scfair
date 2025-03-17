@@ -1,5 +1,5 @@
 class DatasetsController < ApplicationController
-  def index
+  def index    
     @search = Dataset.search do
       if params[:search].present?
         search_term = params[:search].split.map { |term| 
@@ -53,10 +53,14 @@ class DatasetsController < ApplicationController
           end
         end
 
+        if params[:"facet.field"].include?("{!ex=organisms_sm,cell_types_sm,tissues_sm,developmental_stages_sm,diseases_sm,sexes_sm,technologies_sm,source_name_sm,text}organisms_sm")
+          params[:"facet.field"] << "{!ex=organisms_sm,cell_types_sm,tissues_sm,developmental_stages_sm,diseases_sm,sexes_sm,technologies_sm,source_name_sm,text}organism_ancestors_sm"
+        end
+
         params[:"facet.limit"] = -1
       end
       
-      facet :organisms, sort: :index
+      facet :organisms, sort: :count
       facet :cell_types, sort: :index
       facet :tissues, sort: :index
       facet :developmental_stages, sort: :index
@@ -76,9 +80,6 @@ class DatasetsController < ApplicationController
       with(:source_name, params[:source_name]) if params[:source_name].present?
       
       paginate page: params[:page] || 1, per_page: 6
-
-      # Request the stored fields we need using string syntax
-      field_list :organism_hierarchy
       
       data_accessor_for(Dataset).include = [
         :sexes,
@@ -95,38 +96,8 @@ class DatasetsController < ApplicationController
     end
     
     @datasets = @search.results
+    @organism_facet_rows = OrganismFacetBuilder.build_from_facets(@search) || []
     
-    # Process organism hierarchy info for display
-    @organism_hierarchy = {}
-    
-    if @search.results.any?
-      @search.hits.each do |hit|
-        hierarchy_data = Array(hit.stored("organism_hierarchy_ss"))
-        
-        hierarchy_data.each do |data|
-          level_part = data.match(/level:(\d+)/)[1].to_i rescue 0
-          name_part = data.match(/name:(.*)/)[1] rescue nil
-          
-          next unless name_part
-          
-          @organism_hierarchy[name_part] ||= {level: level_part}
-        end
-      end
-    end
-    
-    @organism_facet_rows = []
-    if @search.facet(:organisms).present?
-      @search.facet(:organisms).rows.each do |row|
-        @organism_facet_rows << {
-          name: row.value,
-          count: row.count,
-          level: @organism_hierarchy[row.value]&.dig(:level) || 0
-        }
-      end
-      
-      @organism_facet_rows.sort_by! { |row| [row[:level], row[:name]] }
-    end
-
     respond_to do |format|
       format.html
       format.turbo_stream
