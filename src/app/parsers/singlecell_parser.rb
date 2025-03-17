@@ -145,7 +145,8 @@ class SinglecellParser
       next if cell_type.blank? || 
               cell_type.downcase == "--unspecified--" || 
               cell_type.downcase == "n/a" ||
-              cell_type.downcase == "na"
+              cell_type.downcase == "na" ||
+              cell_type.downcase == "nan"
 
       cell_type_record = CellType.where("name ILIKE ?", cell_type).first_or_create(name: cell_type)
       dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
