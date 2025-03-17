@@ -39,28 +39,27 @@ export default class extends Controller {
     const checked = checkbox.checked
     const level = parseInt(checkbox.dataset.level || "0")
     const item = checkbox.closest('[data-hierarchical-facet-target="item"]')
-    const itemValue = item.dataset.value.toLowerCase()
+    const itemValue = item.dataset.value
     
     if (checked) {
       this.selectChildren(itemValue, level)
     } else {
       this.deselectChildren(itemValue, level)
-      
-      this.deselectParents(item)
+      if (level > 0) {
+        this.deselectParent(itemValue)
+      }
     }
     
     this.submitForm()
-    
     this.updateSelectedCount()
   }
   
   selectChildren(parentValue, parentLevel) {
     this.itemTargets.forEach(childItem => {
       const childLevel = parseInt(childItem.dataset.level || "0")
-      const ancestorsStr = childItem.dataset.ancestors || ""
-      const ancestors = ancestorsStr ? ancestorsStr.split(',').map(a => a.toLowerCase()) : []
+      const childValue = childItem.dataset.value
       
-      if (childLevel > parentLevel && ancestors.includes(parentValue)) {
+      if (childLevel > parentLevel && childValue.startsWith(`${parentValue} `)) {
         const childCheckbox = childItem.querySelector('[data-hierarchical-facet-target="checkbox"]')
         if (childCheckbox && !childCheckbox.checked) {
           childCheckbox.checked = true
@@ -72,10 +71,9 @@ export default class extends Controller {
   deselectChildren(parentValue, parentLevel) {
     this.itemTargets.forEach(childItem => {
       const childLevel = parseInt(childItem.dataset.level || "0")
-      const ancestorsStr = childItem.dataset.ancestors || ""
-      const ancestors = ancestorsStr ? ancestorsStr.split(',').map(a => a.toLowerCase()) : []
+      const childValue = childItem.dataset.value
       
-      if (childLevel > parentLevel && ancestors.includes(parentValue)) {
+      if (childLevel > parentLevel && childValue.startsWith(`${parentValue} `)) {
         const childCheckbox = childItem.querySelector('[data-hierarchical-facet-target="checkbox"]')
         if (childCheckbox && childCheckbox.checked) {
           childCheckbox.checked = false
@@ -84,23 +82,17 @@ export default class extends Controller {
     })
   }
   
-  deselectParents(item) {
-    const ancestorsStr = item.dataset.ancestors || ""
-    if (!ancestorsStr) return
-    
-    const ancestors = ancestorsStr.split(',').map(a => a.toLowerCase())
-    
-    ancestors.forEach(ancestor => {
-      this.itemTargets.forEach(parentItem => {
-        const parentValue = parentItem.dataset.value.toLowerCase()
-        
-        if (parentValue === ancestor) {
-          const parentCheckbox = parentItem.querySelector('[data-hierarchical-facet-target="checkbox"]')
-          if (parentCheckbox && parentCheckbox.checked) {
-            parentCheckbox.checked = false
-          }
+  deselectParent(childValue) {
+    this.itemTargets.forEach(parentItem => {
+      const parentLevel = parseInt(parentItem.dataset.level || "0")
+      const parentValue = parentItem.dataset.value
+      
+      if (parentLevel === 0 && childValue.startsWith(`${parentValue} `)) {
+        const parentCheckbox = parentItem.querySelector('[data-hierarchical-facet-target="checkbox"]')
+        if (parentCheckbox && parentCheckbox.checked) {
+          parentCheckbox.checked = false
         }
-      })
+      }
     })
   }
   
@@ -118,7 +110,7 @@ export default class extends Controller {
     }
     
     const matchingItems = new Set()
-    const ancestorItems = new Set()
+    const parentItems = new Set()
     
     this.itemTargets.forEach(item => {
       const value = item.dataset.value.toLowerCase()
@@ -126,14 +118,11 @@ export default class extends Controller {
       if (value.includes(query)) {
         matchingItems.add(item)
         
-        const ancestorsStr = item.dataset.ancestors || ""
-        if (ancestorsStr) {
-          const ancestors = ancestorsStr.split(',')
-          
-          this.itemTargets.forEach(potentialAncestor => {
-            const ancestorValue = potentialAncestor.dataset.value.toLowerCase()
-            if (ancestors.map(a => a.toLowerCase()).includes(ancestorValue)) {
-              ancestorItems.add(potentialAncestor)
+        if (parseInt(item.dataset.level) > 0) {
+          this.itemTargets.forEach(potentialParent => {
+            const parentValue = potentialParent.dataset.value
+            if (value.startsWith(`${parentValue.toLowerCase()} `)) {
+              parentItems.add(potentialParent)
             }
           })
         }
@@ -141,7 +130,7 @@ export default class extends Controller {
     })
     
     this.itemTargets.forEach(item => {
-      if (matchingItems.has(item) || ancestorItems.has(item)) {
+      if (matchingItems.has(item) || parentItems.has(item)) {
         item.classList.remove("hidden")
       } else {
         item.classList.add("hidden")
