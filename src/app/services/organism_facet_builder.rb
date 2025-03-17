@@ -8,16 +8,20 @@ class OrganismFacetBuilder
   end
 
   def build
-    return [] unless @search&.facet(:organisms)&.rows&.any?
+    return [] unless @search&.facet(:organisms)
 
-    @organism_counts = collect_organism_counts
+    unfiltered_search = Dataset.search do
+      facet :organisms, sort: :count
+    end
+
+    @organism_counts = collect_organism_counts(unfiltered_search)
     build_hierarchy
   end
 
   private
 
-  def collect_organism_counts
-    @search.facet(:organisms).rows.each_with_object({}) do |row, counts|
+  def collect_organism_counts(search)
+    search.facet(:organisms).rows.each_with_object({}) do |row, counts|
       counts[row.value] = row.count if row.value.present?
     end
   end
