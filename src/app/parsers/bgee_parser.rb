@@ -100,7 +100,7 @@ class BgeeParser
   def update_sexes(dataset, sexes_data)
     dataset.sexes.clear
     sexes_data.each do |sex|
-      next if sex.blank?
+      next if sex.blank? || sex.strip.downcase == "na"
 
       sex_record = Sex.find_or_create_by(name: sex)
       dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
@@ -155,8 +155,10 @@ class BgeeParser
     dataset.developmental_stages.clear
     stages_data.each do |stage|
       next if stage.blank?
-
-      stage_record = DevelopmentalStage.find_or_create_by(name: stage)
+      
+      cleaned_stage = stage.gsub(/\s*\([^)]*\)\s*/, '').strip
+      
+      stage_record = DevelopmentalStage.find_or_create_by(name: cleaned_stage)
       dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
     end
   end
@@ -176,7 +178,9 @@ class BgeeParser
     technologies_data.each do |technology|
       next if technology.blank?
 
-      technology_record = Technology.find_or_create_by(name: technology)
+      normalized_tech = technology.gsub(/\b10X\b/, '10x')
+
+      technology_record = Technology.find_or_create_by(name: normalized_tech)
       dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
     end
   end

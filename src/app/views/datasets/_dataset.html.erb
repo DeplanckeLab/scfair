@@ -13,7 +13,7 @@
              else 'not_found'
              end
           %>
-          <div class="flex items-center justify-center w-8 h-8 rounded bg-brand-dark hover:bg-brand-dark/90 cursor-pointer">
+          <div class="flex items-center justify-center w-8 h-8 rounded <%= logo_name == 'cellxgene' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
             <%= image_tag "#{logo_name}.svg", class: "w-6 h-6", alt: "#{dataset.source_name} logo" %>
           </div>
         <% end %>

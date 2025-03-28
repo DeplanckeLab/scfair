@@ -101,7 +101,10 @@ class CellxgeneParser
       ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
       log_missing_ontology("sex", ontology_identifier, dataset.id) unless ontology_term
 
-      sex = Sex.find_or_create_by(name: sex_hash.fetch(:label, "")) do |s|
+      sex_name = sex_hash.fetch(:label, "")
+      next if sex_name.blank? || sex_name.strip.downcase == "unknown"
+
+      sex = Sex.find_or_create_by(name: sex_name) do |s|
         s.ontology_term = ontology_term
       end
 
@@ -116,7 +119,10 @@ class CellxgeneParser
       ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
       log_missing_ontology("cell type", ontology_identifier, dataset.id) unless ontology_term
 
-      cell_type = CellType.find_or_create_by(name: ct_hash.fetch(:label, "")) do |ct|
+      ct_name = ct_hash.fetch(:label, "")
+      next if ct_name.blank? || ct_name.strip.downcase == "unknown"
+
+      cell_type = CellType.find_or_create_by(name: ct_name) do |ct|
         ct.ontology_term = ontology_term
       end
 
@@ -146,7 +152,10 @@ class CellxgeneParser
       ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
       log_missing_ontology("developmental stage", ontology_identifier, dataset.id) unless ontology_term
 
-      stage = DevelopmentalStage.find_or_create_by(name: stage_hash.fetch(:label, "")) do |ds|
+      dev_stage_name = stage_hash.fetch(:label, "")
+      next if dev_stage_name.blank? || dev_stage_name.strip.downcase == "unknown"
+
+      stage = DevelopmentalStage.find_or_create_by(name: dev_stage_name) do |ds|
         ds.ontology_term = ontology_term
       end
       
@@ -207,7 +216,10 @@ class CellxgeneParser
       ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
       log_missing_ontology("technology", ontology_identifier, dataset.id) unless ontology_term
 
-      technology = Technology.find_or_create_by(name: assay_hash.fetch(:label, "")) do |t|
+      normalized_tech = assay_hash.fetch(:label, "").gsub(/\b10X\b/, '10x')
+      next if normalized_tech.blank?
+
+      technology = Technology.find_or_create_by(name: normalized_tech) do |t|
         t.ontology_term = ontology_term
       end
 

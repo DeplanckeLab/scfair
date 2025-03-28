@@ -36,15 +36,12 @@ To set up the project, follow these steps:
 
 After setting up the /data folder and placing the ontology file, run the following Rake commands in sequence:
 
-    rake db:create && rake db:migrate && rake db:seed
-    rake fix:organisms
+    rake db:create && rake db:migrate
     rake 'obo:parse[/data/scfair/collected-metazoan.obo]'
     rake 'obo:parse[/data/scfair/efo.obo]'
     rake 'obo:parse[/data/scfair/hsapdv.obo]'
     rake 'obo:parse[/data/scfair/mondo.obo]'
-    rake api_updates
-    rake load_studies
-    rake load_ext_sources
+    rake scfair:setup
 
 These commands will parse the ontology file, update the adjacency lists, and finally, update the API.
 

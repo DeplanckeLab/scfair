@@ -49,8 +49,22 @@ class Dataset < ApplicationRecord
       end
     end
 
-    # Ontology-aware fields with identifiers and ancestors
-    ASSOCIATION_METHODS.each do |category, method|
+    # Special hierarchical fields for organisms
+    string :organism_ancestors, multiple: true do
+      organisms.includes(:ontology_term).flat_map do |organism|
+        if organism.ontology_term.present?
+          ancestor_names = organism.ontology_term.all_ancestors.flat_map do |ancestor_term|
+            Organism.where(ontology_term_id: ancestor_term.id).pluck(:name)
+          end
+          [organism.name] + ancestor_names
+        else
+          [organism.name]
+        end
+      end.uniq
+    end
+
+    # Ontology-aware fields with identifiers and ancestors (excluding Organism)
+    ASSOCIATION_METHODS.except(Organism).each do |category, method|
       string "#{method}_ontology", multiple: true do
         send(method).includes(:ontology_term).flat_map do |item|
           terms = [item.ontology_term&.identifier]
@@ -73,14 +87,6 @@ class Dataset < ApplicationRecord
         source_name,
         study&.authors
       ].flatten.compact.join(" ")
-    end
-
-    text :ancestor_ontology_terms, boost: 0.3 do
-      ASSOCIATION_METHODS.values.flat_map do |method|
-        send(method).includes(:ontology_term).flat_map do |item|
-          item.ontology_term&.all_ancestors&.map(&:name)
-        end
-      end.compact
     end
   end
 
