@@ -29,5 +29,10 @@ solr/**/*
 # Ignore Byebug command history file.
 #.byebug_history
 
+src/public/.well-known
+src/public/data
+src/solr/default/data/
+src/solr/development/data/
+src/solr/test/data/
 
 src/.vscode/settings.json

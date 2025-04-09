@@ -28,8 +28,18 @@ Rails.application.configure do
   config.assume_ssl = true
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  config.force_ssl = false
+  config.ssl_options = { hsts: false }
 
+  # Instead, insert ActionDispatch::SSL manually without HSTS
+  #  config.middleware.delete ActionDispatch::SSL rescue nil
+  #  
+  #  config.middleware.insert_before 0, ActionDispatch::SSL,
+  #                                  hsts: false,
+  #                                  secure_cookies: true,
+  #                                  redirect: false # optional: disables HTTPS redirection
+  
+  
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }
 
