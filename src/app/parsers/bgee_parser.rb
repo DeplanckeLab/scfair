@@ -62,10 +62,17 @@ class BgeeParser
 
     if dataset.save
       puts "Importing #{dataset.id}"
+
+      cell_types_data = datasets.map do |d| 
+        cell_type = d.dig(:annotation, :rawDataCondition, :cellType)
+        next unless cell_type
+        { name: cell_type[:name], identifier: cell_type[:id] }
+      end.compact.uniq { |ct| [ct[:name], ct[:identifier]] }
+
       
       update_sexes(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :sex) }.compact.uniq)
-      update_organisms(dataset, datasets.map { |d| { name: d.dig(:annotation, :rawDataCondition, :species, :name), id: d.dig(:annotation, :rawDataCondition, :species, :id) } }.compact)
-      update_cell_types(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :cellType, :name) }.compact.uniq)
+      update_organisms(dataset, datasets.map { |d| { name: d.dig(:annotation, :rawDataCondition, :species, :name), id: d.dig(:annotation, :rawDataCondition, :species, :id) } }.compact)      
+      update_cell_types(dataset, cell_types_data)
       update_tissues(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :anatEntity, :name) }.compact.uniq)
       update_developmental_stages(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :devStage, :name) }.compact.uniq)
       update_diseases(dataset, ["normal"])
@@ -135,11 +142,44 @@ class BgeeParser
 
   def update_cell_types(dataset, cell_types_data)
     dataset.cell_types.clear
-    cell_types_data.each do |cell_type|
-      next if cell_type.blank?
-
-      cell_type_record = CellType.find_or_create_by(name: cell_type)
-      dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+    
+    cell_types_data.each do |cell_type_data|
+      next if cell_type_data[:name].blank?
+      
+      if cell_type_data[:identifier].present?
+        ontology_term = OntologyTerm.find_by(identifier: cell_type_data[:identifier])
+        
+        if ontology_term
+          cell_type_record = CellType
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?", 
+              cell_type_data[:name], 
+              ontology_term.id
+            )
+            .first
+            
+          unless cell_type_record
+            cell_type_record = CellType.create!(
+              name: cell_type_data[:name].downcase.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+          
+          dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_data[:name],
+            external_reference_id: cell_type_data[:identifier],
+            message: "Ontology term with identifier '#{cell_type_data[:identifier]}' not found",
+            status: :pending
+          )
+        end
+      end
+      
+      @errors << "Cell type without identifier: #{cell_type_data[:name]}, dataset: #{dataset.source_reference_id}" if cell_type_data[:identifier].blank?
     end
   end
 
