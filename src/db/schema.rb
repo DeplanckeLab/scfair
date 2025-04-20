@@ -238,7 +238,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_tissues_on_name", unique: true
+    t.index ["name", "ontology_term_id"], name: "index_tissues_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_tissues_on_ontology_term_id"
   end
 

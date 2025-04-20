@@ -49,7 +49,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :name, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :datasets_tissues, id: false, force: :cascade do |t|

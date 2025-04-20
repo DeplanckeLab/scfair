@@ -68,12 +68,17 @@ class BgeeParser
         next unless cell_type
         { name: cell_type[:name], identifier: cell_type[:id] }
       end.compact.uniq { |ct| [ct[:name], ct[:identifier]] }
-
+      
+      tissues_data = datasets.map do |d| 
+        anat_entity = d.dig(:annotation, :rawDataCondition, :anatEntity)
+        next unless anat_entity
+        { name: anat_entity[:name], identifier: anat_entity[:id] }
+      end.compact.uniq { |t| [t[:name], t[:identifier]] }
       
       update_sexes(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :sex) }.compact.uniq)
       update_organisms(dataset, datasets.map { |d| { name: d.dig(:annotation, :rawDataCondition, :species, :name), id: d.dig(:annotation, :rawDataCondition, :species, :id) } }.compact)      
       update_cell_types(dataset, cell_types_data)
-      update_tissues(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :anatEntity, :name) }.compact.uniq)
+      update_tissues(dataset, tissues_data)
       update_developmental_stages(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :devStage, :name) }.compact.uniq)
       update_diseases(dataset, ["normal"])
       update_technologies(dataset, datasets.map { |d| d.dig(:library, :technology, :protocolName) }.compact.uniq)
@@ -185,11 +190,44 @@ class BgeeParser
 
   def update_tissues(dataset, tissues_data)
     dataset.tissues.clear
-    tissues_data.each do |tissue|
-      next if tissue.blank?
-
-      tissue_record = Tissue.find_or_create_by(name: tissue)
-      dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
+    
+    tissues_data.each do |tissue_data|
+      next if tissue_data[:name].blank?
+      
+      if tissue_data[:identifier].present?
+        ontology_term = OntologyTerm.find_by(identifier: tissue_data[:identifier])
+        
+        if ontology_term
+          tissue_record = Tissue
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?", 
+              tissue_data[:name], 
+              ontology_term.id
+            )
+            .first
+            
+          unless tissue_record
+            tissue_record = Tissue.create!(
+              name: tissue_data[:name].downcase.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+          
+          dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Tissue.name,
+            value: tissue_data[:name],
+            external_reference_id: tissue_data[:identifier],
+            message: "Ontology term with identifier '#{tissue_data[:identifier]}' not found",
+            status: :pending
+          )
+        end
+      end
+      
+      @errors << "Tissue without identifier: #{tissue_data[:name]}, dataset: #{dataset.source_reference_id}" if tissue_data[:identifier].blank?
     end
   end
 
