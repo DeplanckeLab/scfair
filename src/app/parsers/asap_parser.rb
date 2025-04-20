@@ -100,7 +100,7 @@ class AsapParser
               
             unless cell_type_record
               cell_type_record = CellType.create!(
-                name: cell_type_data[:name],
+                name: cell_type_data[:name].downcase.strip,
                 ontology_term_id: ontology_term.id
               )
             end
