@@ -171,7 +171,7 @@ class BgeeParser
             
           unless cell_type_record
             cell_type_record = CellType.create!(
-              name: cell_type_data[:name].downcase.strip,
+              name: cell_type_data[:name].strip,
               ontology_term_id: ontology_term.id
             )
           end
@@ -214,7 +214,7 @@ class BgeeParser
             
           unless tissue_record
             tissue_record = Tissue.create!(
-              name: tissue_data[:name].downcase.strip,
+              name: tissue_data[:name].strip,
               ontology_term_id: ontology_term.id
             )
           end
@@ -259,7 +259,7 @@ class BgeeParser
             
           unless stage_record
             stage_record = DevelopmentalStage.create!(
-              name: cleaned_stage_name.downcase.strip,
+              name: cleaned_stage_name.strip,
               ontology_term_id: ontology_term.id
             )
           end
