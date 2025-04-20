@@ -111,8 +111,10 @@ class BgeeParser
     dataset.organisms.clear
     organisms_data.each do |org_data|
       name = org_data[:name]
-      taxonomy_id = org_data[:id]
       next if name.blank?
+
+      taxonomy_id = org_data[:id]
+      @errors << "Organism without identifier: #{taxonomy_id}, dataset: #{dataset.source_reference_id}" if taxonomy_id.nil?
 
       begin
         organism = Organism.search_by_data(name, taxonomy_id)
