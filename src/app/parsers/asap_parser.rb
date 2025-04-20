@@ -59,7 +59,12 @@ class AsapParser
   def extract_cell_types(data)
     data[:annotation_groups].flat_map do |group|
       group[:annotations].flat_map do |annotation|
-        annotation[:cell_ontology_terms].map { |term| term[:name] }
+        annotation[:cell_ontology_terms].map do |term|
+          {
+            name: term[:name],
+            identifier: term[:identifier]
+          }
+        end
       end
     end.compact.uniq
   end
@@ -75,13 +80,46 @@ class AsapParser
     files
   end
 
-  def update_cell_types(dataset, cell_types)
+  def update_cell_types(dataset, cell_types_data)
     dataset.cell_types.clear
-    cell_types.each do |cell_type|
-      next if cell_type.blank?
+
+    cell_types_data.each do |cell_type_data|
+      next if cell_type_data[:name].blank?
       
-      cell_type_record = CellType.find_or_create_by(name: cell_type)
-      dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+      if cell_type_data[:identifier].present?
+        ontology_term = OntologyTerm.find_by(identifier: cell_type_data[:identifier])
+        
+        if ontology_term
+            cell_type_record = CellType
+              .where(
+                "LOWER(name) = LOWER(?) AND ontology_term_id = ?", 
+                cell_type_data[:name], 
+                ontology_term.id
+              )
+              .first
+              
+            unless cell_type_record
+              cell_type_record = CellType.create!(
+                name: cell_type_data[:name],
+                ontology_term_id: ontology_term.id
+              )
+            end
+            
+            dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+            next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_data[:name],
+            external_reference_id: cell_type_data[:identifier],
+            message: "Ontology term with identifier '#{cell_type_data[:identifier]}' not found",
+            status: :pending
+          )
+        end
+      end
+
+      @errors << "Cell type without identifier: #{cell_type_data[:name]}, dataset: #{dataset.source_reference_id}" if cell_type_data[:identifier].blank?
     end
   end
 
