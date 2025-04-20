@@ -75,11 +75,17 @@ class BgeeParser
         { name: anat_entity[:name], identifier: anat_entity[:id] }
       end.compact.uniq { |t| [t[:name], t[:identifier]] }
       
+      dev_stages_data = datasets.map do |d| 
+        dev_stage = d.dig(:annotation, :rawDataCondition, :devStage)
+        next unless dev_stage
+        { name: dev_stage[:name], identifier: dev_stage[:id] }
+      end.compact.uniq { |ds| [ds[:name], ds[:identifier]] }
+      
       update_sexes(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :sex) }.compact.uniq)
       update_organisms(dataset, datasets.map { |d| { name: d.dig(:annotation, :rawDataCondition, :species, :name), id: d.dig(:annotation, :rawDataCondition, :species, :id) } }.compact)      
       update_cell_types(dataset, cell_types_data)
       update_tissues(dataset, tissues_data)
-      update_developmental_stages(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :devStage, :name) }.compact.uniq)
+      update_developmental_stages(dataset, dev_stages_data)
       update_diseases(dataset, ["normal"])
       update_technologies(dataset, datasets.map { |d| d.dig(:library, :technology, :protocolName) }.compact.uniq)
       update_links(dataset, datasets.map { |d| d.dig(:library, :experiment, :xRef, :xRefURL) }.compact.uniq)
@@ -233,13 +239,46 @@ class BgeeParser
 
   def update_developmental_stages(dataset, stages_data)
     dataset.developmental_stages.clear
-    stages_data.each do |stage|
-      next if stage.blank?
+    
+    stages_data.each do |stage_data|
+      next if stage_data[:name].blank?
+
+      cleaned_stage_name = stage_data[:name].gsub(/\s*\([^)]*\)\s*/, '').strip
       
-      cleaned_stage = stage.gsub(/\s*\([^)]*\)\s*/, '').strip
+      if stage_data[:identifier].present?
+        ontology_term = OntologyTerm.find_by(identifier: stage_data[:identifier])
+        
+        if ontology_term
+          stage_record = DevelopmentalStage
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?", 
+              cleaned_stage_name, 
+              ontology_term.id
+            )
+            .first
+            
+          unless stage_record
+            stage_record = DevelopmentalStage.create!(
+              name: cleaned_stage_name.downcase.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+          
+          dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: DevelopmentalStage.name,
+            value: cleaned_stage_name,
+            external_reference_id: stage_data[:identifier],
+            message: "Ontology term with identifier '#{stage_data[:identifier]}' not found",
+            status: :pending
+          )
+        end
+      end
       
-      stage_record = DevelopmentalStage.find_or_create_by(name: cleaned_stage)
-      dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
+      @errors << "Developmental stage without identifier: #{cleaned_stage_name}, dataset: #{dataset.source_reference_id}" if stage_data[:identifier].blank?
     end
   end
 
