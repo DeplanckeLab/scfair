@@ -17,7 +17,7 @@ class CellxgeneParser
   def perform
     fetch_collections.each do |collection_data|
       collection = process_collection(collection_data)
-      
+
       datasets = fetch_collection(collection.id).fetch(:datasets, [])
       datasets.each do |dataset_data|
         process_dataset(dataset_data, collection)
@@ -96,75 +96,187 @@ class CellxgeneParser
 
   def update_sexes(dataset, sexes_data)
     dataset.sexes.clear
-    sexes_data.each do |sex_hash|
-      ontology_identifier = sex_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("sex", ontology_identifier, dataset.id) unless ontology_term
 
+    sexes_data.each do |sex_hash|
       sex_name = sex_hash.fetch(:label, "")
       next if sex_name.blank? || sex_name.strip.downcase == "unknown"
 
-      sex = Sex.find_or_create_by(name: sex_name) do |s|
-        s.ontology_term = ontology_term
+      ontology_identifier = sex_hash.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          sex_record = Sex
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              sex_name,
+              ontology_term.id
+            )
+            .first
+
+          unless sex_record
+            sex_record = Sex.create!(
+              name: sex_name.strip,
+              ontology_term: ontology_term
+            )
+          end
+
+          dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Sex.name,
+            value: sex_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
 
-      dataset.sexes << sex unless dataset.sexes.include?(sex)
+      @errors << "Sex without identifier: #{sex_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
   def update_cell_types(dataset, cell_types_data)
     dataset.cell_types.clear
-    cell_types_data.each do |ct_hash|
-      ontology_identifier = ct_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("cell type", ontology_identifier, dataset.id) unless ontology_term
 
-      ct_name = ct_hash.fetch(:label, "")
-      next if ct_name.blank? || ct_name.strip.downcase == "unknown"
+    cell_types_data.each do |cell_type_data|
+      cell_type_name = cell_type_data.fetch(:label, "")
+      next if cell_type_name.blank? || cell_type_name.strip.downcase == "unknown"
 
-      cell_type = CellType.find_or_create_by(name: ct_name) do |ct|
-        ct.ontology_term = ontology_term
+      ontology_identifier = cell_type_data.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          cell_type_record = CellType
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              cell_type_name.strip,
+              ontology_term.id
+            )
+            .first
+
+          unless cell_type_record
+            cell_type_record = CellType.create!(
+              name: cell_type_name.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+
+          dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
 
-      dataset.cell_types << cell_type unless dataset.cell_types.include?(cell_type)
+      @errors << "Cell type without identifier: #{cell_type_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
   def update_tissues(dataset, tissues_data)
     dataset.tissues.clear
-    tissues_data.each do |tissue_hash|
-      ontology_identifier = tissue_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("tissue", ontology_identifier, dataset.id) unless ontology_term
 
-      tissue = Tissue.find_or_create_by(name: tissue_hash.fetch(:label, "")) do |t|
-        t.ontology_term = ontology_term
+    tissues_data.each do |tissue_data|
+      tissue_name = tissue_data.fetch(:label, "")
+      next if tissue_name.blank? || tissue_name.strip.downcase == "unknown"
+
+      ontology_identifier = tissue_data.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          tissue_record = Tissue
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              tissue_name.strip,
+              ontology_term.id
+            )
+            .first
+
+          unless tissue_record
+            tissue_record = Tissue.create!(
+              name: tissue_name.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+
+          dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Tissue.name,
+            value: tissue_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
-      
-      dataset.tissues << tissue unless dataset.tissues.include?(tissue)
+
+      @errors << "Tissue without identifier: #{tissue_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
   def update_developmental_stages(dataset, stages_data)
     dataset.developmental_stages.clear
-    stages_data.each do |stage_hash|
-      ontology_identifier = stage_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("developmental stage", ontology_identifier, dataset.id) unless ontology_term
 
-      dev_stage_name = stage_hash.fetch(:label, "")
-      next if dev_stage_name.blank? || dev_stage_name.strip.downcase == "unknown"
+    stages_data.each do |stage_data|
+      stage_name = stage_data.fetch(:label, "")
+      next if stage_name.blank? || stage_name.strip.downcase == "unknown"
 
-      stage = DevelopmentalStage.find_or_create_by(name: dev_stage_name) do |ds|
-        ds.ontology_term = ontology_term
+      ontology_identifier = stage_data.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          stage_record = DevelopmentalStage
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              stage_name.strip,
+              ontology_term.id
+            )
+            .first
+
+          unless stage_record
+            stage_record = DevelopmentalStage.create!(
+              name: stage_name.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+
+          dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: DevelopmentalStage.name,
+            value: stage_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
-      
-      dataset.developmental_stages << stage unless dataset.developmental_stages.include?(stage)
+
+      @errors << "Developmental stage without identifier: #{stage_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
   def update_organisms(dataset, organisms_data)
     dataset.organisms.clear
+
     organisms_data.each do |org_hash|
       ontology_identifier = org_hash.fetch(:ontology_term_id)
       ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
@@ -194,36 +306,93 @@ class CellxgeneParser
 
   def update_diseases(dataset, diseases_data)
     dataset.diseases.clear
-    diseases_data.each do |disease_hash|
-      ontology_identifier = disease_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("disease", ontology_identifier, dataset.id) unless ontology_term
 
-      disease = Disease.find_or_create_by(name: disease_hash.fetch(:label, "")) do |d|
-        d.ontology_term = ontology_term
+    diseases_data.each do |disease_data|
+      disease_name = disease_data.fetch(:label, "")
+      next if disease_name.blank?
+
+      ontology_identifier = disease_data.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          disease_record = Disease
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              disease_name.strip,
+              ontology_term.id
+            )
+            .first
+
+          unless disease_record
+            disease_record = Disease.create!(
+              name: disease_name.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+
+          dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Disease.name,
+            value: disease_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
 
-      dataset.diseases << disease unless dataset.diseases.include?(disease)
+      @errors << "Disease without identifier: #{disease_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
   def update_technologies(dataset, assay_data)
     return unless assay_data
-    
+
     dataset.technologies.clear
-    assay_data.each do |assay_hash|
-      ontology_identifier = assay_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("technology", ontology_identifier, dataset.id) unless ontology_term
 
-      normalized_tech = assay_hash.fetch(:label, "").gsub(/\b10X\b/, '10x')
-      next if normalized_tech.blank?
+    assay_data.each do |assay_data|
+      technology_name = assay_data.fetch(:label, "").gsub(/\b10X\b/, '10x')
+      next if technology_name.blank?
 
-      technology = Technology.find_or_create_by(name: normalized_tech) do |t|
-        t.ontology_term = ontology_term
+      ontology_identifier = assay_data.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          technology_record = Technology
+            .where(
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              technology_name.strip,
+              ontology_term.id
+            )
+            .first
+
+          unless technology_record
+            technology_record = Technology.create!(
+              name: technology_name.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+
+          dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Technology.name,
+            value: technology_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
 
-      dataset.technologies << technology unless dataset.technologies.include?(technology)
+      @errors << "Technology without identifier: #{technology_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
