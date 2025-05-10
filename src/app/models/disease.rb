@@ -1,10 +1,9 @@
 class Disease < ApplicationRecord
   belongs_to :ontology_term, optional: true
 
-  has_many :dataset_diseases
-  has_many :datasets, through: :dataset_diseases
+  has_and_belongs_to_many :datasets
 
-  validates :name, uniqueness: true
+  validates :name, uniqueness: { scope: :ontology_term_id }
 
   def self.color_settings
     {

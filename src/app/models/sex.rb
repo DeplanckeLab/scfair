@@ -3,7 +3,7 @@ class Sex < ApplicationRecord
 
   has_and_belongs_to_many :datasets
 
-  validates :name, uniqueness: true
+  validates :name, uniqueness: { scope: :ontology_term_id }
 
   def self.color_settings
     {
