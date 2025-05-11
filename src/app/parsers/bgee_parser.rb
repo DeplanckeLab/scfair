@@ -1,6 +1,6 @@
 class BgeeParser
   BASE_URL = "https://api.bgee.org/api_15_1/?page=data&action=experiments&data_type=SC_RNA_SEQ&get_results=1&offset=0&limit=1000"
-  DATASET_URL = lambda { |experiment_id| "https://www.bgee.org/api/?page=data&action=raw_data_annots&data_type=SC_RNA_SEQ&get_results=1&offset=0&limit=50&filter_exp_id=#{experiment_id}&filters_for_all=1" }
+  DATASET_URL = lambda { |experiment_id| "https://www.bgee.org/api/?page=data&exp_id=#{experiment_id}" }
 
   attr_reader :errors
 
@@ -31,72 +31,120 @@ class BgeeParser
     return unless id
 
     response = HTTParty.get(DATASET_URL.call(id))
-    collection = JSON.parse(response.body, symbolize_names: true)
+    data = JSON.parse(response.body, symbolize_names: true)
 
-    if collection.dig(:data, :exceptionType).nil? && collection.dig(:data, :results, :SC_RNA_SEQ)
-      process_datasets(collection.dig(:data, :results, :SC_RNA_SEQ))
-    else
-      puts "No changes or exception for collection #{id}"
+    if data[:status] == "SUCCESS" && data[:data].present?
+      process_experiment_data(data[:data], id)
     end
   rescue => e
     @errors << "Error processing collection #{id}: #{e.message}"
   end
 
-  def process_datasets(datasets)
+  def process_experiment_data(experiment_data, experiment_id)
+    experiment = experiment_data[:experiment]
+    return unless experiment
+
+    assays = experiment_data[:assays] || []
+
     collection_data = {
-      source_reference_id: datasets.first.dig(:library, :experiment, :xRef, :xRefId),
-      collection_id: datasets.first.dig(:library, :experiment, :xRef, :xRefId),
+      source_reference_id: experiment_id,
+      collection_id: experiment_id,
       source_name: "BGEE",
-      source_url: "",
+      source_url: DATASET_URL.call(experiment_id),
       explorer_url: "",
-      doi: datasets.first.dig(:library, :experiment, :dOI),
-      cell_count: 0,
-      parser_hash: Digest::SHA256.hexdigest(datasets.to_s)
+      doi: experiment[:dOI],
+      cell_count: experiment[:numberOfAnnotatedCells],
+      parser_hash: Digest::SHA256.hexdigest(experiment_data.to_s)
     }
 
     dataset = Dataset.find_or_initialize_by(source_reference_id: collection_data[:source_reference_id])
-    
     return if dataset.parser_hash == collection_data[:parser_hash]
-    
+
     dataset.assign_attributes(collection_data)
 
     if dataset.save
-      puts "Importing #{dataset.id}"
+      cell_types_data = extract_cell_types(assays)
+      tissues_data = extract_tissues(assays)
+      dev_stages_data = extract_developmental_stages(assays)
+      sexes_data = extract_sexes(assays)
+      organisms_data = extract_organisms(assays)
+      technologies_data = extract_technologies(assays)
 
-      cell_types_data = datasets.map do |d| 
-        cell_type = d.dig(:annotation, :rawDataCondition, :cellType)
-        next unless cell_type
-        { name: cell_type[:name], identifier: cell_type[:id] }
-      end.compact.uniq { |ct| [ct[:name], ct[:identifier]] }
-      
-      tissues_data = datasets.map do |d| 
-        anat_entity = d.dig(:annotation, :rawDataCondition, :anatEntity)
-        next unless anat_entity
-        { name: anat_entity[:name], identifier: anat_entity[:id] }
-      end.compact.uniq { |t| [t[:name], t[:identifier]] }
-      
-      dev_stages_data = datasets.map do |d| 
-        dev_stage = d.dig(:annotation, :rawDataCondition, :devStage)
-        next unless dev_stage
-        { name: dev_stage[:name], identifier: dev_stage[:id] }
-      end.compact.uniq { |ds| [ds[:name], ds[:identifier]] }
-      
-      update_sexes(dataset, datasets.map { |d| d.dig(:annotation, :rawDataCondition, :sex) }.compact.uniq)
-      update_organisms(dataset, datasets.map { |d| { name: d.dig(:annotation, :rawDataCondition, :species, :name), id: d.dig(:annotation, :rawDataCondition, :species, :id) } }.compact)      
+      download_files = experiment[:downloadFiles] || []
+      xref_url = experiment[:xRef]&.dig(:xRefURL)
+      links = [xref_url].compact.uniq
+
+      update_sexes(dataset, sexes_data)
+      update_organisms(dataset, organisms_data)
       update_cell_types(dataset, cell_types_data)
       update_tissues(dataset, tissues_data)
       update_developmental_stages(dataset, dev_stages_data)
       update_diseases(dataset, ["normal"])
-      update_technologies(dataset, datasets.map { |d| d.dig(:library, :technology, :protocolName) }.compact.uniq)
-      update_links(dataset, datasets.map { |d| d.dig(:library, :experiment, :xRef, :xRefURL) }.compact.uniq)
-
-      all_files = datasets.flat_map { |d| d.dig(:library, :experiment, :downloadFiles) }.compact
-      update_file_resources(dataset, all_files)
+      update_technologies(dataset, technologies_data)
+      update_links(dataset, links)
+      update_file_resources(dataset, download_files)
 
       puts "Imported #{dataset.id}"
     else
       @errors << "Failed to save dataset #{collection_data[:source_reference_id]}: #{dataset.errors.full_messages.join(", ")}"
     end
+  rescue => e
+    @errors << "Error processing experiment data for #{experiment_id}: #{e.message}"
+  end
+
+  def extract_cell_types(assays)
+    result = []
+    assays.each do |assay|
+      cell_type = assay.dig(:annotation, :rawDataCondition, :cellType)
+      next unless cell_type.is_a?(Hash) && cell_type[:name].present? && cell_type[:id].present?
+      result << { name: cell_type[:name], identifier: cell_type[:id] }
+    end
+    result.uniq { |ct| [ct[:name], ct[:identifier]] }
+  end
+
+  def extract_tissues(assays)
+    result = []
+    assays.each do |assay|
+      anat_entity = assay.dig(:annotation, :rawDataCondition, :anatEntity)
+      next unless anat_entity.is_a?(Hash) && anat_entity[:name].present? && anat_entity[:id].present?
+      result << { name: anat_entity[:name], identifier: anat_entity[:id] }
+    end
+    result.uniq { |t| [t[:name], t[:identifier]] }
+  end
+
+  def extract_developmental_stages(assays)
+    result = []
+    assays.each do |assay|
+      dev_stage = assay.dig(:annotation, :rawDataCondition, :devStage)
+      next unless dev_stage.is_a?(Hash) && dev_stage[:name].present? && dev_stage[:id].present?
+      result << { name: dev_stage[:name], identifier: dev_stage[:id] }
+    end
+    result.uniq { |ds| [ds[:name], ds[:identifier]] }
+  end
+
+  def extract_sexes(assays)
+    assays.map { |assay| assay.dig(:annotation, :rawDataCondition, :sex) }
+      .compact
+      .select(&:present?)
+      .uniq
+  end
+
+  def extract_organisms(assays)
+    result = []
+    assays.each do |assay|
+      species = assay.dig(:annotation, :rawDataCondition, :species)
+      next unless species.is_a?(Hash) && species[:name].present? && species[:id].present?
+      result << { name: species[:name], id: species[:id] }
+    end
+    result.uniq { |o| o[:id] }
+  end
+
+  def extract_technologies(assays)
+    assays.map do |assay|
+      tech = assay.dig(:library, :technology)
+      next unless tech.is_a?(Hash)
+      tech[:protocolName]
+    end.compact.select(&:present?).uniq
   end
 
   def update_file_resources(dataset, assets_data)
@@ -153,29 +201,29 @@ class BgeeParser
 
   def update_cell_types(dataset, cell_types_data)
     dataset.cell_types.clear
-    
+
     cell_types_data.each do |cell_type_data|
       next if cell_type_data[:name].blank?
-      
+
       if cell_type_data[:identifier].present?
         ontology_term = OntologyTerm.find_by(identifier: cell_type_data[:identifier])
-        
+
         if ontology_term
           cell_type_record = CellType
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?", 
-              cell_type_data[:name], 
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              cell_type_data[:name],
               ontology_term.id
             )
             .first
-            
+
           unless cell_type_record
             cell_type_record = CellType.create!(
               name: cell_type_data[:name].strip,
               ontology_term_id: ontology_term.id
             )
           end
-          
+
           dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
           next
         else
@@ -189,36 +237,36 @@ class BgeeParser
           )
         end
       end
-      
+
       @errors << "Cell type without identifier: #{cell_type_data[:name]}, dataset: #{dataset.source_reference_id}" if cell_type_data[:identifier].blank?
     end
   end
 
   def update_tissues(dataset, tissues_data)
     dataset.tissues.clear
-    
+
     tissues_data.each do |tissue_data|
       next if tissue_data[:name].blank?
-      
+
       if tissue_data[:identifier].present?
         ontology_term = OntologyTerm.find_by(identifier: tissue_data[:identifier])
-        
+
         if ontology_term
           tissue_record = Tissue
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?", 
-              tissue_data[:name], 
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              tissue_data[:name],
               ontology_term.id
             )
             .first
-            
+
           unless tissue_record
             tissue_record = Tissue.create!(
               name: tissue_data[:name].strip,
               ontology_term_id: ontology_term.id
             )
           end
-          
+
           dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
           next
         else
@@ -232,38 +280,38 @@ class BgeeParser
           )
         end
       end
-      
+
       @errors << "Tissue without identifier: #{tissue_data[:name]}, dataset: #{dataset.source_reference_id}" if tissue_data[:identifier].blank?
     end
   end
 
   def update_developmental_stages(dataset, stages_data)
     dataset.developmental_stages.clear
-    
+
     stages_data.each do |stage_data|
       next if stage_data[:name].blank?
 
       cleaned_stage_name = stage_data[:name].gsub(/\s*\([^)]*\)\s*/, '').strip
-      
+
       if stage_data[:identifier].present?
         ontology_term = OntologyTerm.find_by(identifier: stage_data[:identifier])
-        
+
         if ontology_term
           stage_record = DevelopmentalStage
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?", 
-              cleaned_stage_name, 
+              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+              cleaned_stage_name,
               ontology_term.id
             )
             .first
-            
+
           unless stage_record
             stage_record = DevelopmentalStage.create!(
               name: cleaned_stage_name.strip,
               ontology_term_id: ontology_term.id
             )
           end
-          
+
           dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
           next
         else
@@ -277,7 +325,7 @@ class BgeeParser
           )
         end
       end
-      
+
       @errors << "Developmental stage without identifier: #{cleaned_stage_name}, dataset: #{dataset.source_reference_id}" if stage_data[:identifier].blank?
     end
   end
@@ -309,7 +357,7 @@ class BgeeParser
 
     links.each do |url|
       next unless url.present?
-      
+
       dataset.links.find_or_create_by(url: url)
     rescue => e
       @errors << "Error creating dataset link for URL #{url}: #{e.message}"
