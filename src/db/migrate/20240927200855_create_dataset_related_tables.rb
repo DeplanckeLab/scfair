@@ -19,7 +19,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :name, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :datasets_sexes, id: false, force: :cascade do |t|
@@ -34,7 +34,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :name, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :cell_types_datasets, id: false, force: :cascade do |t|
@@ -49,7 +49,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :name, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :datasets_tissues, id: false, force: :cascade do |t|
@@ -64,7 +64,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :name, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :datasets_developmental_stages, id: false, force: :cascade do |t|
@@ -100,7 +100,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :name, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :datasets_diseases, id: false, force: :cascade do |t|
@@ -115,7 +115,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
-      t.index :name, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :datasets_technologies, id: false, force: :cascade do |t|

@@ -20,7 +20,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_cell_types_on_name", unique: true
+    t.index ["name", "ontology_term_id"], name: "index_cell_types_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_cell_types_on_ontology_term_id"
   end
 
@@ -52,7 +52,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.string "parser_hash", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.integer "links_count", default: 0
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
     t.index ["doi"], name: "index_datasets_on_doi"
     t.index ["source_name"], name: "index_datasets_on_source_name"
@@ -111,7 +110,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_developmental_stages_on_name", unique: true
+    t.index ["name", "ontology_term_id"], name: "index_developmental_stages_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_developmental_stages_on_ontology_term_id"
   end
 
@@ -120,7 +119,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_diseases_on_name", unique: true
+    t.index ["name", "ontology_term_id"], name: "index_diseases_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_diseases_on_ontology_term_id"
   end
 
@@ -201,7 +200,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_sexes_on_name", unique: true
+    t.index ["name", "ontology_term_id"], name: "index_sexes_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_sexes_on_ontology_term_id"
   end
 
@@ -230,7 +229,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_technologies_on_name", unique: true
+    t.index ["name", "ontology_term_id"], name: "index_technologies_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_technologies_on_ontology_term_id"
   end
 
@@ -239,7 +238,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_tissues_on_name", unique: true
+    t.index ["name", "ontology_term_id"], name: "index_tissues_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_tissues_on_ontology_term_id"
   end
 
@@ -257,7 +256,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
 
   add_foreign_key "cell_types_datasets", "cell_types"
   add_foreign_key "cell_types_datasets", "datasets"
-  add_foreign_key "dataset_links", "datasets"
   add_foreign_key "datasets_developmental_stages", "datasets"
   add_foreign_key "datasets_developmental_stages", "developmental_stages"
   add_foreign_key "datasets_diseases", "datasets"

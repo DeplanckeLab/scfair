@@ -136,20 +136,46 @@ class SinglecellParser
   def update_cell_types(dataset, annotations_data)
     return unless annotations_data.is_a?(Array) && annotations_data.any?
 
-    cell_annotation = annotations_data.find { |a| a[:name] == "cell_type__ontology_label" }
+    cell_annotation = annotations_data.find { |a| a[:name] == "cell_type" }
     return unless cell_annotation
 
-    cell_types = cell_annotation[:values].uniq.compact
     dataset.cell_types.clear
-    cell_types.each do |cell_type|
-      next if cell_type.blank? ||
-              cell_type.downcase == "--unspecified--" ||
-              cell_type.downcase == "n/a" ||
-              cell_type.downcase == "na" ||
-              cell_type.downcase == "nan"
-
-      cell_type_record = CellType.where("name ILIKE ?", cell_type).first_or_create(name: cell_type)
-      dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+    
+    cell_values = cell_annotation[:values].uniq.compact
+    cell_values.each do |cell_value|
+      next if cell_value.blank?
+      
+      ontology_identifier = cell_value.gsub('_', ':')
+      
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+        
+        if ontology_term
+          cell_type_record = CellType
+            .where(ontology_term_id: ontology_term.id)
+            .first
+          
+          unless cell_type_record
+            cell_type_record = CellType.create!(
+              name: ontology_term.name,
+              ontology_term_id: ontology_term.id
+            )
+          end
+          
+          dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_value,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
+      else
+        @errors << "Cell type without valid identifier: #{cell_value}, dataset: #{dataset.source_reference_id}"
+      end
     end
   end
 
@@ -183,33 +209,92 @@ class SinglecellParser
   def update_diseases(dataset, annotations_data)
     return unless annotations_data.is_a?(Array) && annotations_data.any?
 
-    disease_annotation = annotations_data.find { |a| a[:name] == "disease__ontology_label" }
+    disease_annotation = annotations_data.find { |a| a[:name] == "disease" }
     return unless disease_annotation
 
-    diseases = disease_annotation[:values].uniq.compact
     dataset.diseases.clear
-    diseases.each do |disease|
-      next if disease.blank?
-      disease_record = Disease.where("name ILIKE ?", disease).first_or_create(name: disease)
-      dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
+    
+    disease_values = disease_annotation[:values].uniq.compact
+    disease_values.each do |disease_value|
+      next if disease_value.blank?
+      
+      ontology_identifier = disease_value.gsub('_', ':')
+      
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+        
+        if ontology_term
+          disease_record = Disease
+            .where(ontology_term_id: ontology_term.id)
+            .first
+          
+          unless disease_record
+            disease_record = Disease.create!(
+              name: ontology_term.name,
+              ontology_term_id: ontology_term.id
+            )
+          end
+          
+          dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Disease.name,
+            value: disease_value,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
+      else
+        @errors << "Disease without valid identifier: #{disease_value}, dataset: #{dataset.source_reference_id}"
+      end
     end
   end
 
   def update_technologies(dataset, annotations_data)
     return unless annotations_data.is_a?(Array) && annotations_data.any?
 
-    tech_annotation = annotations_data.find { |a| a[:name] == "library_preparation_protocol__ontology_label" }
+    tech_annotation = annotations_data.find { |a| a[:name] == "library_preparation_protocol" }
     return unless tech_annotation
 
-    technologies = tech_annotation[:values].uniq.compact
     dataset.technologies.clear
-    technologies.each do |tech|
-      next if tech.blank?
-
-      normalized_tech = tech.gsub(/×/, 'x').strip
-
-      tech_record = Technology.where("name ILIKE ?", normalized_tech).first_or_create(name: normalized_tech)
-      dataset.technologies << tech_record unless dataset.technologies.include?(tech_record)
+    
+    tech_values = tech_annotation[:values].uniq.compact
+    tech_values.each do |tech_value|
+      next if tech_value.blank?
+      
+      ontology_identifier = tech_value.gsub('_', ':')
+      
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+        
+        if ontology_term
+          tech_record = Technology
+            .where(ontology_term_id: ontology_term.id)
+            .first
+          
+          unless tech_record
+            tech_record = Technology.create!(
+              name: ontology_term.name,
+              ontology_term_id: ontology_term.id
+            )
+          end
+          
+          dataset.technologies << tech_record unless dataset.technologies.include?(tech_record)
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Technology.name,
+            value: tech_value,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
+      else
+        @errors << "Technology without valid identifier: #{tech_value}, dataset: #{dataset.source_reference_id}"
+      end
     end
   end
 
