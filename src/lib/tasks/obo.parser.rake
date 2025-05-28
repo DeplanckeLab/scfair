@@ -19,7 +19,6 @@ namespace :obo do
       exit
     end
 
-    # Count total lines
     puts "\nCounting lines..."
     total_lines = File.foreach(file_path).count
     puts "Found #{total_lines} lines"
@@ -30,7 +29,6 @@ namespace :obo do
     current_relationships = []
     line_count = 0
 
-    # First pass: collect all terms and relationships
     puts "\nParsing file..."
     File.foreach(file_path) do |line|
       line_count += 1
@@ -73,7 +71,6 @@ namespace :obo do
     print_progress(total_lines, total_lines, "Parsing")
     puts "\n"
 
-    # Add the last term if present
     if current_term[:identifier].present?
       terms_to_create[current_term[:identifier]] = {
         identifier: current_term[:identifier],
@@ -83,7 +80,6 @@ namespace :obo do
       relationships_to_create.concat(current_relationships)
     end
 
-    # Bulk create/update terms
     puts "\nCreating/updating #{terms_to_create.size} terms..."
     terms_processed = 0
     ActiveRecord::Base.transaction do
@@ -98,40 +94,62 @@ namespace :obo do
     print_progress(terms_to_create.size, terms_to_create.size, "Terms")
     puts "\n"
 
-    # Create a mapping of identifiers to IDs for relationship creation
     puts "\nBuilding identifier mapping..."
-    identifier_to_id = OntologyTerm.where(identifier: terms_to_create.keys)
+    identifier_to_id = {}
+    all_identifiers = terms_to_create.keys
+    total_identifiers = all_identifiers.size
+    processed_identifiers = 0
+    
+    all_identifiers.each_slice(10000) do |identifier_batch|
+      batch_mapping = OntologyTerm.where(identifier: identifier_batch)
                                  .pluck(:identifier, :id)
                                  .to_h
+      identifier_to_id.merge!(batch_mapping)
+      processed_identifiers += identifier_batch.size
+      print_progress(processed_identifiers, total_identifiers, "Mapping") if processed_identifiers % 10000 == 0
+    end
+    print_progress(total_identifiers, total_identifiers, "Mapping")
+    puts "\n"
 
-    # Bulk create relationships
     puts "\nCreating #{relationships_to_create.size} relationships..."
     relationships_processed = 0
-    ActiveRecord::Base.transaction do
-      relationships_to_create.each_slice(1000) do |rel_batch|
-        rel_records = rel_batch.map do |rel|
-          parent_id = identifier_to_id[rel[:parent_identifier]]
-          child_id = identifier_to_id[rel[:child_identifier]]
-          next unless parent_id && child_id
+    
+    relationships_to_create.each_slice(1000) do |rel_batch|
+      begin
+        ActiveRecord::Base.transaction do
+          rel_records = rel_batch.map do |rel|
+            parent_id = identifier_to_id[rel[:parent_identifier]]
+            child_id = identifier_to_id[rel[:child_identifier]]
+            next unless parent_id && child_id
 
-          {
-            parent_id: parent_id,
-            child_id: child_id,
-            relationship_type: rel[:relationship_type],
-            created_at: Time.current,
-            updated_at: Time.current
-          }
-        end.compact
+            {
+              parent_id: parent_id,
+              child_id: child_id,
+              relationship_type: rel[:relationship_type],
+              created_at: Time.current,
+              updated_at: Time.current
+            }
+          end.compact
 
-        # Use insert_all to skip validations and callbacks for speed
-        OntologyTermRelationship.insert_all(
-          rel_records,
-          unique_by: [:parent_id, :child_id]
-        )
+          if rel_records.any?
+            OntologyTermRelationship.insert_all(
+              rel_records,
+              unique_by: [:parent_id, :child_id]
+            )
+          end
+        end
         relationships_processed += rel_batch.size
-        print_progress(relationships_processed, relationships_to_create.size, "Relations")
+        print_progress(relationships_processed, relationships_to_create.size, "Relations") if relationships_processed % 1000 == 0
+      rescue ActiveRecord::ConnectionFailed, PG::ConnectionBad => e
+        puts "\nConnection error, reconnecting and retrying..."
+        ActiveRecord::Base.connection.reconnect!
+        sleep(1)
+        retry
       end
     end
-    puts "\n\nOntology table updated successfully!"
+    print_progress(relationships_to_create.size, relationships_to_create.size, "Relations")
+    puts "\n\nOntology parsing completed successfully!"
+    puts "Total terms processed: #{terms_to_create.size}"
+    puts "Total relationships created: #{relationships_to_create.size}"
   end
 end
