@@ -38,9 +38,20 @@ After setting up the /data folder and placing the ontology file, run the followi
 
     rake db:create && rake db:migrate
     rake 'obo:parse[/data/scfair/collected-metazoan.obo]'
+    rake 'obo:parse[/data/scfair/cl.obo]'
     rake 'obo:parse[/data/scfair/efo.obo]'
+    rake 'obo:parse[/data/scfair/fbbt.obo]'
+    rake 'obo:parse[/data/scfair/fbdv.obo]'
+    rake 'obo:parse[/data/scfair/hancestro-base.obo]'
     rake 'obo:parse[/data/scfair/hsapdv.obo]'
+    rake 'obo:parse[/data/scfair/mmusdv.obo]'
     rake 'obo:parse[/data/scfair/mondo.obo]'
+    rake 'obo:parse[/data/scfair/ncbitaxon.obo]'
+    rake 'obo:parse[/data/scfair/pato.obo]'
+    rake 'obo:parse[/data/scfair/uberon.obo]'
+    rake 'obo:parse[/data/scfair/wbbt.obo]'
+    rake 'obo:parse[/data/scfair/wbls.obo]'
+    rake 'obo:parse[/data/scfair/zfa.obo]'
     rake scfair:setup
 
 These commands will parse the ontology file, update the adjacency lists, and finally, update the API.

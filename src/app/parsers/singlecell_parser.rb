@@ -118,6 +118,10 @@ class SinglecellParser
 
     return if organism_name.blank? || tax_id.blank?
 
+    skip_values = ["nan", "--unspecified--", "n/a", "na"]
+    return if skip_values.include?(organism_name.downcase.strip) || \
+              skip_values.include?(tax_id.downcase.strip)
+
     begin
       organism = Organism.search_by_data(organism_name, tax_id)
       dataset.organisms << organism unless dataset.organisms.include?(organism)
