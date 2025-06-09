@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
@@ -52,6 +52,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.string "parser_hash", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "links_count", default: 0
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
     t.index ["doi"], name: "index_datasets_on_doi"
     t.index ["source_name"], name: "index_datasets_on_source_name"
@@ -147,6 +148,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.text "name"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "ontology_coverage", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.string "source"
+    t.string "category"
+    t.integer "records"
+    t.integer "relationships"
+    t.integer "ontology_coverage"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_ontology_coverage_on_category"
+    t.index ["source", "category"], name: "index_ontology_coverage_on_source_and_category", unique: true
+    t.index ["source"], name: "index_ontology_coverage_on_source"
   end
 
   create_table "ontology_term_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

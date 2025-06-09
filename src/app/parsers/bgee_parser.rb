@@ -13,6 +13,8 @@ class BgeeParser
       process_collection(id)
     end
 
+    OntologyCoverageService.update_for_source("BGEE")
+
     @errors.empty?
   end
 

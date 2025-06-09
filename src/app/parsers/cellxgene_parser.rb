@@ -24,6 +24,8 @@ class CellxgeneParser
       end
     end
 
+    OntologyCoverageService.update_for_source("CELLxGENE")
+
     @errors.empty?
   end
 

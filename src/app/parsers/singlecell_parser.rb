@@ -15,6 +15,8 @@ class SinglecellParser
       process_dataset(study_data)
     end
 
+    OntologyCoverageService.update_for_source("SINGLE CELL PORTAL")
+
     @errors.empty?
   end
 
@@ -147,7 +149,7 @@ class SinglecellParser
     
     cell_values = cell_annotation[:values].uniq.compact
     cell_values.each do |cell_value|
-      next if cell_value.blank?
+      next if cell_value.blank? || cell_value.strip.downcase == "--unspecified--"
       
       ontology_identifier = cell_value.gsub('_', ':')
       
@@ -220,7 +222,7 @@ class SinglecellParser
     
     disease_values = disease_annotation[:values].uniq.compact
     disease_values.each do |disease_value|
-      next if disease_value.blank?
+      next if disease_value.blank? || disease_value.strip.downcase == "--unspecified--"
       
       ontology_identifier = disease_value.gsub('_', ':')
       
@@ -266,7 +268,7 @@ class SinglecellParser
     
     tech_values = tech_annotation[:values].uniq.compact
     tech_values.each do |tech_value|
-      next if tech_value.blank?
+      next if tech_value.blank? || tech_value.strip.downcase == "--unspecified--"
       
       ontology_identifier = tech_value.gsub('_', ':')
       
