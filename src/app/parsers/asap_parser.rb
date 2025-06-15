@@ -33,7 +33,7 @@ class AsapParser
 
     dataset_data = {
       collection_id: "ASAP000000",
-      source_name: "ASAP",
+      source: source,
       source_url: "https://asap.epfl.ch/projects.json",
       explorer_url: "https://asap.epfl.ch/projects/#{data[:public_key]}",
       doi: data[:doi],
@@ -53,6 +53,13 @@ class AsapParser
       puts "Imported #{dataset.id}"
     else
       @errors << "Failed to save dataset #{data[:public_key]}: #{dataset.errors.full_messages.join(', ')}"
+    end
+  end
+
+  def source
+    @source ||= Source.find_or_create_by(slug: "asap") do |source|
+      source.name = "ASAP"
+      source.logo = "asap.svg"
     end
   end
 

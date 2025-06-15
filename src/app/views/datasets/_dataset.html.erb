@@ -5,16 +5,8 @@
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
         <%= link_to dataset.source_url, target: "_blank", data: { action: "click->dataset#stopPropagation" } do %>
-          <% logo_name = case dataset.source_name.downcase
-             when /cellxgene/ then 'cellxgene'
-             when /bgee/ then 'bgee'
-             when /asap/ then 'asap'
-             when /single\s+cell\s+portal/ then 'single_cell_portal'
-             else 'not_found'
-             end
-          %>
-          <div class="flex items-center justify-center w-8 h-8 rounded <%= logo_name == 'cellxgene' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
-            <%= image_tag "#{logo_name}.svg", class: "w-6 h-6", alt: "#{dataset.source_name} logo" %>
+          <div class="flex items-center justify-center w-8 h-8 rounded <%= dataset.source.name == 'CELLxGENE' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
+            <%= image_tag dataset.source.logo || "not_found.svg", class: "w-6 h-6", alt: "#{dataset.source.name} logo" %>
           </div>
         <% end %>
       </div>
@@ -22,7 +14,7 @@
         <div class="flex flex-col justify-between h-full py-0.5">
           <h2 class="text-xs font-medium text-gray-900 leading-none" 
                 data-action="click->dataset#stopPropagation">
-            <%= dataset.source_name %>
+            <%= dataset.source.name %>
           </h2>
           <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
             <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>

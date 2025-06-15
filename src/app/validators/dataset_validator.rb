@@ -3,17 +3,17 @@ class DatasetValidator
 
   BATCH_SIZE = 100
 
-  def initialize(source = nil)
-    @source = source
+  def initialize(source_slug = nil)
+    @source_slug = source_slug
     @errors = []
     @processed_count = 0
     @total_count = 0
   end
 
   def validate!
-    return puts "No valid source name provided" unless Dataset::SOURCES.values.include?(@source)
+    return puts "No valid source name provided" unless source
 
-    @total_count = Dataset.processing.where(source_name: @source).count
+    @total_count = Dataset.processing.where(source: source).count
 
     if @total_count.zero?
       @errors << "No datasets found for source: #{@source}"
@@ -22,7 +22,7 @@ class DatasetValidator
 
     puts "Starting validation of #{@total_count} datasets..."
 
-    Dataset.processing.includes(:organisms, :cell_types).where(source_name: @source).find_each(batch_size: BATCH_SIZE) do |dataset|
+    Dataset.processing.includes(:organisms, :cell_types).where(source: source).find_each(batch_size: BATCH_SIZE) do |dataset|
       validate_dataset(dataset)
       @processed_count += 1
 
@@ -33,14 +33,18 @@ class DatasetValidator
 
     puts "Validation completed: #{@processed_count} datasets processed, #{@errors.count} errors found."
 
-    puts "Updating ontology coverage for #{@source}..."
-    OntologyCoverageService.update_for_source(@source)
+    puts "Updating ontology coverage for #{source.name}..."
+    OntologyCoverageService.update_for_source(source)
     puts "Ontology coverage updated!"
 
     @errors.empty?
   end
 
   private
+  
+  def source
+    @source ||= Source.find_by(slug: @source_slug)
+  end
 
   def validate_dataset(dataset)
     begin

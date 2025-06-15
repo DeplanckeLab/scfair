@@ -69,7 +69,7 @@ class CellxgeneParser
 
     dataset.assign_attributes(
       collection_id: collection.id,
-      source_name: "CELLxGENE",
+      source: source,
       source_url: collection.url,
       explorer_url: data.fetch(:explorer_url, ""),
       doi: collection.doi,
@@ -91,6 +91,13 @@ class CellxgeneParser
       puts "Imported #{dataset.id}"
     else
       @errors << "Failed to save dataset #{dataset.id}: #{dataset.errors.full_messages.join(", ")}"
+    end
+  end
+
+  def source
+    @source ||= Source.find_or_create_by(slug: "cxg") do |source|
+      source.name = "CELLxGENE"
+      source.logo = "cellxgene.svg"
     end
   end
 

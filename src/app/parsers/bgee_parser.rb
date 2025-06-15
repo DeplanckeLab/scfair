@@ -49,7 +49,7 @@ class BgeeParser
     collection_data = {
       source_reference_id: experiment_id,
       collection_id: experiment_id,
-      source_name: "BGEE",
+      source: source,
       source_url: DATASET_URL.call(experiment_id),
       explorer_url: "",
       doi: experiment[:dOI],
@@ -90,6 +90,13 @@ class BgeeParser
     end
   rescue => e
     @errors << "Error processing experiment data for #{experiment_id}: #{e.message}"
+  end
+
+  def source
+    @source ||= Source.find_or_create_by(slug: "bgee") do |source|
+      source.name = "Bgee"
+      source.logo = "bgee.svg"
+    end
   end
 
   def extract_cell_types(assays)

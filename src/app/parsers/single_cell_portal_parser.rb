@@ -72,7 +72,7 @@ class SingleCellPortalParser
 
     dataset_data = {
       collection_id: study_id,
-      source_name:   "SINGLE CELL PORTAL",
+      source: source,
       source_url:    "#{BASE_URL_EXPLORE}#{study_id}#study-summary",
       explorer_url:  explore_url,
       doi:           doi,
@@ -94,6 +94,13 @@ class SingleCellPortalParser
       puts "Imported #{dataset.id}"
     else
       @errors << "Failed to save dataset #{study_id}: #{dataset.errors.full_messages.join(', ')}"
+    end
+  end
+
+  def source
+    @source ||= Source.find_or_create_by(slug: "scp") do |source|
+      source.name = "Single Cell Portal"
+      source.logo = "single_cell_portal.svg"
     end
   end
 
