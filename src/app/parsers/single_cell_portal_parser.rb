@@ -1,4 +1,4 @@
-class SinglecellParser
+class SingleCellPortalParser
   BASE_URL_ALL_STUDIES = "https://singlecell.broadinstitute.org/single_cell/api/v1/site/studies".freeze
   BASE_URL_STUDIES     = "https://singlecell.broadinstitute.org/single_cell/api/v1/studies/".freeze
   BASE_URL_EXPLORE     = "https://singlecell.broadinstitute.org/single_cell/study/".freeze
