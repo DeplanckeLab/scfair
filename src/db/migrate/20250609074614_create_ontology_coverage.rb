@@ -1,7 +1,7 @@
 class CreateOntologyCoverage < ActiveRecord::Migration[8.0]
   def change
     create_table :ontology_coverage, id: :uuid, default: -> { "uuid_generate_v4()" } do |t|
-      t.string :source
+      t.references :source, type: :uuid, null: false, foreign_key: true
       t.string :category
       t.integer :records
       t.integer :relationships
