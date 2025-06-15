@@ -28,7 +28,7 @@ class Dataset < ApplicationRecord
 
   belongs_to :study, primary_key: :doi, foreign_key: :doi, optional: true
 
-  searchable do
+  searchable if: :completed? do
     string :id
     string :collection_id
     string :source_reference_id
