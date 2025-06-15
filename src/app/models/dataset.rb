@@ -1,4 +1,5 @@
 class Dataset < ApplicationRecord
+  SOURCES = { cxg: "CELLxGENE", bgee: "Bgee", asap: "ASAP", scp: "Single Cell Portal" }.freeze
   ASSOCIATION_METHODS = {
     Organism => :organisms,
     CellType => :cell_types,
@@ -10,6 +11,8 @@ class Dataset < ApplicationRecord
   }.freeze
 
   CATEGORIES = ASSOCIATION_METHODS.keys.freeze
+
+  enum :status, { processing: "processing", completed: "completed", failed: "failed" }
 
   has_and_belongs_to_many :sexes
   has_and_belongs_to_many :cell_types

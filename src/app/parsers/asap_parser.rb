@@ -12,8 +12,6 @@ class AsapParser
       process_dataset(collection_data)
     end
 
-    OntologyCoverageService.update_for_source("ASAP")
-
     @errors.empty?
   end
 

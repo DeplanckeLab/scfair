@@ -15,8 +15,6 @@ class SingleCellPortalParser
       process_dataset(study_data)
     end
 
-    OntologyCoverageService.update_for_source("SINGLE CELL PORTAL")
-
     @errors.empty?
   end
 
@@ -121,8 +119,7 @@ class SingleCellPortalParser
     return if organism_name.blank? || tax_id.blank?
 
     skip_values = ["nan", "--unspecified--", "n/a", "na"]
-    return if skip_values.include?(organism_name.downcase.strip) || \
-              skip_values.include?(tax_id.downcase.strip)
+    return if skip_values.include?(organism_name.downcase.strip) || skip_values.include?(tax_id.downcase.strip)
 
     begin
       organism = Organism.search_by_data(organism_name, tax_id)
@@ -136,6 +133,17 @@ class SingleCellPortalParser
         message: e.message,
         status: :pending
       )
+
+      notes = dataset.notes || {}
+      notes[:parsing_errors] ||= []
+      notes[:parsing_errors] << {
+        annotation: Organism.name,
+        message: e.message,
+        value: organism_name,
+        external_ontology_reference: tax_id.to_s,
+        timestamp: Time.current.utc.to_s
+      }
+      dataset.update!(notes: notes)
     end
   end
 
@@ -147,9 +155,11 @@ class SingleCellPortalParser
 
     dataset.cell_types.clear
     
+    skip_values = ["nan", "--unspecified--", "n/a", "na"]
+
     cell_values = cell_annotation[:values].uniq.compact
     cell_values.each do |cell_value|
-      next if cell_value.blank? || cell_value.strip.downcase == "--unspecified--"
+      next if cell_value.blank? || skip_values.include?(cell_value.downcase.strip)
       
       ontology_identifier = cell_value.gsub('_', ':')
       
@@ -178,6 +188,17 @@ class SingleCellPortalParser
             message: "Ontology term with identifier '#{ontology_identifier}' not found",
             status: :pending
           )
+
+          notes = dataset.notes || {}
+          notes[:parsing_errors] ||= []
+          notes[:parsing_errors] << {
+            annotation: CellType.name,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            value: cell_value,
+            external_ontology_reference: ontology_identifier,
+            timestamp: Time.current.utc.to_s
+          }
+          dataset.update!(notes: notes)
         end
       else
         @errors << "Cell type without valid identifier: #{cell_value}, dataset: #{dataset.source_reference_id}"

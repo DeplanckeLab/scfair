@@ -10,6 +10,7 @@ namespace :scfair do
       "load_studies",
       "load_ext_sources",
       "ontology_terms:update_for_organisms",
+      "validate_datasets",
       "index_db"
     ]
 
