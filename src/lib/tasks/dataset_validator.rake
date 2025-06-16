@@ -1,21 +1,21 @@
 desc "VALIDATE GELLxGENE DATASETS"
 task validate_cxg: :environment do
-  DatasetValidator.new("CELLxGENE").validate!
+  DatasetValidator.new("cxg").validate!
 end
 
 desc "VALIDATE BGEE DATASETS"
 task validate_bgee: :environment do
-  DatasetValidator.new("Bgee").validate!
+  DatasetValidator.new("bgee").validate!
 end
 
 desc "VALIDATE ASAP DATASETS"
 task validate_asap: :environment do
-  DatasetValidator.new("ASAP").validate!
+  DatasetValidator.new("asap").validate!
 end
 
 desc "VALIDATE SINGLE CELL PORTAL DATASETS"
 task validate_scp: :environment do
-  DatasetValidator.new("SINGLE CELL PORTAL").validate!
+  DatasetValidator.new("scp").validate!
 end
 
 desc "Run all validations"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_15_075218) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
@@ -154,16 +154,19 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_15_075218) do
   end
 
   create_table "ontology_coverage", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "source"
+    t.uuid "source_id", null: false
     t.string "category"
-    t.integer "records"
-    t.integer "relationships"
-    t.integer "ontology_coverage"
+    t.integer "records_count", default: 0, null: false
+    t.integer "relationships_count", default: 0, null: false
+    t.integer "records_with_ontology_count", default: 0, null: false
+    t.integer "records_missing_ontology_count", default: 0, null: false
+    t.integer "parsing_issues_count", default: 0, null: false
+    t.boolean "manually_curated", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["category"], name: "index_ontology_coverage_on_category"
-    t.index ["source", "category"], name: "index_ontology_coverage_on_source_and_category", unique: true
-    t.index ["source"], name: "index_ontology_coverage_on_source"
+    t.index ["source_id", "category"], name: "index_ontology_coverage_on_source_id_and_category", unique: true
+    t.index ["source_id"], name: "index_ontology_coverage_on_source_id"
   end
 
   create_table "ontology_term_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -287,5 +290,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_15_075218) do
   add_foreign_key "datasets_tissues", "datasets"
   add_foreign_key "datasets_tissues", "tissues"
   add_foreign_key "file_resources", "datasets"
+  add_foreign_key "ontology_coverage", "sources"
   add_foreign_key "studies", "journals"
 end

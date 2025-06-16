@@ -225,18 +225,57 @@ class SingleCellPortalParser
       next if sex.blank?
 
       standardized_sex = case sex.to_s.strip.downcase
-                         when "f"
-                           "female"
-                         when "m"
-                           "male"
-                         when "mixed"
-                           "mixed"
-                         else
-                           next
-                         end
+        when "f"
+          "female"
+        when "m"
+          "male"
+        when "mixed"
+          "mixed"
+        else
+          next
+      end
 
-      sex_record = Sex.where("name ILIKE ?", standardized_sex).first_or_create(name: standardized_sex)
-      dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
+      identifier = case sex
+        when "male"
+          "PATO:0000384"
+        when "female"
+          "PATO:0000383"
+        when "mixed"
+          "PATO:0001338"
+        else
+          next
+      end
+
+      ontology_term = OntologyTerm.find_by(identifier: identifier)
+
+      if ontology_term
+        sex_record = Sex
+          .where(
+            "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+            standardized_sex,
+            ontology_term.id
+          )
+          .first
+
+        unless sex_record
+          sex_record = Sex.create!(
+            name: standardized_sex,
+            ontology_term_id: ontology_term.id
+          )
+        end
+
+        dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
+        next
+      else
+        ParsingIssue.create!(
+          dataset: dataset,
+          resource: Sex.name,
+          value: standardized_sex,
+          external_reference_id: identifier,
+          message: "Ontology term with identifier '#{identifier}' not found",
+          status: :pending
+        )
+      end
     end
   end
 

@@ -64,7 +64,7 @@ task api_updates: :environment do
     "update_cxg",
     "update_bgee",
     "update_asap",
-    "update_singlecell",
+    "update_scp",
   ]
 
   tasks_to_run.each do |task|
