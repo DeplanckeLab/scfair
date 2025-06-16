@@ -25,6 +25,9 @@
         <%= link_to "Data", datasets_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(datasets_path) ? "bg-gray-700 text-white" : ""}" %>
+        <%= link_to "Stats", stats_path, 
+            class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
+                   #{current_page?(stats_path) ? "bg-gray-700 text-white" : ""}" %>
         <%= link_to "Resources", resources_path, 
             class: "text-gray-300 hover:text-white hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors
                    #{current_page?(resources_path) ? "bg-gray-700 text-white" : ""}" %>

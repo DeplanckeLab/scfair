@@ -1,0 +1,116 @@
+<div class="container mx-auto px-4 mt-4 mb-8">
+  <div class="min-h-screen py-8">
+    <div class="max-w-4xl mx-auto space-y-8">
+      <h2 class="text-2xl font-bold text-center mb-8">
+        Data statistics
+      </h2>
+
+      <div class="bg-white rounded-lg border border-gray-200">
+        <div class="grid" style="grid-template-columns: 190px repeat(<%= @categories.count %>, 1fr);">
+          <div></div>
+
+          <% @categories.each do |category| %>
+            <div class="px-2 py-3 text-center">
+              <span class="px-2 py-1 rounded-full text-xs font-semibold <%= category.color_settings[:bg_text] %> <%= category.color_settings[:text_color] %>">
+                <%= category.name %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+
+        <% @sources.each_with_index do |source, index| %>
+          <div class="grid <%= index.even? ? 'bg-white' : 'bg-gray-50' %>" style="grid-template-columns: 190px repeat(<%= @categories.count %>, 1fr);">
+            <div class="px-4 py-2">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 mr-2">
+                  <div class="flex items-center justify-center w-8 h-8 rounded <%= source.name == 'CELLxGENE' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
+                    <%= image_tag "#{source.logo || 'not_found.svg' }", class: "w-5 h-5", alt: "#{source.name} logo" %>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-bold text-gray-900 leading-tight"><%= source.name %></div>
+                    <div class="text-xs text-gray-600 mt-1 space-y-0.5">
+                      <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ <%= source.completed_datasets_count %>
+                        </span>
+                        <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1">
+                          ✗ <%= source.failed_datasets_count %>
+                        </span>
+                      </div>
+                      <% if source.total_datasets_count > 0 %>
+                        <div class="text-xs text-gray-500">
+                          <%= source.completion_rate %>% success rate
+                        </div>
+                      <% end %>
+                    </div>
+                </div>
+              </div>
+            </div>
+            <% @stats.where(source: source).each do |stat| %>
+              <%
+                records = stat.records_count
+                relationships = stat.relationships_count
+                parsing_issues = stat.parsing_issues_count
+                records_with_ontology = stat.records_with_ontology_count
+                records_missing_ontology = stat.records_missing_ontology_count
+
+                if parsing_issues == 0 && relationships > 0 && records == records_with_ontology
+                  # Fully linked
+                  status_class = "bg-green-100 text-green-800"
+                  status_icon = "✅"
+                  coverage = 100
+                elsif parsing_issues >= 0 && relationships > 0
+                  # Partially linked
+                  status_class = "bg-yellow-100 text-yellow-800"
+                  status_icon = "⚠️"
+                  coverage = (records.to_f / (records_with_ontology + records_missing_ontology + parsing_issues) * 100).round
+                  coverage = coverage == 100 ? 100 - coverage : coverage
+                elsif records >= 0 && records_with_ontology == 0
+                  # Not provided
+                  status_class = "bg-gray-100 text-gray-600"
+                  status_icon = "✖"
+                  coverage = 0
+                else
+                  status_class = "bg-red-100 text-red-800"
+                  status_icon = "✖"
+                  coverage = 0
+                end
+              %>
+              <div class="px-2 py-2 text-center">
+                <div class="flex flex-col items-center justify-center space-y-1">
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
+                    <%= status_icon %>
+                  </span>
+                  <% if coverage.between?(0, 99) && status_icon != "✖" %>
+                    <div class="text-xs text-gray-600 font-semibold">
+                      <%= coverage %>%
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="mt-6 pt-4 pb-4">
+          <h3 class="text-sm text-gray-800 text-center mb-3">Legend</h3>
+          <div class="flex flex-wrap justify-center gap-4">
+            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">✅</span>
+              <span class="text-xs font-medium text-gray-700">Fully Linked</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⚠️</span>
+              <span class="text-xs font-medium text-gray-700">Partially Linked</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">✖</span>
+              <span class="text-xs font-medium text-gray-700">Not Provided</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
