@@ -12,4 +12,8 @@ class Sex < ApplicationRecord
       text_color: "text-pink-800",
     }
   end
+
+  def self.name
+    "Sex"
+  end
 end

@@ -12,4 +12,8 @@ class DevelopmentalStage < ApplicationRecord
       text_color: "text-orange-800",
     }
   end
+
+  def self.name
+    "Dev. Stage"
+  end
 end

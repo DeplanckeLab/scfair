@@ -12,4 +12,8 @@ class Tissue < ApplicationRecord
       text_color: "text-purple-800",
     }
   end
+
+  def self.name
+    "Tissue"
+  end
 end

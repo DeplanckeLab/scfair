@@ -12,4 +12,8 @@ class Technology < ApplicationRecord
       text_color: "text-indigo-800",
     }
   end
+
+  def self.name
+    "Technology"
+  end
 end
