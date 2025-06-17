@@ -13,7 +13,7 @@ class Technology < ApplicationRecord
     }
   end
 
-  def self.name
+  def self.display_name
     "Technology"
   end
 end

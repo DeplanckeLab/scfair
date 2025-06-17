@@ -12,7 +12,7 @@
           <% @categories.each do |category| %>
             <div class="px-2 py-3 text-center">
               <span class="px-2 py-1 rounded-full text-xs font-semibold <%= category.color_settings[:bg_text] %> <%= category.color_settings[:text_color] %>">
-                <%= category.name %>
+                <%= category.display_name %>
               </span>
             </div>
           <% end %>

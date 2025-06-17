@@ -13,7 +13,7 @@ class Disease < ApplicationRecord
     }
   end
 
-  def self.name
+  def self.display_name
     "Disease"
   end
 end

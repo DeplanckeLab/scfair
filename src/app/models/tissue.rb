@@ -13,7 +13,7 @@ class Tissue < ApplicationRecord
     }
   end
 
-  def self.name
+  def self.display_name
     "Tissue"
   end
 end

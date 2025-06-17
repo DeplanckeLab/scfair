@@ -13,7 +13,7 @@ class DevelopmentalStage < ApplicationRecord
     }
   end
 
-  def self.name
+  def self.display_name
     "Dev. Stage"
   end
 end

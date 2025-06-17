@@ -13,7 +13,7 @@ class CellType < ApplicationRecord
     }
   end
 
-  def self.name
+  def self.display_name
     "Cell Type"
   end
 end

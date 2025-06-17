@@ -13,7 +13,7 @@ class Organism < ApplicationRecord
     }
   end
 
-  def self.name
+  def self.display_name
     "Organism"
   end
 

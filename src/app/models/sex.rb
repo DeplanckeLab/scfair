@@ -13,7 +13,7 @@ class Sex < ApplicationRecord
     }
   end
 
-  def self.name
+  def self.display_name
     "Sex"
   end
 end
