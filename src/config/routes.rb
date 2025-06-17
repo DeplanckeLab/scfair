@@ -1,6 +1,7 @@
 Rails.application.routes.draw do
   resources :datasets, only: :index, path: "explore"
   resources :ontology_terms, only: [:show]
+  resources :stats, only: [:index]
 
   get "tools", to: "home#tools", as: :tools
   get "contact-us", to: "home#contact", as: :contact
