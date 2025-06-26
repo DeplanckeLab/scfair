@@ -51,10 +51,17 @@ class Dataset < ApplicationRecord
       study&.authors || []
     end
 
-    # Basic string fields for direct name matches
+    # Basic string fields for direct name matches (all items for search)
     ASSOCIATION_METHODS.each do |category, method|
       string method, multiple: true do
         send(method).map(&:name)
+      end
+    end
+
+    # Separate fields for facets (only items with ontology terms, excluding Organism)
+    ASSOCIATION_METHODS.except(Organism).each do |category, method|
+      string "#{method}_facet", multiple: true do
+        send(method).select { |item| item.ontology_term_id.present? }.map(&:name)
       end
     end
 

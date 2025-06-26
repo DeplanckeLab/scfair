@@ -17,13 +17,13 @@ class DatasetsController < ApplicationController
       adjust_solr_params do |params|
         facet_fields = %w[
           organisms_sm
-          cell_types_sm
-          tissues_sm
-          developmental_stages_sm
-          diseases_sm
-          sexes_sm
-          technologies_sm
-          source_name_sm
+          cell_types_facet_sm
+          tissues_facet_sm
+          developmental_stages_facet_sm
+          diseases_facet_sm
+          sexes_facet_sm
+          technologies_facet_sm
+          source_name_s
         ]
 
         if params[:q] && params[:q] != "*:*"
@@ -46,37 +46,40 @@ class DatasetsController < ApplicationController
 
         params[:"facet.field"] = params[:"facet.field"].map do |field|
           exclusions = (facet_fields + ["text"]).join(",")
-          if field.include?("{!key=sex}")
-            "{!ex=#{exclusions} key=sex}sexes_sm"
+
+          if field =~ /\{!key=([^}]+)\}(.*)/
+            key         = Regexp.last_match(1)
+            field_name  = Regexp.last_match(2)
+            "{!ex=#{exclusions} key=#{key}}#{field_name}"
           else
             "{!ex=#{exclusions}}#{field}"
           end
         end
 
-        if params[:"facet.field"].include?("{!ex=organisms_sm,cell_types_sm,tissues_sm,developmental_stages_sm,diseases_sm,sexes_sm,technologies_sm,source_name_sm,text}organisms_sm")
-          params[:"facet.field"] << "{!ex=organisms_sm,cell_types_sm,tissues_sm,developmental_stages_sm,diseases_sm,sexes_sm,technologies_sm,source_name_sm,text}organism_ancestors_sm"
+        unless params[:"facet.field"].include?("{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,source_name_s,text}organism_ancestors_sm")
+          params[:"facet.field"] << "{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,source_name_s,text}organism_ancestors_sm"
         end
 
         params[:"facet.limit"] = -1
       end
 
       facet :organisms, sort: :count
-      facet :cell_types, sort: :index
-      facet :tissues, sort: :index
-      facet :developmental_stages, sort: :index
-      facet :diseases, sort: :index
-      facet :sexes, name: "sex", sort: :index
-      facet :technologies, sort: :index
+      facet :cell_types_facet, name: "cell_types", sort: :index
+      facet :tissues_facet, name: "tissues", sort: :index
+      facet :developmental_stages_facet, name: "developmental_stages", sort: :index
+      facet :diseases_facet, name: "diseases", sort: :index
+      facet :sexes_facet, name: "sex", sort: :index
+      facet :technologies_facet, name: "technologies", sort: :index
       facet :source_name, sort: :index
 
       with(:organism_ancestors, params[:organisms]) if params[:organisms].present?
 
-      with(:sexes, params[:sex]) if params[:sex].present?
-      with(:cell_types, params[:cell_types]) if params[:cell_types].present?
-      with(:tissues, params[:tissues]) if params[:tissues].present?
-      with(:developmental_stages, params[:developmental_stages]) if params[:developmental_stages].present?
-      with(:diseases, params[:diseases]) if params[:diseases].present?
-      with(:technologies, params[:technologies]) if params[:technologies].present?
+      with(:sexes_facet, params[:sex]) if params[:sex].present?
+      with(:cell_types_facet, params[:cell_types]) if params[:cell_types].present?
+      with(:tissues_facet, params[:tissues]) if params[:tissues].present?
+      with(:developmental_stages_facet, params[:developmental_stages]) if params[:developmental_stages].present?
+      with(:diseases_facet, params[:diseases]) if params[:diseases].present?
+      with(:technologies_facet, params[:technologies]) if params[:technologies].present?
       with(:source_name, params[:source_name]) if params[:source_name].present?
 
       paginate page: params[:page] || 1, per_page: 6
