@@ -46,7 +46,7 @@ class AsapParser
     if dataset.save
       update_cell_types(dataset, extract_cell_types(data))
       update_organisms(dataset, [{ label: data[:organism], tax_id: data[:tax_id] }].compact)
-      update_technologies(dataset, [data[:technology]].compact)
+      update_technologies(dataset, data[:technology])
       update_file_resources(dataset, extract_files(data))
       update_links(dataset, data.dig(:experiments))
       
@@ -156,13 +156,54 @@ class AsapParser
 
   def update_technologies(dataset, technologies)
     dataset.technologies.clear
-    technologies.each do |technology|
-      next if technology.blank?
 
-      normalized_tech = technology.gsub(/\b10X\b/, '10x')
+    Array(technologies).flatten.each do |technology|
+      tech_name, identifier =
+        case technology
+        when Hash
+          [technology[:name], technology[:identifier]]
+        else
+          [technology, nil]
+        end
+
+      next if tech_name.blank?
+
+      # Normalise various capitalisations of 10x/10X
+      normalized_tech = tech_name.to_s.gsub(/\b10X\b/i, "10x").strip
       next if normalized_tech.blank?
-      
-      technology_record = Technology.find_or_create_by(name: normalized_tech)
+
+      technology_record = nil
+
+      if identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: identifier)
+
+        if ontology_term
+          technology_record = Technology.find_or_create_by(
+            name:             normalized_tech,
+            ontology_term_id: ontology_term.id
+          )
+        else
+          ParsingIssue.create!(
+            dataset:               dataset,
+            resource:              Technology.name,
+            value:                 normalized_tech,
+            external_reference_id: identifier,
+            message:               "Ontology term with identifier '#{identifier}' not found",
+            status:                :pending
+          )
+
+          technology_record = Technology.find_or_create_by(
+            name:             normalized_tech,
+            ontology_term_id: nil
+          )
+        end
+      else
+        technology_record = Technology.find_or_create_by(
+          name:             normalized_tech,
+          ontology_term_id: nil
+        )
+      end
+
       dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
     end
   end
