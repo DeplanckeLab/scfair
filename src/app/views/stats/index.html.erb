@@ -47,7 +47,7 @@
                 </div>
               </div>
             </div>
-            <% @stats.where(source: source).each do |stat| %>
+            <% @stats[source.id].each do |stat| %>
               <%
                 records = stat.records_count
                 relationships = stat.relationships_count

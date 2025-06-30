@@ -1,6 +1,8 @@
 class Source < ApplicationRecord
   has_many :datasets, dependent: :destroy
-  
+
+  has_many :ontology_coverage, dependent: :destroy
+
   validates :slug, presence: true, uniqueness: true
   validates :name, presence: true, uniqueness: true
 
