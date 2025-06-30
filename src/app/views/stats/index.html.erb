@@ -34,7 +34,7 @@
                         <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           ✓ <%= source.completed_datasets_count %>
                         </span>
-                        <%= link_to failed_datasets_stats_path(source), 
+                        <%= link_to failed_datasets_stats_path(source),
                               class: "inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1 hover:bg-red-200 cursor-pointer",
                               data: { turbo_frame: "failed_datasets" } do %>
                           ✗ <%= source.failed_datasets_count %>
@@ -49,7 +49,7 @@
                 </div>
               </div>
             </div>
-            <% @stats[source.id].each do |stat| %>
+            <% @stats[source.id].each_with_index do |stat, category_index| %>
               <%
                 records = stat.records_count
                 relationships = stat.relationships_count
@@ -80,7 +80,7 @@
                 end
               %>
               <div class="px-2 py-2 text-center">
-                <div class="flex flex-col items-center justify-center space-y-1">
+                <div class="flex flex-col items-center justify-center space-y-1 relative group cursor-help">
                   <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
                     <%= status_icon %>
                   </span>
@@ -89,6 +89,21 @@
                       <%= coverage %>%
                     </div>
                   <% end %>
+
+                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                    <div class="bg-gray-900 text-white text-xs rounded-md py-2 px-3 whitespace-nowrap">
+                      <div class="space-y-1">
+                        <div><strong>Unique <%= @categories[category_index].display_name.downcase.pluralize %>:</strong> <%= records %></div>
+                        <div><strong>Used in datasets:</strong> <%= relationships %></div>
+                        <div><strong>Linked to ontology:</strong> <%= records_with_ontology %></div>
+                        <div><strong>Not linked:</strong> <%= records_missing_ontology %></div>
+                        <% if parsing_issues > 0 %>
+                          <div><strong>Parsing issues:</strong> <%= parsing_issues %></div>
+                        <% end %>
+                      </div>
+                    </div>
+                    <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-1/2 -translate-y-1 absolute left-1/2"></div>
+                  </div>
                 </div>
               </div>
             <% end %>
