@@ -34,9 +34,11 @@
                         <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           ✓ <%= source.completed_datasets_count %>
                         </span>
-                        <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1">
+                        <%= link_to failed_datasets_stats_path(source), 
+                              class: "inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1 hover:bg-red-200 cursor-pointer",
+                              data: { turbo_frame: "failed_datasets" } do %>
                           ✗ <%= source.failed_datasets_count %>
-                        </span>
+                        <% end %>
                       </div>
                       <% if source.total_datasets_count > 0 %>
                         <div class="text-xs text-gray-500">
@@ -111,6 +113,8 @@
           </div>
         </div>
       </div>
+
+      <turbo-frame id="failed_datasets"></turbo-frame>
     </div>
   </div>
 </div>

@@ -1,7 +1,12 @@
 Rails.application.routes.draw do
   resources :datasets, only: :index, path: "explore"
   resources :ontology_terms, only: [:show]
-  resources :stats, only: [:index]
+  
+  resources :stats, only: [:index] do
+    collection do
+      get ":source_id/failed_datasets", action: :failed_datasets, as: :failed_datasets
+    end
+  end
 
   get "tools", to: "home#tools", as: :tools
   get "contact-us", to: "home#contact", as: :contact

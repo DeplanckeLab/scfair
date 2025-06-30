@@ -93,6 +93,43 @@
       </div>
     </div>
   </div>
+  <% if dataset.notes.present? && dataset.notes.any? %>
+    <div class="mt-2 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded text-xs">
+      <div class="flex items-start gap-1.5">
+        <div class="flex-1 space-y-0.5">
+          <% dataset.notes.each do |key, value| %>
+            <% if value.present? %>
+              <% if ["parsing_errors", "validation_errors"].include?(key.to_s) && value.is_a?(Array) %>
+                <% value.each do |error| %>
+                  <% if error.is_a?(Hash) && error["message"].present? %>
+                    <div class="flex items-start gap-2">
+                      <div class="text-amber-600 text-xs leading-none mt-0.5 shrink-0">
+                        <%= key.to_s == "parsing_errors" ? "🔧" : "⚠️" %>
+                      </div>
+                      <div class="flex-1">
+                        <div class="text-amber-800 text-xs leading-tight">
+                          <span class="font-medium">
+                            <%= error["annotation"]&.underscore&.humanize || key.humanize.singularize %>:
+                          </span>
+                          <span class="ml-1"><%= error["message"] %></span>
+                        </div>
+                      </div>
+                    </div>
+                  <% end %>
+                <% end %>
+              <% else %>
+                <div class="text-amber-800 text-xs">
+                  <span class="font-medium"><%= key.humanize %>:</span>
+                  <span class="ml-1"><%= value %></span>
+                </div>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
   <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" 
      data-card-target="summary">
     <div class="flex flex-wrap gap-1.5 items-center">
@@ -153,8 +190,8 @@
             <% end %>
           </div>
         </div>
-      <% end %>
-    </div>
+              <% end %>
+      </div>
     <% if dataset.links_count > 0 %>
       <div class="border-t pt-4">
         <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">
