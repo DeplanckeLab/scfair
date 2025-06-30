@@ -73,12 +73,12 @@ class DatasetValidator
 
       validation_errors << {
         annotation: CellType.name,
-        message: "No cell types are linked to ontological terms",
+        message: "No cell types are linked to ontology terms",
       } unless has_cell_type_ontology
 
       validation_errors << {
         annotation: Organism.name,
-        message: "No organisms are linked to ontological terms",
+        message: "No organisms are linked to ontology terms",
       } unless has_organism_ontology
 
       add_validation_errors(dataset, validation_errors)
