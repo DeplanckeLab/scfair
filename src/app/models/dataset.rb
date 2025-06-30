@@ -90,6 +90,15 @@ class Dataset < ApplicationRecord
       end
     end
 
+    # Names of ancestor ontology terms (for full-text search weighting)
+    text :ancestor_ontology_terms do
+      ASSOCIATION_METHODS.values.flat_map do |method|
+        send(method).includes(:ontology_term).flat_map do |item|
+          item.ontology_term&.all_ancestors&.map(&:name)
+        end
+      end.flatten.compact.join(" ")
+    end
+
     text :text_search do
       [
         ASSOCIATION_METHODS.values.flat_map do |method|
