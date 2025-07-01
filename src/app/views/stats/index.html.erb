@@ -66,8 +66,7 @@
                   # Partially linked
                   status_class = "bg-yellow-100 text-yellow-800"
                   status_icon = "⚠️"
-                  coverage = (records.to_f / (records_with_ontology + records_missing_ontology + parsing_issues) * 100).round
-                  coverage = coverage == 100 ? 100 - coverage : coverage
+                  coverage = ((1 - ((records_missing_ontology + parsing_issues) / relationships.to_f)) * 100).round(1)
                 elsif records >= 0 && records_with_ontology == 0
                   # Not provided
                   status_class = "bg-gray-100 text-gray-600"
@@ -84,7 +83,7 @@
                   <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
                     <%= status_icon %>
                   </span>
-                  <% if coverage.between?(0, 99) && status_icon != "✖" %>
+                  <% if coverage.between?(0, 99.99) && status_icon != "✖" %>
                     <div class="text-xs text-gray-600 font-semibold">
                       <%= coverage %>%
                     </div>
@@ -96,7 +95,7 @@
                         <div><strong>Unique <%= @categories[category_index].display_name.downcase.pluralize %>:</strong> <%= records %></div>
                         <div><strong>Used in datasets:</strong> <%= relationships %></div>
                         <div><strong>Linked to ontology:</strong> <%= records_with_ontology %></div>
-                        <div><strong>Not linked:</strong> <%= records_missing_ontology %></div>
+                        <div><strong>Not linked to ontology:</strong> <%= records_missing_ontology %></div>
                         <% if parsing_issues > 0 %>
                           <div><strong>Parsing issues:</strong> <%= parsing_issues %></div>
                         <% end %>
