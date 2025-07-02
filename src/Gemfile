@@ -21,7 +21,6 @@ gem "bootsnap", "~> 1.18", require: false
 gem "thruster", "~> 0.1.8", require: false
 
 gem "sunspot_rails", "~> 2.7"
-gem "sunspot_solr", "~> 2.7"
 
 gem "httparty", "~> 0.22.0"
 
