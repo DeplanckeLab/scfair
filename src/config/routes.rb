@@ -1,6 +1,12 @@
 Rails.application.routes.draw do
   resources :datasets, only: :index, path: "explore"
   resources :ontology_terms, only: [:show]
+  
+  resources :stats, only: [:index] do
+    collection do
+      get ":source_id/failed_datasets", action: :failed_datasets, as: :failed_datasets
+    end
+  end
 
   get "tools", to: "home#tools", as: :tools
   get "contact-us", to: "home#contact", as: :contact
@@ -8,6 +14,7 @@ Rails.application.routes.draw do
   get "metadata-schema", to: "home#metadata_schema", as: :metadata_schema
   get "about", to: "home#about", as: :about
   get "community", to: "home#community", as: :community
+  get "contribute", to: "home#contribute", as: :contribute
 
   root to: "home#index"
 end

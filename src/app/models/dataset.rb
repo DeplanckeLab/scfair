@@ -11,6 +11,8 @@ class Dataset < ApplicationRecord
 
   CATEGORIES = ASSOCIATION_METHODS.keys.freeze
 
+  enum :status, { processing: "processing", completed: "completed", failed: "failed" }
+
   has_and_belongs_to_many :sexes
   has_and_belongs_to_many :cell_types
   has_and_belongs_to_many :tissues
@@ -24,15 +26,22 @@ class Dataset < ApplicationRecord
   has_many :parsing_issues
 
   belongs_to :study, primary_key: :doi, foreign_key: :doi, optional: true
+  belongs_to :source, dependent: :destroy
 
-  searchable do
+  after_update :update_source_counters, if: :saved_change_to_status?
+  after_destroy :decrement_source_counters
+
+  searchable if: :completed? do
     string :id
     string :collection_id
     string :source_reference_id
-    string :source_name, multiple: true
     string :source_url
     string :explorer_url
     integer :cell_count
+
+    string :source_name do
+      source.name
+    end
 
     string :authors, multiple: true do
       study&.authors || []
@@ -42,10 +51,17 @@ class Dataset < ApplicationRecord
       study&.authors || []
     end
 
-    # Basic string fields for direct name matches
+    # Basic string fields for direct name matches (all items for search)
     ASSOCIATION_METHODS.each do |category, method|
       string method, multiple: true do
         send(method).map(&:name)
+      end
+    end
+
+    # Separate fields for facets (only items with ontology terms, excluding Organism)
+    ASSOCIATION_METHODS.except(Organism).each do |category, method|
+      string "#{method}_facet", multiple: true do
+        send(method).select { |item| item.ontology_term_id.present? }.map(&:name)
       end
     end
 
@@ -74,6 +90,15 @@ class Dataset < ApplicationRecord
       end
     end
 
+    # Names of ancestor ontology terms (for full-text search weighting)
+    text :ancestor_ontology_terms do
+      ASSOCIATION_METHODS.values.flat_map do |method|
+        send(method).includes(:ontology_term).flat_map do |item|
+          item.ontology_term&.all_ancestors&.map(&:name)
+        end
+      end.flatten.compact.join(" ")
+    end
+
     text :text_search do
       [
         ASSOCIATION_METHODS.values.flat_map do |method|
@@ -84,7 +109,7 @@ class Dataset < ApplicationRecord
             ]
           end
         end,
-        source_name,
+        source.name,
         study&.authors
       ].flatten.compact.join(" ")
     end
@@ -94,5 +119,37 @@ class Dataset < ApplicationRecord
     association_method = ASSOCIATION_METHODS[category]
     raise ArgumentError, "Invalid category: #{category}. Must be one of: #{CATEGORIES.join(', ')}" unless association_method
     send(association_method)
+  end
+
+  private
+
+  def update_source_counters
+    return unless source.present?
+
+    old_status, new_status = saved_change_to_status
+
+    case old_status
+    when "completed"
+      source.decrement!(:completed_datasets_count)
+    when "failed"
+      source.decrement!(:failed_datasets_count)
+    end
+
+    case new_status
+    when "completed"
+      source.increment!(:completed_datasets_count)
+    when "failed"
+      source.increment!(:failed_datasets_count)
+    end
+  end
+
+  def decrement_source_counters
+    return unless source.present?
+
+    if completed?
+      source.decrement!(:completed_datasets_count)
+    elsif failed?
+      source.decrement!(:failed_datasets_count)
+    end
   end
 end

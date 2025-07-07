@@ -13,6 +13,10 @@ class Organism < ApplicationRecord
     }
   end
 
+  def self.display_name
+    "Organism"
+  end
+
   def self.normalize_str(str)
     str.to_s.gsub(/[^A-Za-z0-9]+/, ' ').strip.downcase
   end

@@ -9,7 +9,7 @@ services:
     volumes:
       - ./src:/opt/scfair:cached
       - ./data:/data/scfair:rw,z
-    env_file: .env
+    env_file: src/.env
     environment:
       - RAILS_ENV=production
     depends_on:
@@ -23,7 +23,7 @@ services:
 
   postgres:
     image: postgres:15.4
-    env_file: .env
+    env_file: src/.env
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

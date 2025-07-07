@@ -1,0 +1,123 @@
+<main class="container mx-auto px-4 py-8 mb-12">
+  <div class="space-y-12 max-w-4xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-12">
+      How to Submit Single-Cell Data
+    </h2>
+    
+    <p class="text-gray-700 mb-8">
+      Submitting well-annotated single-cell datasets ensures full compliance with 
+      FAIR principles — <strong>Findable, Accessible, Interoperable, and Reusable</strong>. Adding
+      standardized metadata enhances reproducibility, enables integration into 
+      reference atlases (e.g. HCA, MCA, FCA, ...), and facilitates use in analysis 
+      platforms such as CELLxGENE. Moreover, the CELLxGENE data portal enforces
+      a versioned schema (currently version 6.0.0) to ensure consistency across 
+      datasets.
+    </p>
+
+    <div>
+      <h3 class="text-2xl font-bold mb-4">What file format should I use?</h3>
+      <p class="text-gray-700 mb-6">
+        Nowadays, standard file formats include Seurat objects (.rds), HDF5 files such 
+        as LOOM (.loom) or AnnData (.h5ad) and others.
+      </p>
+      <p class="text-gray-700">
+        At scFAIR, <strong>we recommend using the .h5ad format</strong>, following the default 
+        paths and metadata described in <%= link_to "CELLxGENE schema 6.0.0", "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/6.0.0/schema.md", class: "text-red-500 hover:text-red-600", target: "_blank" %> and summarized 
+        below. Please include at least the raw count matrix (non filtered) in your file 
+        (whether in /X or in /raw/X). Please also include the normalized counts if 
+        available. If the data is integrated, it's also good practice to keep the integrated 
+        embedding within the file.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="text-2xl font-bold mb-4">Required Metadata Fields (AnnData .h5ad)</h3>
+      <p class="text-gray-700 mb-6">
+        Use the <%= link_to "CELLxGENE schema 6.0.0", "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/6.0.0/schema.md", class: "text-red-500 hover:text-red-600", target: "_blank" %> for full metadata specs:
+      </p>
+
+      <h4 class="text-xl font-semibold text-gray-900 mt-6 mb-3">📁 Dataset-level (/uns)</h4>
+      <ul class="list-disc ml-8 space-y-2 text-gray-700 mb-6">
+        <li>title and description</li>
+        <li>contact (name + email)</li>
+        <li>Publication/preprint DOI</li>
+        <li>URLs (e.g. GEO accession, protocol links)</li>
+        <li>default_embedding, comments</li>
+      </ul>
+
+      <h4 class="text-xl font-semibold text-gray-900 mt-6 mb-3">📁 Cell-level metadata (obs)</h4>
+      <p class="text-gray-700 mb-6">
+        Use <strong>controlled vocabularies</strong> (NCBITaxon, UBERON, CL, MONDO, etc.) as 
+        required by the schema.
+      </p>
+
+      <p class="text-gray-700 mb-6">
+        Refer to the full <%= link_to "cellxgene schema 6.0.0", "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/6.0.0/schema.md", class: "text-red-500 hover:text-red-600", target: "_blank" %> for complete metadata definitions and
+        ontologies
+      </p>
+
+      <p class="text-gray-700 mb-4">
+        In short, it will ask you to include for each cell:
+      </p>
+
+      <div class="grid gap-4 mt-6">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 class="font-semibold text-blue-900 mb-2">organism_ontology_term_id</h5>
+          <p class="text-gray-700">Organism. The CELLxGENE schema for now only supports a restricted list of organisms, but feel free to use any taxon of any organism if you submit to another portal.</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 class="font-semibold text-blue-900 mb-2">tissue_ontology_term_id</h5>
+          <p class="text-gray-700">Tissue</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 class="font-semibold text-blue-900 mb-2">cell_type_ontology_term_id</h5>
+          <p class="text-gray-700">Cell-types (annotated / curated). Since it's an ontology, it's better to provide the most detailed cell-type, since we can recover the broader annotation by navigating the ontology graph.</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 class="font-semibold text-blue-900 mb-2">development_stage_ontology_term_id</h5>
+          <p class="text-gray-700">Development stage. Embryonic or Adult. If adult, please provide the age in days or years (depending on the species)</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 class="font-semibold text-blue-900 mb-2">sex_ontology_term_id</h5>
+          <p class="text-gray-700">Male, Female, Mixed sex (if mixed and unknown at cell level), Hermaphrodite or Unknown.</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 class="font-semibold text-blue-900 mb-2">self_reported_ethnicity_ontology_term_id</h5>
+          <p class="text-gray-700">For homo sapiens species.</p>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h5 class="font-semibold text-blue-900 mb-2">disease_ontology_term_id</h5>
+          <p class="text-gray-700">Use PATO:0000461 for normal or healthy. Or find your condition in MONDO ontology.</p>
+        </div>
+
+        <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <h5 class="font-semibold text-gray-700 mb-2">[Optional] Additional metadata</h5>
+          <p class="text-gray-600">batch, donor_id, sample_id, clustering, doublets, etc... Any other metadata that could be useful for interoperability and reproducibility (usually, the more the better)</p>
+        </div>
+      </div>
+
+      <p class="text-gray-700 mt-6">
+        At least one 2D embedding stored in obsm (e.g. X_umap, X_pca)
+      </p>
+    </div>
+
+    <div>
+      <h3 class="text-2xl font-bold mb-4">Submission & Validation</h3>
+      <p class="text-gray-700 mb-6">
+        You can validate your .h5ad with this <%= link_to "validation tool", "https://github.com/chanzuckerberg/single-cell-curation", class: "text-red-500 hover:text-red-600", target: "_blank" %>.
+      </p>
+
+      <p class="text-gray-700">
+        Next, you can submit validated files to any supported portal such as 
+        CELLxGENE, ASAP, or SingleCellPortal. You can also upload your .h5ad file to 
+        GEO or ArrayExpress, along with your sequencing data.
+      </p>
+    </div>
+  </div>
+</main>

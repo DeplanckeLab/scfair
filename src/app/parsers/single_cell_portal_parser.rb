@@ -1,4 +1,4 @@
-class SinglecellParser
+class SingleCellPortalParser
   BASE_URL_ALL_STUDIES = "https://singlecell.broadinstitute.org/single_cell/api/v1/site/studies".freeze
   BASE_URL_STUDIES     = "https://singlecell.broadinstitute.org/single_cell/api/v1/studies/".freeze
   BASE_URL_EXPLORE     = "https://singlecell.broadinstitute.org/single_cell/study/".freeze
@@ -72,7 +72,7 @@ class SinglecellParser
 
     dataset_data = {
       collection_id: study_id,
-      source_name:   "SINGLE CELL PORTAL",
+      source: source,
       source_url:    "#{BASE_URL_EXPLORE}#{study_id}#study-summary",
       explorer_url:  explore_url,
       doi:           doi,
@@ -94,6 +94,13 @@ class SinglecellParser
       puts "Imported #{dataset.id}"
     else
       @errors << "Failed to save dataset #{study_id}: #{dataset.errors.full_messages.join(', ')}"
+    end
+  end
+
+  def source
+    @source ||= Source.find_or_create_by(slug: "scp") do |source|
+      source.name = "Single Cell Portal"
+      source.logo = "single_cell_portal.svg"
     end
   end
 
@@ -119,8 +126,7 @@ class SinglecellParser
     return if organism_name.blank? || tax_id.blank?
 
     skip_values = ["nan", "--unspecified--", "n/a", "na"]
-    return if skip_values.include?(organism_name.downcase.strip) || \
-              skip_values.include?(tax_id.downcase.strip)
+    return if skip_values.include?(organism_name.downcase.strip) || skip_values.include?(tax_id.downcase.strip)
 
     begin
       organism = Organism.search_by_data(organism_name, tax_id)
@@ -134,6 +140,17 @@ class SinglecellParser
         message: e.message,
         status: :pending
       )
+
+      notes = dataset.notes || {}
+      notes[:parsing_errors] ||= []
+      notes[:parsing_errors] << {
+        annotation: Organism.name,
+        message: e.message,
+        value: organism_name,
+        external_ontology_reference: tax_id.to_s,
+        timestamp: Time.current.utc.to_s
+      }
+      dataset.update!(notes: notes)
     end
   end
 
@@ -145,9 +162,11 @@ class SinglecellParser
 
     dataset.cell_types.clear
     
+    skip_values = ["nan", "--unspecified--", "n/a", "na"]
+
     cell_values = cell_annotation[:values].uniq.compact
     cell_values.each do |cell_value|
-      next if cell_value.blank?
+      next if cell_value.blank? || skip_values.include?(cell_value.downcase.strip)
       
       ontology_identifier = cell_value.gsub('_', ':')
       
@@ -176,6 +195,17 @@ class SinglecellParser
             message: "Ontology term with identifier '#{ontology_identifier}' not found",
             status: :pending
           )
+
+          notes = dataset.notes || {}
+          notes[:parsing_errors] ||= []
+          notes[:parsing_errors] << {
+            annotation: CellType.name,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            value: cell_value,
+            external_ontology_reference: ontology_identifier,
+            timestamp: Time.current.utc.to_s
+          }
+          dataset.update!(notes: notes)
         end
       else
         @errors << "Cell type without valid identifier: #{cell_value}, dataset: #{dataset.source_reference_id}"
@@ -195,18 +225,57 @@ class SinglecellParser
       next if sex.blank?
 
       standardized_sex = case sex.to_s.strip.downcase
-                         when "f"
-                           "female"
-                         when "m"
-                           "male"
-                         when "mixed"
-                           "mixed"
-                         else
-                           next
-                         end
+        when "f"
+          "female"
+        when "m"
+          "male"
+        when "mixed"
+          "mixed"
+        else
+          next
+      end
 
-      sex_record = Sex.where("name ILIKE ?", standardized_sex).first_or_create(name: standardized_sex)
-      dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
+      identifier = case sex
+        when "male"
+          "PATO:0000384"
+        when "female"
+          "PATO:0000383"
+        when "mixed"
+          "PATO:0001338"
+        else
+          next
+      end
+
+      ontology_term = OntologyTerm.find_by(identifier: identifier)
+
+      if ontology_term
+        sex_record = Sex
+          .where(
+            "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+            standardized_sex,
+            ontology_term.id
+          )
+          .first
+
+        unless sex_record
+          sex_record = Sex.create!(
+            name: standardized_sex,
+            ontology_term_id: ontology_term.id
+          )
+        end
+
+        dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
+        next
+      else
+        ParsingIssue.create!(
+          dataset: dataset,
+          resource: Sex.name,
+          value: standardized_sex,
+          external_reference_id: identifier,
+          message: "Ontology term with identifier '#{identifier}' not found",
+          status: :pending
+        )
+      end
     end
   end
 
@@ -220,7 +289,7 @@ class SinglecellParser
     
     disease_values = disease_annotation[:values].uniq.compact
     disease_values.each do |disease_value|
-      next if disease_value.blank?
+      next if disease_value.blank? || disease_value.strip.downcase == "--unspecified--"
       
       ontology_identifier = disease_value.gsub('_', ':')
       
@@ -266,7 +335,7 @@ class SinglecellParser
     
     tech_values = tech_annotation[:values].uniq.compact
     tech_values.each do |tech_value|
-      next if tech_value.blank?
+      next if tech_value.blank? || tech_value.strip.downcase == "--unspecified--"
       
       ontology_identifier = tech_value.gsub('_', ':')
       

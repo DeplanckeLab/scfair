@@ -5,13 +5,19 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     create_table :datasets, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.string :collection_id, null: false
       t.string :source_reference_id, null: false
-      t.string :source_name, null: false, index: true
+      t.references :source, type: :uuid, null: false, foreign_key: true
       t.string :source_url, null: false # previously link_to_dataset
       t.string :explorer_url, null: false # previously link_to_explore_data
       t.string :doi, index: true
       t.integer :cell_count, null: false, default: 0, index: true
       t.string :parser_hash, null: false
+      t.integer :links_count, default: 0, null: false
+      t.string :status, default: "processing", null: false
+      t.jsonb :notes, default: {}
+
       t.timestamps
+
+      t.index :status
     end
 
     create_table :sexes, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|

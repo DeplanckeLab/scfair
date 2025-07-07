@@ -12,4 +12,8 @@ class Disease < ApplicationRecord
       text_color: "text-red-800",
     }
   end
+
+  def self.display_name
+    "Disease"
+  end
 end

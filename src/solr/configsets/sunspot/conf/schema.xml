@@ -52,7 +52,7 @@
     <field name="text_search_text" type="text_search" indexed="true" stored="false" multiValued="true"/>
     <field name="ancestor_ontology_terms_text" type="text_search" indexed="true" stored="false" multiValued="true"/>
 
-    <!-- Facet fields -->
+    <!-- Facet fields (all items for search) -->
     <field name="cell_types_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="sexes_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="tissues_sm" type="string" indexed="true" stored="false" multiValued="true"/>
@@ -60,7 +60,15 @@
     <field name="organisms_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="diseases_sm" type="string" indexed="true" stored="false" multiValued="true"/>
     <field name="technologies_sm" type="string" indexed="true" stored="false" multiValued="true"/>
-    <field name="source_name_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="source_name_s" type="string" indexed="true" stored="false" multiValued="false"/>
+
+    <!-- Facet fields (only items with ontology terms for faceting) -->
+    <field name="cell_types_facet_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="sexes_facet_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="tissues_facet_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="developmental_stages_facet_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="diseases_facet_sm" type="string" indexed="true" stored="false" multiValued="true"/>
+    <field name="technologies_facet_sm" type="string" indexed="true" stored="false" multiValued="true"/>
 
     <!-- Spell checking field -->
     <field name="textSpell" type="text" indexed="true" stored="false" multiValued="true"/>

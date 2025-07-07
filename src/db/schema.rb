@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
+ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
@@ -44,17 +44,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
   create_table "datasets", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "collection_id", null: false
     t.string "source_reference_id", null: false
-    t.string "source_name", null: false
+    t.uuid "source_id", null: false
     t.string "source_url", null: false
     t.string "explorer_url", null: false
     t.string "doi"
     t.integer "cell_count", default: 0, null: false
     t.string "parser_hash", null: false
+    t.integer "links_count", default: 0, null: false
+    t.string "status", default: "processing", null: false
+    t.jsonb "notes", default: {}
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
     t.index ["doi"], name: "index_datasets_on_doi"
-    t.index ["source_name"], name: "index_datasets_on_source_name"
+    t.index ["source_id"], name: "index_datasets_on_source_id"
+    t.index ["status"], name: "index_datasets_on_status"
   end
 
   create_table "datasets_developmental_stages", id: false, force: :cascade do |t|
@@ -149,6 +153,22 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "ontology_coverage", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.uuid "source_id", null: false
+    t.string "category"
+    t.integer "records_count", default: 0, null: false
+    t.integer "relationships_count", default: 0, null: false
+    t.integer "records_with_ontology_count", default: 0, null: false
+    t.integer "records_missing_ontology_count", default: 0, null: false
+    t.integer "parsing_issues_count", default: 0, null: false
+    t.boolean "manually_curated", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category"], name: "index_ontology_coverage_on_category"
+    t.index ["source_id", "category"], name: "index_ontology_coverage_on_source_id_and_category", unique: true
+    t.index ["source_id"], name: "index_ontology_coverage_on_source_id"
+  end
+
   create_table "ontology_term_relationships", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "parent_id", null: false
     t.uuid "child_id", null: false
@@ -204,6 +224,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.index ["ontology_term_id"], name: "index_sexes_on_ontology_term_id"
   end
 
+  create_table "sources", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.string "slug", null: false
+    t.string "name", null: false
+    t.string "logo"
+    t.integer "completed_datasets_count", default: 0, null: false
+    t.integer "failed_datasets_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_sources_on_name", unique: true
+    t.index ["slug"], name: "index_sources_on_slug", unique: true
+  end
+
   create_table "studies", force: :cascade do |t|
     t.text "title"
     t.text "first_author"
@@ -242,20 +274,9 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
     t.index ["ontology_term_id"], name: "index_tissues_on_ontology_term_id"
   end
 
-  create_table "users", force: :cascade do |t|
-    t.string "email", default: "", null: false
-    t.string "encrypted_password", default: "", null: false
-    t.string "reset_password_token"
-    t.datetime "reset_password_sent_at"
-    t.datetime "remember_created_at"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["email"], name: "index_users_on_email", unique: true
-    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
-  end
-
   add_foreign_key "cell_types_datasets", "cell_types"
   add_foreign_key "cell_types_datasets", "datasets"
+  add_foreign_key "datasets", "sources"
   add_foreign_key "datasets_developmental_stages", "datasets"
   add_foreign_key "datasets_developmental_stages", "developmental_stages"
   add_foreign_key "datasets_diseases", "datasets"
@@ -269,5 +290,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_01_26_194658) do
   add_foreign_key "datasets_tissues", "datasets"
   add_foreign_key "datasets_tissues", "tissues"
   add_foreign_key "file_resources", "datasets"
+  add_foreign_key "ontology_coverage", "sources"
   add_foreign_key "studies", "journals"
 end

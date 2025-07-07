@@ -39,14 +39,14 @@ task update_asap: :environment do
   end
 end
 
-desc "UPDATE SINGLECELL DATASETS"
-task update_singlecell: :environment do
-  parser = SinglecellParser.new
+desc "UPDATE SINGLE CELL PORTAL DATASETS"
+task update_scp: :environment do
+  parser = SingleCellPortalParser.new
 
   if parser.perform
-    puts "SINGLECELL parsing completed successfully!"
+    puts "SINGLE CELL PORTAL parsing completed successfully!"
   else
-    puts "SINGLECELL parsing encountered errors:"
+    puts "SINGLE CELL PORTAL parsing encountered errors:"
     puts parser.errors.join("\n")
   end
 end
@@ -64,7 +64,7 @@ task api_updates: :environment do
     "update_cxg",
     "update_bgee",
     "update_asap",
-    "update_singlecell",
+    "update_scp",
   ]
 
   tasks_to_run.each do |task|

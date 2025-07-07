@@ -49,7 +49,7 @@ class BgeeParser
     collection_data = {
       source_reference_id: experiment_id,
       collection_id: experiment_id,
-      source_name: "BGEE",
+      source: source,
       source_url: DATASET_URL.call(experiment_id),
       explorer_url: "",
       doi: experiment[:dOI],
@@ -79,7 +79,7 @@ class BgeeParser
       update_cell_types(dataset, cell_types_data)
       update_tissues(dataset, tissues_data)
       update_developmental_stages(dataset, dev_stages_data)
-      update_diseases(dataset, ["normal"])
+      update_diseases(dataset)
       update_technologies(dataset, technologies_data)
       update_links(dataset, links)
       update_file_resources(dataset, download_files)
@@ -90,6 +90,13 @@ class BgeeParser
     end
   rescue => e
     @errors << "Error processing experiment data for #{experiment_id}: #{e.message}"
+  end
+
+  def source
+    @source ||= Source.find_or_create_by(slug: "bgee") do |source|
+      source.name = "Bgee"
+      source.logo = "bgee.svg"
+    end
   end
 
   def extract_cell_types(assays)
@@ -168,8 +175,49 @@ class BgeeParser
     sexes_data.each do |sex|
       next if sex.blank? || sex.strip.downcase == "na"
 
-      sex_record = Sex.find_or_create_by(name: sex)
-      dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
+      identifier = case sex
+        when "male"
+          "PATO:0000384"
+        when "female"
+          "PATO:0000383"
+        when "mixed"
+          "PATO:0001338"
+        else
+          nil
+      end
+
+      next if identifier.blank?
+
+      ontology_term = OntologyTerm.find_by(identifier: identifier)
+
+      if ontology_term
+        sex_record = Sex
+          .where(
+            "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+            sex.strip,
+            ontology_term.id
+          )
+          .first
+
+        unless sex_record
+          sex_record = Sex.create!(
+            name: sex.strip,
+            ontology_term_id: ontology_term.id
+          )
+        end
+
+        dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
+        next
+      else
+        ParsingIssue.create!(
+          dataset: dataset,
+          resource: Sex.name,
+          value: sex,
+          external_reference_id: identifier,
+          message: "Ontology term with identifier '#{identifier}' not found",
+          status: :pending
+        )
+      end
     end
   end
 
@@ -330,13 +378,38 @@ class BgeeParser
     end
   end
 
-  def update_diseases(dataset, diseases_data)
+  def update_diseases(dataset)
     dataset.diseases.clear
-    diseases_data.each do |disease|
-      next if disease.blank?
 
-      disease_record = Disease.find_or_create_by(name: disease)
+    ontology_term = OntologyTerm.find_by(identifier: "PATO:0000461")
+    disease = "normal"
+
+    if ontology_term
+      disease_record = Disease
+        .where(
+          "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+          disease,
+          ontology_term.id
+        )
+        .first
+
+      unless disease_record
+        disease_record = Disease.create!(
+          name: disease,
+          ontology_term_id: ontology_term.id
+        )
+      end
+
       dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
+    else
+      ParsingIssue.create!(
+        dataset: dataset,
+        resource: Disease.name,
+        value: disease,
+        external_reference_id: "PATO:0000461",
+        message: "Ontology term with identifier 'PATO:0000461' not found",
+        status: :pending
+      )
     end
   end
 

@@ -5,16 +5,8 @@
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
         <%= link_to dataset.source_url, target: "_blank", data: { action: "click->dataset#stopPropagation" } do %>
-          <% logo_name = case dataset.source_name.downcase
-             when /cellxgene/ then 'cellxgene'
-             when /bgee/ then 'bgee'
-             when /asap/ then 'asap'
-             when /single\s+cell\s+portal/ then 'single_cell_portal'
-             else 'not_found'
-             end
-          %>
-          <div class="flex items-center justify-center w-8 h-8 rounded <%= logo_name == 'cellxgene' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
-            <%= image_tag "#{logo_name}.svg", class: "w-6 h-6", alt: "#{dataset.source_name} logo" %>
+          <div class="flex items-center justify-center w-8 h-8 rounded <%= dataset.source.name == 'CELLxGENE' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
+            <%= image_tag dataset.source.logo || "not_found.svg", class: "w-6 h-6", alt: "#{dataset.source.name} logo" %>
           </div>
         <% end %>
       </div>
@@ -22,7 +14,7 @@
         <div class="flex flex-col justify-between h-full py-0.5">
           <h2 class="text-xs font-medium text-gray-900 leading-none" 
                 data-action="click->dataset#stopPropagation">
-            <%= dataset.source_name %>
+            <%= dataset.source.name %>
           </h2>
           <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
             <span><%= number_with_delimiter(dataset.cell_count) %> cells</span>
@@ -101,6 +93,43 @@
       </div>
     </div>
   </div>
+  <% if dataset.notes.present? && dataset.notes.any? %>
+    <div class="mt-2 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded text-xs">
+      <div class="flex items-start gap-1.5">
+        <div class="flex-1 space-y-0.5">
+          <% dataset.notes.each do |key, value| %>
+            <% if value.present? %>
+              <% if ["parsing_errors", "validation_errors"].include?(key.to_s) && value.is_a?(Array) %>
+                <% value.each do |error| %>
+                  <% if error.is_a?(Hash) && error["message"].present? %>
+                    <div class="flex items-start gap-2">
+                      <div class="text-amber-600 text-xs leading-none mt-0.5 shrink-0">
+                        <%= key.to_s == "parsing_errors" ? "🔧" : "⚠️" %>
+                      </div>
+                      <div class="flex-1">
+                        <div class="text-amber-800 text-xs leading-tight">
+                          <span class="font-medium">
+                            <%= error["annotation"]&.underscore&.humanize || key.humanize.singularize %>:
+                          </span>
+                          <span class="ml-1"><%= error["message"] %></span>
+                        </div>
+                      </div>
+                    </div>
+                  <% end %>
+                <% end %>
+              <% else %>
+                <div class="text-amber-800 text-xs">
+                  <span class="font-medium"><%= key.humanize %>:</span>
+                  <span class="ml-1"><%= value %></span>
+                </div>
+              <% end %>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
   <div class="flex flex-wrap gap-1.5 mt-2 items-center justify-between" 
      data-card-target="summary">
     <div class="flex flex-wrap gap-1.5 items-center">
@@ -161,8 +190,8 @@
             <% end %>
           </div>
         </div>
-      <% end %>
-    </div>
+              <% end %>
+      </div>
     <% if dataset.links_count > 0 %>
       <div class="border-t pt-4">
         <h3 class="font-medium text-sm text-gray-900 mb-2 flex items-center">

@@ -6,10 +6,11 @@ namespace :scfair do
     tasks_to_run = [
       "db:seed",
       "fix:organisms",
+      "ontology_terms:update_for_organisms",
       "api_updates",
       "load_studies",
       "load_ext_sources",
-      "ontology_terms:update_for_organisms",
+      "validate_datasets",
       "index_db"
     ]
 

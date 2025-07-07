@@ -12,4 +12,8 @@ class CellType < ApplicationRecord
       text_color: "text-green-800",
     }
   end
+
+  def self.display_name
+    "Cell Type"
+  end
 end
