@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   get "metadata-schema", to: "home#metadata_schema", as: :metadata_schema
   get "about", to: "home#about", as: :about
   get "community", to: "home#community", as: :community
+  get "contribute", to: "home#contribute", as: :contribute
 
   root to: "home#index"
 end
