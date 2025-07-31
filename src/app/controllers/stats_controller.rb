@@ -17,4 +17,31 @@ class StatsController < ApplicationController
     
     render layout: false
   end
+
+  def parsing_issues
+    @source = Source.find(params[:source_id])
+    @category = params[:category]
+    @category_class = Dataset::CATEGORIES.find { |c| c.name.downcase == @category.downcase }
+
+    parsing_issues_filter = { status: [:pending, :processing] }
+    if @category_class
+      parsing_issues_filter[:resource] = @category_class.name
+    end
+
+    dataset_ids = @source.datasets
+                         .joins(:parsing_issues)
+                         .where(parsing_issues: parsing_issues_filter)
+                         .select(:id)
+                         .distinct
+                         .pluck(:id)
+
+    @datasets = Dataset.where(id: dataset_ids)
+                      .includes(:source, :study, :file_resources, :parsing_issues)
+                      .preload(
+                        :sexes, :cell_types, :tissues, :developmental_stages,
+                        :organisms, :diseases, :technologies, :links
+                      )
+    
+    render layout: false
+  end
 end

@@ -80,9 +80,17 @@
               %>
               <div class="px-2 py-2 text-center">
                 <div class="flex flex-col items-center justify-center space-y-1 relative group cursor-help">
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
-                    <%= status_icon %>
-                  </span>
+                  <% if status_icon == "⚠️" && parsing_issues > 0 %>
+                    <%= link_to parsing_issues_stats_path(@sources.find { |s| s.id == source.id }, @categories[category_index].name),
+                          class: "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium #{status_class} hover:opacity-80 cursor-pointer",
+                          data: { turbo_frame: "parsing_issues" } do %>
+                      <%= status_icon %>
+                    <% end %>
+                  <% else %>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
+                      <%= status_icon %>
+                    </span>
+                  <% end %>
                   <% if coverage.between?(0, 99.99) && status_icon != "✖" %>
                     <div class="text-xs text-gray-600 font-semibold">
                       <%= coverage %>%
@@ -129,6 +137,7 @@
       </div>
 
       <turbo-frame id="failed_datasets"></turbo-frame>
+      <turbo-frame id="parsing_issues"></turbo-frame>
     </div>
   </div>
 </div>
