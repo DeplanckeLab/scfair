@@ -318,41 +318,46 @@ class CellxgeneParser
       disease_name = disease_data.fetch(:label, "")
       next if disease_name.blank?
 
-      ontology_identifier = disease_data.fetch(:ontology_term_id, "")
-      if ontology_identifier.present?
-        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      raw_identifier = disease_data.fetch(:ontology_term_id, "")
+      if raw_identifier.present?
+        identifiers = raw_identifier.to_s.split(/\s*\|\|\s*/).map(&:strip).reject(&:blank?).uniq
 
-        if ontology_term
-          disease_record = Disease
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              disease_name.strip,
-              ontology_term.id
-            )
-            .first
+        identifiers.each do |ontology_identifier|
+          ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
-          unless disease_record
-            disease_record = Disease.create!(
-              name: disease_name.strip,
-              ontology_term_id: ontology_term.id
+          if ontology_term
+            disease_record = Disease
+              .where(
+                "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
+                disease_name.strip,
+                ontology_term.id
+              )
+              .first
+
+            unless disease_record
+              disease_record = Disease.create!(
+                name: disease_name.strip,
+                ontology_term_id: ontology_term.id
+              )
+            end
+
+            dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
+          else
+            ParsingIssue.create!(
+              dataset: dataset,
+              resource: Disease.name,
+              value: disease_name,
+              external_reference_id: ontology_identifier,
+              message: "Ontology term with identifier '#{ontology_identifier}' not found",
+              status: :pending
             )
           end
-
-          dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
-          next
-        else
-          ParsingIssue.create!(
-            dataset: dataset,
-            resource: Disease.name,
-            value: disease_name,
-            external_reference_id: ontology_identifier,
-            message: "Ontology term with identifier '#{ontology_identifier}' not found",
-            status: :pending
-          )
         end
+
+        next
       end
 
-      @errors << "Disease without identifier: #{disease_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
+      @errors << "Disease without identifier: #{disease_name}, dataset: #{dataset.source_reference_id}" if raw_identifier.blank?
     end
   end
 
