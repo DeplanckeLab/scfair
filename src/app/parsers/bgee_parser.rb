@@ -51,7 +51,7 @@ class BgeeParser
       collection_id: experiment_id,
       source: source,
       source_url: DATASET_URL.call(experiment_id),
-      explorer_url: "",
+      explorer_url: "https://www.bgee.org/experiment/#{experiment_id}",
       doi: experiment[:dOI],
       cell_count: experiment[:numberOfAnnotatedCells],
       parser_hash: Digest::SHA256.hexdigest(experiment_data.to_s)
