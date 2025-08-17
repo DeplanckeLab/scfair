@@ -326,17 +326,18 @@ class CellxgeneParser
           ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
           if ontology_term
+            record_name = ontology_term.name.presence || disease_name.strip
             disease_record = Disease
               .where(
                 "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-                disease_name.strip,
+                record_name,
                 ontology_term.id
               )
               .first
 
             unless disease_record
               disease_record = Disease.create!(
-                name: disease_name.strip,
+                name: record_name,
                 ontology_term_id: ontology_term.id
               )
             end
