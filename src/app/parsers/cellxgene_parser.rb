@@ -321,18 +321,16 @@ class CellxgeneParser
       raw_identifier = disease_data.fetch(:ontology_term_id, "")
       if raw_identifier.present?
         identifiers = raw_identifier.to_s.split(/\s*\|\|\s*/).map(&:strip).reject(&:blank?).uniq
+        labels = disease_name.to_s.split(/\s*\|\|\s*/).map(&:strip)
 
-        identifiers.each do |ontology_identifier|
+        identifiers.each_with_index do |ontology_identifier, idx|
           ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
           if ontology_term
-            record_name = ontology_term.name.presence || disease_name.strip
+            label_for_id = labels[idx]
+            record_name = ontology_term.name.presence || label_for_id.presence
             disease_record = Disease
-              .where(
-                "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-                record_name,
-                ontology_term.id
-              )
+              .where(ontology_term_id: ontology_term.id)
               .first
 
             unless disease_record
