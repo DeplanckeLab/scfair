@@ -61,21 +61,21 @@
                   # Fully linked
                   status_class = "bg-green-100 text-green-800"
                   status_icon = "✅"
-                  coverage = 100
-                elsif parsing_issues >= 0 && relationships > 0
+                  coverage = 100.0
+                elsif (records_missing_ontology + parsing_issues) > 0 && relationships > 0
                   # Partially linked
                   status_class = "bg-yellow-100 text-yellow-800"
                   status_icon = "⚠️"
-                  coverage = ((1 - ((records_missing_ontology + parsing_issues) / relationships.to_f)) * 100).round(1)
+                  coverage = (1 - ((records_missing_ontology + parsing_issues).to_f / relationships)) * 100
                 elsif records >= 0 && records_with_ontology == 0
                   # Not provided
                   status_class = "bg-gray-100 text-gray-600"
                   status_icon = "✖"
-                  coverage = 0
+                  coverage = 0.0
                 else
                   status_class = "bg-red-100 text-red-800"
                   status_icon = "✖"
-                  coverage = 0
+                  coverage = 0.0
                 end
               %>
               <div class="px-2 py-2 text-center">
@@ -91,9 +91,9 @@
                       <%= status_icon %>
                     </span>
                   <% end %>
-                  <% if coverage.between?(0, 99.99) && status_icon != "✖" %>
+                  <% if status_icon != "✖" && coverage < 100 %>
                     <div class="text-xs text-gray-600 font-semibold">
-                      <%= coverage %>%
+                      <%= ((coverage * 10).floor / 10.0).round(1) %>%
                     </div>
                   <% end %>
 
