@@ -14,8 +14,8 @@ class StatsController < ApplicationController
                         :organisms, :diseases, :technologies, :file_resources,
                         :study, :links
                       )
-    
-    render layout: false
+
+    render layout: false, formats: [:html]
   end
 
   def parsing_issues
@@ -41,7 +41,7 @@ class StatsController < ApplicationController
                         :sexes, :cell_types, :tissues, :developmental_stages,
                         :organisms, :diseases, :technologies, :links
                       )
-    
-    render layout: false
+
+    render layout: false, formats: [:html]
   end
 end

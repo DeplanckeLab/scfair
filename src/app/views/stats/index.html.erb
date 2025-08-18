@@ -34,9 +34,9 @@
                         <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           ✓ <%= source.completed_datasets_count %>
                         </span>
-                        <%= link_to failed_datasets_stats_path(source),
+                        <%= link_to failed_datasets_stats_path(source_id: source),
                               class: "inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1 hover:bg-red-200 cursor-pointer",
-                              data: { turbo_frame: "failed_datasets" } do %>
+                              data: { turbo_frame: "stats_details" } do %>
                           ✗ <%= source.failed_datasets_count %>
                         <% end %>
                       </div>
@@ -81,9 +81,9 @@
               <div class="px-2 py-2 text-center">
                 <div class="flex flex-col items-center justify-center space-y-1 relative group cursor-help">
                   <% if status_icon == "⚠️" && parsing_issues > 0 %>
-                    <%= link_to parsing_issues_stats_path(@sources.find { |s| s.id == source.id }, @categories[category_index].name),
+                    <%= link_to parsing_issues_stats_path(source_id: source, category: @categories[category_index].name),
                           class: "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium #{status_class} hover:opacity-80 cursor-pointer",
-                          data: { turbo_frame: "parsing_issues" } do %>
+                          data: { turbo_frame: "stats_details" } do %>
                       <%= status_icon %>
                     <% end %>
                   <% else %>
@@ -136,8 +136,7 @@
         </div>
       </div>
 
-      <turbo-frame id="failed_datasets"></turbo-frame>
-      <turbo-frame id="parsing_issues"></turbo-frame>
+      <turbo-frame id="stats_details"></turbo-frame>
     </div>
   </div>
 </div>
