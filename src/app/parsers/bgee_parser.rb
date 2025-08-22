@@ -418,9 +418,24 @@ class BgeeParser
     technologies_data.each do |technology|
       next if technology.blank?
 
-      normalized_tech = technology.gsub(/\b10X\b/, '10x')
+      normalized_tech = technology.to_s.gsub(/\b10X\b/i, '10x').strip
+      next if normalized_tech.blank?
 
-      technology_record = Technology.find_or_create_by(name: normalized_tech)
+      technology_record = Technology.find_by(name: normalized_tech)
+
+      unless technology_record
+        technology_record = Technology.create!(name: normalized_tech)
+
+        ParsingIssue.create!(
+          dataset: dataset,
+          resource: Technology.name,
+          value: normalized_tech,
+          external_reference_id: nil,
+          message: "Technology without identifier",
+          status: :pending
+        )
+      end
+
       dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
     end
   end
