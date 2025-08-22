@@ -85,16 +85,16 @@
                           class: "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium #{status_class} hover:opacity-80 cursor-pointer",
                           data: { turbo_frame: "stats_details" } do %>
                       <%= status_icon %>
+                      <% if status_icon != "✖" && coverage < 100 %>
+                        <div class="text-xs text-gray-600 font-semibold">
+                          <%= ((coverage * 10).floor / 10.0).round(1) %>%
+                        </div>
+                      <% end %>
                     <% end %>
                   <% else %>
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
                       <%= status_icon %>
                     </span>
-                  <% end %>
-                  <% if status_icon != "✖" && coverage < 100 %>
-                    <div class="text-xs text-gray-600 font-semibold">
-                      <%= ((coverage * 10).floor / 10.0).round(1) %>%
-                    </div>
                   <% end %>
 
                   <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
