@@ -315,13 +315,15 @@ class BgeeParser
     stages_data.each do |stage_data|
       next if stage_data[:name].blank?
 
+      cleaned_stage_name = stage_data[:name].gsub(/\s*\([^)]*\)\s*/, '').strip
+
       if stage_data[:identifier].present?
         ontology_term = OntologyTerm.find_by(identifier: stage_data[:identifier])
 
         if ontology_term
           stage_record = DevelopmentalStage
             .where(ontology_term_id: ontology_term.id)
-            .first_or_create!(name: ontology_term.name.presence || stage_data[:name])
+            .first_or_create!(name: ontology_term.name.presence || cleaned_stage_name)
 
           dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
           next
