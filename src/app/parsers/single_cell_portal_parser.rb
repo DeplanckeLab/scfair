@@ -120,24 +120,41 @@ class SingleCellPortalParser
     return unless species_annotation && label_annotation
 
     tax_entry = species_annotation[:values].first.to_s.strip
-    tax_id = tax_entry.split(/[_:]+/).last rescue nil
+    ontology_identifier = tax_entry.to_s.gsub('_', ':')
     organism_name = label_annotation[:values].first.to_s.strip
 
-    return if organism_name.blank? || tax_id.blank?
+    return if organism_name.blank? || ontology_identifier.blank?
 
     skip_values = ["nan", "--unspecified--", "n/a", "na"]
-    return if skip_values.include?(organism_name.downcase.strip) || skip_values.include?(tax_id.downcase.strip)
+    return if skip_values.include?(organism_name.downcase.strip) || skip_values.include?(ontology_identifier.downcase.strip)
 
-    begin
-      organism = Organism.search_by_data(organism_name, tax_id)
-      dataset.organisms << organism unless dataset.organisms.include?(organism)
-    rescue ActiveRecord::RecordNotFound, MultipleMatchesError => e
+    ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+    if ontology_term
+      organism_record = Organism
+        .where(
+          name: organism_name,
+          ontology_term_id: ontology_term.id
+        )
+        .first
+
+      unless organism_record
+        organism_record = Organism.create!(
+          name: organism_name,
+          ontology_term_id: ontology_term.id
+        )
+      end
+
+      dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
+    else
+      message = "Ontology term with identifier '#{ontology_identifier}' not found"
+
       ParsingIssue.create!(
         dataset: dataset,
         resource: Organism.name,
         value: organism_name,
-        external_reference_id: tax_id.to_s,
-        message: e.message,
+        external_reference_id: ontology_identifier,
+        message: message,
         status: :pending
       )
 
@@ -145,9 +162,9 @@ class SingleCellPortalParser
       notes[:parsing_errors] ||= []
       notes[:parsing_errors] << {
         annotation: Organism.name,
-        message: e.message,
+        message: message,
         value: organism_name,
-        external_ontology_reference: tax_id.to_s,
+        external_ontology_reference: ontology_identifier,
         timestamp: Time.current.utc.to_s
       }
       dataset.update!(notes: notes)

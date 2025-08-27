@@ -115,9 +115,8 @@ class CellxgeneParser
         if ontology_term
           sex_record = Sex
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              sex_name,
-              ontology_term.id
+              name: sex_name,
+              ontology_term_id: ontology_term.id
             )
             .first
 
@@ -160,9 +159,8 @@ class CellxgeneParser
         if ontology_term
           cell_type_record = CellType
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              cell_type_name.strip,
-              ontology_term.id
+              name: cell_type_name.strip,
+              ontology_term_id: ontology_term.id
             )
             .first
 
@@ -205,9 +203,8 @@ class CellxgeneParser
         if ontology_term
           tissue_record = Tissue
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              tissue_name.strip,
-              ontology_term.id
+              name: tissue_name.strip,
+              ontology_term_id: ontology_term.id
             )
             .first
 
@@ -250,9 +247,8 @@ class CellxgeneParser
         if ontology_term
           stage_record = DevelopmentalStage
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              stage_name.strip,
-              ontology_term.id
+              name: stage_name.strip,
+              ontology_term_id: ontology_term.id
             )
             .first
 
@@ -285,29 +281,43 @@ class CellxgeneParser
     dataset.organisms.clear
 
     organisms_data.each do |org_hash|
-      ontology_identifier = org_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("organism", ontology_identifier, dataset.id) unless ontology_term
-
       organism_name = org_hash.fetch(:label, "")
-      taxonomy_id = ontology_identifier.split(":").last
-      next unless organism_name.present?
+      next if organism_name.blank?
 
-      begin
-        organism = Organism.search_by_data(organism_name, taxonomy_id)
-        organism.update!(ontology_term: ontology_term)
-        dataset.organisms << organism unless dataset.organisms.include?(organism)
-      rescue ActiveRecord::RecordNotFound, MultipleMatchesError => e
-        ParsingIssue.create!(
-          dataset:  dataset,
-          resource: Organism.name,
-          value:    organism_name,
-          external_reference_id: taxonomy_id.to_s,
-          message:  e.message,
-          status:   :pending
-        )
-        next
+      ontology_identifier = org_hash.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          organism_record = Organism
+            .where(
+              name: organism_name.strip,
+              ontology_term_id: ontology_term.id
+            )
+            .first
+
+          unless organism_record
+            organism_record = Organism.create!(
+              name: organism_name.strip,
+              ontology_term_id: ontology_term.id
+            )
+          end
+
+          dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Organism.name,
+            value: organism_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
+
+      @errors << "Organism without identifier: #{organism_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
@@ -376,9 +386,8 @@ class CellxgeneParser
         if ontology_term
           technology_record = Technology
             .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              technology_name.strip,
-              ontology_term.id
+              name: technology_name.strip,
+              ontology_term_id: ontology_term.id
             )
             .first
 

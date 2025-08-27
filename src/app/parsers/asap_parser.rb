@@ -147,9 +147,8 @@ class AsapParser
         if ontology_term
             cell_type_record = CellType
               .where(
-                "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-                cell_type_data[:name],
-                ontology_term.id
+                name: cell_type_data[:name],
+                ontology_term_id: ontology_term.id
               )
               .first
 
@@ -185,19 +184,38 @@ class AsapParser
       taxonomy_id = organism_data[:tax_id]
       next if organism_name.blank?
 
-      begin
-        organism = Organism.search_by_data(organism_name, taxonomy_id)
-        dataset.organisms << organism unless dataset.organisms.include?(organism)
-      rescue ActiveRecord::RecordNotFound, MultipleMatchesError => e
-        ParsingIssue.create!(
-          dataset:  dataset,
-          resource: Organism.name,
-          value:    organism_name,
-          external_reference_id: taxonomy_id.to_s,
-          message:  e.message,
-          status:   :pending
-        )
-        next
+      if taxonomy_id.present?
+        identifier = "NCBITaxon:#{taxonomy_id}"
+        ontology_term = OntologyTerm.find_by(identifier: identifier)
+
+        if ontology_term
+          organism_record = Organism
+            .where(
+              name: organism_name,
+              ontology_term_id: ontology_term.id
+            )
+            .first
+
+          unless organism_record
+            organism_record = Organism.create!(
+              name: organism_name,
+              ontology_term_id: ontology_term.id
+            )
+          end
+
+          dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
+        else
+          ParsingIssue.create!(
+            dataset:  dataset,
+            resource: Organism.name,
+            value:    organism_name,
+            external_reference_id: taxonomy_id.to_s,
+            message:  "Ontology term with identifier '#{identifier}' not found",
+            status:   :pending
+          )
+        end
+      else
+        @errors << "Organism without tax_id: #{organism_name}, dataset: #{dataset.source_reference_id}"
       end
     end
   end
