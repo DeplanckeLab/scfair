@@ -82,13 +82,15 @@
                 <div class="flex flex-col items-center justify-center space-y-1 relative group cursor-help">
                   <% if status_icon == "⚠️" && parsing_issues > 0 %>
                     <%= link_to parsing_issues_stats_path(source_id: source, category: @categories[category_index].name),
-                          class: "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium #{status_class} hover:opacity-80 cursor-pointer",
+                          class: "inline-flex flex-col items-center text-xs font-medium hover:opacity-80 cursor-pointer",
                           data: { turbo_frame: "stats_details" } do %>
-                      <%= status_icon %>
-                      <% if status_icon != "✖" && coverage < 100 %>
-                        <div class="text-xs text-gray-600 font-semibold">
+                      <span class="inline-flex items-center px-2 py-1 rounded-full <%= status_class %>">
+                        <%= status_icon %>
+                      </span>
+                      <% if coverage < 100 %>
+                        <span class="mt-1 text-gray-600 font-semibold">
                           <%= ((coverage * 10).floor / 10.0).round(1) %>%
-                        </div>
+                        </span>
                       <% end %>
                     <% end %>
                   <% else %>
