@@ -145,22 +145,12 @@ class AsapParser
         ontology_term = OntologyTerm.find_by(identifier: cell_type_data[:identifier])
 
         if ontology_term
-            cell_type_record = CellType
-              .where(
-                name: cell_type_data[:name],
-                ontology_term_id: ontology_term.id
-              )
-              .first
+          cell_type_record = CellType
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || cell_type_data[:name])
 
-            unless cell_type_record
-              cell_type_record = CellType.create!(
-                name: cell_type_data[:name].strip,
-                ontology_term_id: ontology_term.id
-              )
-            end
-
-            dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
-            next
+          dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
+          next
         else
           ParsingIssue.create!(
             dataset: dataset,
@@ -190,18 +180,8 @@ class AsapParser
 
         if ontology_term
           organism_record = Organism
-            .where(
-              name: organism_name,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless organism_record
-            organism_record = Organism.create!(
-              name: organism_name,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || organism_name)
 
           dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
         else
@@ -263,10 +243,10 @@ class AsapParser
       end
 
       if ontology_term
-        sex_record = Sex.find_or_create_by(
-          name: sex_data[:name].strip,
-          ontology_term_id: ontology_term.id
-        )
+        sex_record = Sex
+          .where(ontology_term_id: ontology_term.id)
+          .first_or_create!(name: ontology_term.name.presence || sex_name)
+
         dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
       else
         sex_record = Sex.find_or_create_by(
@@ -304,10 +284,10 @@ class AsapParser
       end
 
       if ontology_term
-        stage_record = DevelopmentalStage.find_or_create_by(
-          name: stage_data[:name].strip,
-          ontology_term_id: ontology_term.id
-        )
+        stage_record = DevelopmentalStage
+          .where(ontology_term_id: ontology_term.id)
+          .first_or_create!(name: ontology_term.name.presence || stage_data[:name])
+
         dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
       else
         stage_record = DevelopmentalStage.find_or_create_by(
@@ -353,10 +333,10 @@ class AsapParser
       end
 
       if ontology_term
-        disease_record = Disease.find_or_create_by(
-          name: disease_data[:name].strip,
-          ontology_term_id: ontology_term.id
-        )
+        disease_record = Disease
+          .where(ontology_term_id: ontology_term.id)
+          .first_or_create!(name: ontology_term.name.presence || disease_data[:name])
+
         dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
       else
         disease_record = Disease.find_or_create_by(
@@ -403,10 +383,9 @@ class AsapParser
       end
 
       if ontology_term
-        tissue_record = Tissue.find_or_create_by(
-          name: tissue_data[:name].strip,
-          ontology_term_id: ontology_term.id
-        )
+        tissue_record = Tissue
+          .where(ontology_term_id: ontology_term.id)
+          .first_or_create!(name: ontology_term.name.presence || tissue_data[:name])
         dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
       else
         tissue_record = Tissue.find_or_create_by(
@@ -453,10 +432,9 @@ class AsapParser
         ontology_term = OntologyTerm.find_by(identifier: identifier)
 
         if ontology_term
-          technology_record = Technology.find_or_create_by(
-            name:             normalized_tech,
-            ontology_term_id: ontology_term.id
-          )
+          technology_record = Technology
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || normalized_tech)
         else
           ParsingIssue.create!(
             dataset:               dataset,

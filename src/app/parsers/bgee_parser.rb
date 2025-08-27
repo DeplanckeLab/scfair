@@ -192,18 +192,8 @@ class BgeeParser
 
       if ontology_term
         sex_record = Sex
-          .where(
-            name: sex.strip,
-            ontology_term_id: ontology_term.id
-          )
-          .first
-
-        unless sex_record
-          sex_record = Sex.create!(
-            name: sex.strip,
-            ontology_term_id: ontology_term.id
-          )
-        end
+          .where(ontology_term_id: ontology_term.id)
+          .first_or_create!(name: ontology_term.name.presence || sex)
 
         dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
         next
@@ -234,18 +224,8 @@ class BgeeParser
 
         if ontology_term
           organism_record = Organism
-            .where(
-              name: name,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless organism_record
-            organism_record = Organism.create!(
-              name: name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || name)
 
           dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
           next
@@ -276,18 +256,8 @@ class BgeeParser
 
         if ontology_term
           cell_type_record = CellType
-            .where(
-              name: cell_type_data[:name],
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless cell_type_record
-            cell_type_record = CellType.create!(
-              name: cell_type_data[:name].strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || cell_type_data[:name])
 
           dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
           next
@@ -318,18 +288,8 @@ class BgeeParser
 
         if ontology_term
           tissue_record = Tissue
-            .where(
-              name: tissue_data[:name],
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless tissue_record
-            tissue_record = Tissue.create!(
-              name: tissue_data[:name].strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || tissue_data[:name])
 
           dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
           next
@@ -355,25 +315,13 @@ class BgeeParser
     stages_data.each do |stage_data|
       next if stage_data[:name].blank?
 
-      cleaned_stage_name = stage_data[:name].gsub(/\s*\([^)]*\)\s*/, '').strip
-
       if stage_data[:identifier].present?
         ontology_term = OntologyTerm.find_by(identifier: stage_data[:identifier])
 
         if ontology_term
           stage_record = DevelopmentalStage
-            .where(
-              name: cleaned_stage_name,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless stage_record
-            stage_record = DevelopmentalStage.create!(
-              name: cleaned_stage_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || stage_data[:name])
 
           dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
           next
@@ -381,7 +329,7 @@ class BgeeParser
           ParsingIssue.create!(
             dataset: dataset,
             resource: DevelopmentalStage.name,
-            value: cleaned_stage_name,
+            value: stage_data[:name],
             external_reference_id: stage_data[:identifier],
             message: "Ontology term with identifier '#{stage_data[:identifier]}' not found",
             status: :pending
@@ -401,18 +349,8 @@ class BgeeParser
 
     if ontology_term
       disease_record = Disease
-        .where(
-          name: disease,
-          ontology_term_id: ontology_term.id
-        )
-        .first
-
-      unless disease_record
-        disease_record = Disease.create!(
-          name: disease,
-          ontology_term_id: ontology_term.id
-        )
-      end
+        .where(ontology_term_id: ontology_term.id)
+        .first_or_create!(name: ontology_term.name.presence || disease)
 
       dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
     else

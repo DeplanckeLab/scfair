@@ -132,18 +132,8 @@ class SingleCellPortalParser
 
     if ontology_term
       organism_record = Organism
-        .where(
-          name: organism_name,
-          ontology_term_id: ontology_term.id
-        )
-        .first
-
-      unless organism_record
-        organism_record = Organism.create!(
-          name: organism_name,
-          ontology_term_id: ontology_term.id
-        )
-      end
+        .where(ontology_term_id: ontology_term.id)
+        .first_or_create!(name: ontology_term.name.presence || organism_name)
 
       dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
     else
@@ -193,14 +183,7 @@ class SingleCellPortalParser
         if ontology_term
           cell_type_record = CellType
             .where(ontology_term_id: ontology_term.id)
-            .first
-          
-          unless cell_type_record
-            cell_type_record = CellType.create!(
-              name: ontology_term.name,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .first_or_create!(name: ontology_term.name.presence || cell_value)
           
           dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
         else
@@ -267,19 +250,8 @@ class SingleCellPortalParser
 
       if ontology_term
         sex_record = Sex
-          .where(
-            "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-            standardized_sex,
-            ontology_term.id
-          )
-          .first
-
-        unless sex_record
-          sex_record = Sex.create!(
-            name: standardized_sex,
-            ontology_term_id: ontology_term.id
-          )
-        end
+          .where(ontology_term_id: ontology_term.id)
+          .first_or_create!(name: ontology_term.name.presence || standardized_sex)
 
         dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
         next
@@ -316,14 +288,7 @@ class SingleCellPortalParser
         if ontology_term
           disease_record = Disease
             .where(ontology_term_id: ontology_term.id)
-            .first
-          
-          unless disease_record
-            disease_record = Disease.create!(
-              name: ontology_term.name,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .first_or_create!(name: ontology_term.name.presence || disease_value) 
           
           dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
         else
@@ -362,14 +327,7 @@ class SingleCellPortalParser
         if ontology_term
           tech_record = Technology
             .where(ontology_term_id: ontology_term.id)
-            .first
-          
-          unless tech_record
-            tech_record = Technology.create!(
-              name: ontology_term.name,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .first_or_create!(name: ontology_term.name.presence || tech_value)
           
           dataset.technologies << tech_record unless dataset.technologies.include?(tech_record)
         else

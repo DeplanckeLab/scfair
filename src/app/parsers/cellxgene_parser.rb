@@ -114,18 +114,8 @@ class CellxgeneParser
 
         if ontology_term
           sex_record = Sex
-            .where(
-              name: sex_name,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless sex_record
-            sex_record = Sex.create!(
-              name: sex_name.strip,
-              ontology_term: ontology_term
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || sex_name)
 
           dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
           next
@@ -158,18 +148,8 @@ class CellxgeneParser
 
         if ontology_term
           cell_type_record = CellType
-            .where(
-              name: cell_type_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless cell_type_record
-            cell_type_record = CellType.create!(
-              name: cell_type_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || cell_type_name)
 
           dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
           next
@@ -202,18 +182,8 @@ class CellxgeneParser
 
         if ontology_term
           tissue_record = Tissue
-            .where(
-              name: tissue_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless tissue_record
-            tissue_record = Tissue.create!(
-              name: tissue_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || tissue_name)
 
           dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
           next
@@ -246,18 +216,8 @@ class CellxgeneParser
 
         if ontology_term
           stage_record = DevelopmentalStage
-            .where(
-              name: stage_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless stage_record
-            stage_record = DevelopmentalStage.create!(
-              name: stage_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || stage_name)
 
           dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
           next
@@ -290,18 +250,8 @@ class CellxgeneParser
 
         if ontology_term
           organism_record = Organism
-            .where(
-              name: organism_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless organism_record
-            organism_record = Organism.create!(
-              name: organism_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || organism_name)
 
           dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
           next
@@ -337,18 +287,9 @@ class CellxgeneParser
           ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
           if ontology_term
-            label_for_id = labels[idx]
-            record_name = ontology_term.name.presence || label_for_id.presence
             disease_record = Disease
               .where(ontology_term_id: ontology_term.id)
-              .first
-
-            unless disease_record
-              disease_record = Disease.create!(
-                name: record_name,
-                ontology_term_id: ontology_term.id
-              )
-            end
+              .first_or_create!(name: ontology_term.name.presence || labels[idx])
 
             dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
           else
@@ -385,18 +326,8 @@ class CellxgeneParser
 
         if ontology_term
           technology_record = Technology
-            .where(
-              name: technology_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-            .first
-
-          unless technology_record
-            technology_record = Technology.create!(
-              name: technology_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || technology_name)
 
           dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
           next
