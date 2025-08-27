@@ -12,11 +12,12 @@
 
 ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
   enable_extension "uuid-ossp"
 
   create_table "cell_types", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "name", null: false
+    t.citext "name", null: false
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -58,6 +59,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
     t.index ["doi"], name: "index_datasets_on_doi"
     t.index ["source_id"], name: "index_datasets_on_source_id"
+    t.index ["source_reference_id"], name: "index_datasets_on_source_reference_id", unique: true
     t.index ["status"], name: "index_datasets_on_status"
   end
 
@@ -110,7 +112,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   end
 
   create_table "developmental_stages", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "name", null: false
+    t.citext "name", null: false
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -119,7 +121,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   end
 
   create_table "diseases", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "name", null: false
+    t.citext "name", null: false
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -134,8 +136,6 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
     t.string "id_regexp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.bigint "dataset_id"
-    t.index ["dataset_id"], name: "index_ext_sources_on_dataset_id"
   end
 
   create_table "file_resources", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
@@ -144,6 +144,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
     t.string "filetype", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["dataset_id", "url", "filetype"], name: "index_file_resources_on_dataset_id_and_url_and_filetype", unique: true
     t.index ["dataset_id"], name: "index_file_resources_on_dataset_id"
   end
 
@@ -181,26 +182,21 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
 
   create_table "ontology_terms", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.string "identifier", null: false
-    t.string "name"
+    t.citext "name"
     t.string "description"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["identifier"], name: "index_ontology_terms_on_identifier", unique: true
+    t.index ["name"], name: "index_ontology_terms_on_name"
   end
 
   create_table "organisms", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "name", null: false
-    t.string "short_name", null: false
+    t.citext "name", null: false
     t.uuid "ontology_term_id"
-    t.integer "tax_id", null: false
-    t.integer "external_reference_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["external_reference_id"], name: "index_organisms_on_external_reference_id", unique: true
-    t.index ["name"], name: "index_organisms_on_name"
+    t.index ["name", "ontology_term_id"], name: "index_organisms_on_name_and_ontology_term_id", unique: true
     t.index ["ontology_term_id"], name: "index_organisms_on_ontology_term_id"
-    t.index ["short_name"], name: "index_organisms_on_short_name"
-    t.index ["tax_id"], name: "index_organisms_on_tax_id"
   end
 
   create_table "parsing_issues", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
@@ -216,7 +212,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   end
 
   create_table "sexes", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "name", null: false
+    t.citext "name", null: false
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -257,7 +253,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   end
 
   create_table "technologies", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "name", null: false
+    t.citext "name", null: false
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -266,7 +262,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   end
 
   create_table "tissues", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "name", null: false
+    t.citext "name", null: false
     t.uuid "ontology_term_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -276,6 +272,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
 
   add_foreign_key "cell_types_datasets", "cell_types"
   add_foreign_key "cell_types_datasets", "datasets"
+  add_foreign_key "dataset_links", "datasets"
   add_foreign_key "datasets", "sources"
   add_foreign_key "datasets_developmental_stages", "datasets"
   add_foreign_key "datasets_developmental_stages", "developmental_stages"

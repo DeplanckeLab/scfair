@@ -18,7 +18,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index :status
-      t.index :source_id
       t.index :source_reference_id, unique: true
     end
 
@@ -28,7 +27,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index [:name, :ontology_term_id], unique: true
-      t.index :ontology_term_id
     end
 
     create_table :datasets_sexes, id: false, force: :cascade do |t|
@@ -44,7 +42,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index [:name, :ontology_term_id], unique: true
-      t.index :ontology_term_id
     end
 
     create_table :cell_types_datasets, id: false, force: :cascade do |t|
@@ -60,7 +57,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index [:name, :ontology_term_id], unique: true
-      t.index :ontology_term_id
     end
 
     create_table :datasets_tissues, id: false, force: :cascade do |t|
@@ -76,7 +72,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index [:name, :ontology_term_id], unique: true
-      t.index :ontology_term_id
     end
 
     create_table :datasets_developmental_stages, id: false, force: :cascade do |t|
@@ -92,7 +87,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index [:name, :ontology_term_id], unique: true
-      t.index :ontology_term_id
     end
 
     create_table :datasets_organisms, id: false, force: :cascade do |t|
@@ -108,7 +102,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index [:name, :ontology_term_id], unique: true
-      t.index :ontology_term_id
     end
 
     create_table :datasets_diseases, id: false, force: :cascade do |t|
@@ -124,7 +117,6 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index [:name, :ontology_term_id], unique: true
-      t.index :ontology_term_id
     end
 
     create_table :datasets_technologies, id: false, force: :cascade do |t|
