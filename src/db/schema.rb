@@ -181,7 +181,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   end
 
   create_table "ontology_terms", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-    t.string "identifier", null: false
+    t.citext "identifier", null: false
     t.citext "name"
     t.string "description"
     t.datetime "created_at", null: false
