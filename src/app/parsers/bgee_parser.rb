@@ -51,7 +51,7 @@ class BgeeParser
       collection_id: experiment_id,
       source: source,
       source_url: DATASET_URL.call(experiment_id),
-      explorer_url: "",
+      explorer_url: "https://www.bgee.org/experiment/#{experiment_id}",
       doi: experiment[:dOI],
       cell_count: experiment[:numberOfAnnotatedCells],
       parser_hash: Digest::SHA256.hexdigest(experiment_data.to_s)
@@ -192,19 +192,8 @@ class BgeeParser
 
       if ontology_term
         sex_record = Sex
-          .where(
-            "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-            sex.strip,
-            ontology_term.id
-          )
-          .first
-
-        unless sex_record
-          sex_record = Sex.create!(
-            name: sex.strip,
-            ontology_term_id: ontology_term.id
-          )
-        end
+          .where(ontology_term_id: ontology_term.id)
+          .first_or_create!(name: ontology_term.name.presence || sex)
 
         dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
         next
@@ -228,22 +217,31 @@ class BgeeParser
       next if name.blank?
 
       taxonomy_id = org_data[:id]
-      @errors << "Organism without identifier: #{taxonomy_id}, dataset: #{dataset.source_reference_id}" if taxonomy_id.nil?
+      identifier = taxonomy_id.present? ? "NCBITaxon:#{taxonomy_id}" : nil
 
-      begin
-        organism = Organism.search_by_data(name, taxonomy_id)
-        dataset.organisms << organism unless dataset.organisms.include?(organism)
-      rescue MultipleMatchesError, ActiveRecord::RecordNotFound => e
-        ParsingIssue.create!(
-          dataset:  dataset,
-          resource: Organism.name,
-          value:    name,
-          external_reference_id: taxonomy_id.to_s,
-          message:  e.message,
-          status:   :pending
-        )
-        next
+      if identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: identifier)
+
+        if ontology_term
+          organism_record = Organism
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || name)
+
+          dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Organism.name,
+            value: name,
+            external_reference_id: identifier,
+            message: "Ontology term with identifier '#{identifier}' not found",
+            status: :pending
+          )
+        end
       end
+
+      @errors << "Organism without identifier: #{name}, dataset: #{dataset.source_reference_id}" if identifier.blank?
     end
   end
 
@@ -258,19 +256,8 @@ class BgeeParser
 
         if ontology_term
           cell_type_record = CellType
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              cell_type_data[:name],
-              ontology_term.id
-            )
-            .first
-
-          unless cell_type_record
-            cell_type_record = CellType.create!(
-              name: cell_type_data[:name].strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || cell_type_data[:name])
 
           dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
           next
@@ -301,19 +288,8 @@ class BgeeParser
 
         if ontology_term
           tissue_record = Tissue
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              tissue_data[:name],
-              ontology_term.id
-            )
-            .first
-
-          unless tissue_record
-            tissue_record = Tissue.create!(
-              name: tissue_data[:name].strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || tissue_data[:name])
 
           dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
           next
@@ -346,19 +322,8 @@ class BgeeParser
 
         if ontology_term
           stage_record = DevelopmentalStage
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              cleaned_stage_name,
-              ontology_term.id
-            )
-            .first
-
-          unless stage_record
-            stage_record = DevelopmentalStage.create!(
-              name: cleaned_stage_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || cleaned_stage_name)
 
           dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
           next
@@ -366,7 +331,7 @@ class BgeeParser
           ParsingIssue.create!(
             dataset: dataset,
             resource: DevelopmentalStage.name,
-            value: cleaned_stage_name,
+            value: stage_data[:name],
             external_reference_id: stage_data[:identifier],
             message: "Ontology term with identifier '#{stage_data[:identifier]}' not found",
             status: :pending
@@ -386,19 +351,8 @@ class BgeeParser
 
     if ontology_term
       disease_record = Disease
-        .where(
-          "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-          disease,
-          ontology_term.id
-        )
-        .first
-
-      unless disease_record
-        disease_record = Disease.create!(
-          name: disease,
-          ontology_term_id: ontology_term.id
-        )
-      end
+        .where(ontology_term_id: ontology_term.id)
+        .first_or_create!(name: ontology_term.name.presence || disease)
 
       dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
     else
@@ -418,9 +372,24 @@ class BgeeParser
     technologies_data.each do |technology|
       next if technology.blank?
 
-      normalized_tech = technology.gsub(/\b10X\b/, '10x')
+      normalized_tech = technology.to_s.gsub(/\b10X\b/i, '10x').strip
+      next if normalized_tech.blank?
 
-      technology_record = Technology.find_or_create_by(name: normalized_tech)
+      technology_record = Technology.find_by(name: normalized_tech)
+
+      unless technology_record
+        technology_record = Technology.create!(name: normalized_tech)
+
+        ParsingIssue.create!(
+          dataset: dataset,
+          resource: Technology.name,
+          value: normalized_tech,
+          external_reference_id: nil,
+          message: "Technology without identifier",
+          status: :pending
+        )
+      end
+
       dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
     end
   end

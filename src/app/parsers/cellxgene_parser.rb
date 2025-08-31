@@ -114,19 +114,8 @@ class CellxgeneParser
 
         if ontology_term
           sex_record = Sex
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              sex_name,
-              ontology_term.id
-            )
-            .first
-
-          unless sex_record
-            sex_record = Sex.create!(
-              name: sex_name.strip,
-              ontology_term: ontology_term
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || sex_name)
 
           dataset.sexes << sex_record unless dataset.sexes.include?(sex_record)
           next
@@ -159,19 +148,8 @@ class CellxgeneParser
 
         if ontology_term
           cell_type_record = CellType
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              cell_type_name.strip,
-              ontology_term.id
-            )
-            .first
-
-          unless cell_type_record
-            cell_type_record = CellType.create!(
-              name: cell_type_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || cell_type_name)
 
           dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
           next
@@ -204,19 +182,8 @@ class CellxgeneParser
 
         if ontology_term
           tissue_record = Tissue
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              tissue_name.strip,
-              ontology_term.id
-            )
-            .first
-
-          unless tissue_record
-            tissue_record = Tissue.create!(
-              name: tissue_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || tissue_name)
 
           dataset.tissues << tissue_record unless dataset.tissues.include?(tissue_record)
           next
@@ -249,19 +216,8 @@ class CellxgeneParser
 
         if ontology_term
           stage_record = DevelopmentalStage
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              stage_name.strip,
-              ontology_term.id
-            )
-            .first
-
-          unless stage_record
-            stage_record = DevelopmentalStage.create!(
-              name: stage_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || stage_name)
 
           dataset.developmental_stages << stage_record unless dataset.developmental_stages.include?(stage_record)
           next
@@ -285,29 +241,33 @@ class CellxgeneParser
     dataset.organisms.clear
 
     organisms_data.each do |org_hash|
-      ontology_identifier = org_hash.fetch(:ontology_term_id)
-      ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-      log_missing_ontology("organism", ontology_identifier, dataset.id) unless ontology_term
-
       organism_name = org_hash.fetch(:label, "")
-      taxonomy_id = ontology_identifier.split(":").last
-      next unless organism_name.present?
+      next if organism_name.blank?
 
-      begin
-        organism = Organism.search_by_data(organism_name, taxonomy_id)
-        organism.update!(ontology_term: ontology_term)
-        dataset.organisms << organism unless dataset.organisms.include?(organism)
-      rescue ActiveRecord::RecordNotFound, MultipleMatchesError => e
-        ParsingIssue.create!(
-          dataset:  dataset,
-          resource: Organism.name,
-          value:    organism_name,
-          external_reference_id: taxonomy_id.to_s,
-          message:  e.message,
-          status:   :pending
-        )
-        next
+      ontology_identifier = org_hash.fetch(:ontology_term_id, "")
+      if ontology_identifier.present?
+        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+
+        if ontology_term
+          organism_record = Organism
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || organism_name)
+
+          dataset.organisms << organism_record unless dataset.organisms.include?(organism_record)
+          next
+        else
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Organism.name,
+            value: organism_name,
+            external_reference_id: ontology_identifier,
+            message: "Ontology term with identifier '#{ontology_identifier}' not found",
+            status: :pending
+          )
+        end
       end
+
+      @errors << "Organism without identifier: #{organism_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
     end
   end
 
@@ -318,41 +278,36 @@ class CellxgeneParser
       disease_name = disease_data.fetch(:label, "")
       next if disease_name.blank?
 
-      ontology_identifier = disease_data.fetch(:ontology_term_id, "")
-      if ontology_identifier.present?
-        ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
+      raw_identifier = disease_data.fetch(:ontology_term_id, "")
+      if raw_identifier.present?
+        identifiers = raw_identifier.to_s.split(/\s*\|\|\s*/).map(&:strip).reject(&:blank?).uniq
+        labels = disease_name.to_s.split(/\s*\|\|\s*/).map(&:strip)
 
-        if ontology_term
-          disease_record = Disease
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              disease_name.strip,
-              ontology_term.id
-            )
-            .first
+        identifiers.each_with_index do |ontology_identifier, idx|
+          ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
-          unless disease_record
-            disease_record = Disease.create!(
-              name: disease_name.strip,
-              ontology_term_id: ontology_term.id
+          if ontology_term
+            disease_record = Disease
+              .where(ontology_term_id: ontology_term.id)
+              .first_or_create!(name: ontology_term.name.presence || labels[idx])
+
+            dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
+          else
+            ParsingIssue.create!(
+              dataset: dataset,
+              resource: Disease.name,
+              value: disease_name,
+              external_reference_id: ontology_identifier,
+              message: "Ontology term with identifier '#{ontology_identifier}' not found",
+              status: :pending
             )
           end
-
-          dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
-          next
-        else
-          ParsingIssue.create!(
-            dataset: dataset,
-            resource: Disease.name,
-            value: disease_name,
-            external_reference_id: ontology_identifier,
-            message: "Ontology term with identifier '#{ontology_identifier}' not found",
-            status: :pending
-          )
         end
+
+        next
       end
 
-      @errors << "Disease without identifier: #{disease_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
+      @errors << "Disease without identifier: #{disease_name}, dataset: #{dataset.source_reference_id}" if raw_identifier.blank?
     end
   end
 
@@ -371,19 +326,8 @@ class CellxgeneParser
 
         if ontology_term
           technology_record = Technology
-            .where(
-              "LOWER(name) = LOWER(?) AND ontology_term_id = ?",
-              technology_name.strip,
-              ontology_term.id
-            )
-            .first
-
-          unless technology_record
-            technology_record = Technology.create!(
-              name: technology_name.strip,
-              ontology_term_id: ontology_term.id
-            )
-          end
+            .where(ontology_term_id: ontology_term.id)
+            .first_or_create!(name: ontology_term.name.presence || technology_name)
 
           dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
           next

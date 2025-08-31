@@ -34,9 +34,9 @@
                         <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           ✓ <%= source.completed_datasets_count %>
                         </span>
-                        <%= link_to failed_datasets_stats_path(source),
+                        <%= link_to failed_datasets_stats_path(source_id: source),
                               class: "inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1 hover:bg-red-200 cursor-pointer",
-                              data: { turbo_frame: "failed_datasets" } do %>
+                              data: { turbo_frame: "stats_details" } do %>
                           ✗ <%= source.failed_datasets_count %>
                         <% end %>
                       </div>
@@ -61,32 +61,42 @@
                   # Fully linked
                   status_class = "bg-green-100 text-green-800"
                   status_icon = "✅"
-                  coverage = 100
-                elsif parsing_issues >= 0 && relationships > 0
+                  coverage = 100.0
+                elsif (records_missing_ontology + parsing_issues) > 0 && relationships > 0
                   # Partially linked
                   status_class = "bg-yellow-100 text-yellow-800"
                   status_icon = "⚠️"
-                  coverage = ((1 - ((records_missing_ontology + parsing_issues) / relationships.to_f)) * 100).round(1)
+                  coverage = (1 - ((records_missing_ontology + parsing_issues).to_f / relationships)) * 100
                 elsif records >= 0 && records_with_ontology == 0
                   # Not provided
                   status_class = "bg-gray-100 text-gray-600"
                   status_icon = "✖"
-                  coverage = 0
+                  coverage = 0.0
                 else
                   status_class = "bg-red-100 text-red-800"
                   status_icon = "✖"
-                  coverage = 0
+                  coverage = 0.0
                 end
               %>
               <div class="px-2 py-2 text-center">
                 <div class="flex flex-col items-center justify-center space-y-1 relative group cursor-help">
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
-                    <%= status_icon %>
-                  </span>
-                  <% if coverage.between?(0, 99.99) && status_icon != "✖" %>
-                    <div class="text-xs text-gray-600 font-semibold">
-                      <%= coverage %>%
-                    </div>
+                  <% if status_icon == "⚠️" && parsing_issues > 0 %>
+                    <%= link_to parsing_issues_stats_path(source_id: source, category: @categories[category_index].name),
+                          class: "inline-flex flex-col items-center text-xs font-medium hover:opacity-80 cursor-pointer",
+                          data: { turbo_frame: "stats_details" } do %>
+                      <span class="inline-flex items-center px-2 py-1 rounded-full <%= status_class %>">
+                        <%= status_icon %>
+                      </span>
+                      <% if coverage < 100 %>
+                        <span class="mt-1 text-gray-600 font-semibold">
+                          <%= ((coverage * 10).floor / 10.0).round(1) %>%
+                        </span>
+                      <% end %>
+                    <% end %>
+                  <% else %>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
+                      <%= status_icon %>
+                    </span>
                   <% end %>
 
                   <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
@@ -128,7 +138,7 @@
         </div>
       </div>
 
-      <turbo-frame id="failed_datasets"></turbo-frame>
+      <turbo-frame id="stats_details"></turbo-frame>
     </div>
   </div>
 </div>

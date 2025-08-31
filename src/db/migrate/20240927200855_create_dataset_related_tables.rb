@@ -18,10 +18,11 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.timestamps
 
       t.index :status
+      t.index :source_reference_id, unique: true
     end
 
     create_table :sexes, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :name, null: false
+      t.citext :name, null: false
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
@@ -36,7 +37,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     end
 
     create_table :cell_types, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :name, null: false
+      t.citext :name, null: false
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
@@ -51,7 +52,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     end
 
     create_table :tissues, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :name, null: false
+      t.citext :name, null: false
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
@@ -66,7 +67,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     end
 
     create_table :developmental_stages, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :name, null: false
+      t.citext :name, null: false
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
@@ -81,17 +82,11 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     end
 
     create_table :organisms, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :name, null: false
-      t.string :short_name, null: false
+      t.citext :name, null: false
       t.references :ontology_term, type: :uuid, null: true
-      t.integer :tax_id, null: false
-      t.integer :external_reference_id, null: true
       t.timestamps
 
-      t.index :name
-      t.index :short_name
-      t.index :tax_id
-      t.index :external_reference_id, unique: true
+      t.index [:name, :ontology_term_id], unique: true
     end
 
     create_table :datasets_organisms, id: false, force: :cascade do |t|
@@ -102,7 +97,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     end
 
     create_table :diseases, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :name, null: false
+      t.citext :name, null: false
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
@@ -117,7 +112,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     end
 
     create_table :technologies, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
-      t.string :name, null: false
+      t.citext :name, null: false
       t.references :ontology_term, type: :uuid, null: true
       t.timestamps
 
@@ -137,6 +132,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.string :url, null: false
       t.string :filetype, null: false
       t.timestamps
+      t.index [:dataset_id, :url, :filetype], unique: true
     end
 
     add_reference :ext_sources, :dataset, index: true
