@@ -9,15 +9,11 @@
     <div class="flex items-center">
       <span class="w-2 h-2 rounded-full bg-blue-500 mr-2"></span>
       Organism
-      <% if selected_count > 0 %>
-        <span class="ml-2 text-sm text-gray-500"
-              data-action="mouseover->hierarchical-facet#showClearAll mouseout->hierarchical-facet#restoreSelectedCount click->hierarchical-facet#clearAllSelected click->hierarchical-facet#stopPropagation"
-          data-hierarchical-facet-target="selectedCount">
-          <%= "#{selected_count} selected" %>
-        </span>
-      <% else %>
-        <span class="ml-2 text-sm text-gray-500 hidden" data-hierarchical-facet-target="selectedCount"></span>
-      <% end %>
+      <span class="ml-2 text-sm text-gray-500 <%= selected_count > 0 ? '' : 'hidden' %>"
+            data-action="mouseover->hierarchical-facet#showClearAll mouseout->hierarchical-facet#restoreSelectedCount click->hierarchical-facet#clearAllSelected click->hierarchical-facet#stopPropagation"
+        data-hierarchical-facet-target="selectedCount">
+        <%= selected_count > 0 ? "#{selected_count} selected" : "" %>
+      </span>
     </div>
     <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150 <%= selected_count > 0 ? 'rotate-180' : '' %>"
          viewBox="0 0 20 20"
