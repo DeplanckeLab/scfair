@@ -1,4 +1,4 @@
-<div class="container mx-auto px-4 mt-4 mb-8">
+<div class="container mx-auto px-4 mt-4 mb-8" data-controller="sort">
   <div class="flex">
     <div class="w-1/4 pr-6">
       <%= form_with(
@@ -6,7 +6,8 @@
               method: :get,
               data: { 
                 controller: "facet",
-                turbo_frame: "datasets"
+                turbo_frame: "datasets",
+                sort_target: "form"
               },
               class: "space-y-6",
               id: :search_form
@@ -148,6 +149,14 @@
             <div class="flex items-center justify-between mb-3">
               <div></div>
               <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1">
+                  <label class="text-xs text-gray-500">Sort</label>
+                  <select class="text-sm border-gray-300 rounded-md" name="sort" form="search_form" data-action="change->sort#apply">
+                    <option value="" <%= 'selected' if params[:sort].blank? %>>Relevance</option>
+                    <option value="cells_desc" <%= 'selected' if params[:sort] == 'cells_desc' %>>Most cells</option>
+                    <option value="cells_asc" <%= 'selected' if params[:sort] == 'cells_asc' %>>Fewest cells</option>
+                  </select>
+                </div>
                 <div id="loading-spinner" class="flex items-center" style="display: none;">
                   <svg class="animate-spin h-4 w-4 text-brand-dark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -156,61 +165,63 @@
                 </div>
                 <h2 class="text-sm text-gray-600">
                   <span class="text-brand-light font-medium"><%= @search.total %></span>
-                  <%= 'dataset'.pluralize(@search.total) %>
-                  <% if params[:search].present? %>
-                    <span class="text-gray-500">
-                      for "<span class="text-gray-600"><%= params[:search] %></span>"
-                    </span>
-                  <% end %>
-                </h2>
-              </div>
-            </div>
-            <div class="space-y-3">
-              <%= render @datasets %>
-            </div>
-            <div class="mt-4">
-              <%= will_paginate @datasets,
+                      <%= 'dataset'.pluralize(@search.total) %>
+                      <% if params[:search].present? %>
+                        <span class="text-gray-500">
+                          for "<span class="text-gray-600"><%= params[:search] %></span>"
+                        </span>
+                      <% end %>
+                    </h2>
+                  </div>
+                </div>
+                <div class="space-y-3">
+                  <%= render @datasets %>
+                </div>
+                <div class="mt-4">
+                  <%= will_paginate @datasets,
                   class: "pagination",
                   inner_window: 2,
                   outer_window: 1,
                   previous_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>',
                   next_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>',
                   renderer: WillPaginate::ActionView::LinkRenderer %>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      <% end %>
-      <%= tag.div id: "tag-modal", 
+          <% end %>
+          <%= tag.div id: "tag-modal", 
                   class: "fixed inset-0 bg-gray-500 bg-opacity-75 z-50 hidden", 
                   data: { controller: "tag" } do %>
-        <div class="fixed inset-0 z-50 overflow-y-auto">
-          <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-              <div class="absolute right-0 top-0 pr-4 pt-4">
-                <%= button_tag type: "button",
+            <div class="fixed inset-0 z-50 overflow-y-auto">
+              <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                  <div class="absolute right-0 top-0 pr-4 pt-4">
+                    <%= button_tag type: "button",
                class: "rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none",
                data: { action: "click->tag#hideModal click->tag#stopPropagation" } do %>
-                  <span class="sr-only">Close</span>
-                  <%= tag.svg class: "h-6 w-6", 
+                      <span class="sr-only">Close</span>
+                      <%= tag.svg class: "h-6 w-6", 
                              fill: "none", 
                              viewBox: "0 0 24 24", 
                              "stroke-width": "1.5", 
                              stroke: "currentColor" do %>
-                    <path stroke-linecap="round" 
+                        <path stroke-linecap="round" 
                           stroke-linejoin="round" 
                           d="M6 18L18 6M6 6l12 12" />
+                      <% end %>
+                    <% end %>
+                  </div>
+                  <%= turbo_frame_tag "tag-modal-content" do %>
+                    <div class="flex items-center justify-center p-4">
+                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    </div>
                   <% end %>
-                <% end %>
-              </div>
-              <%= turbo_frame_tag "tag-modal-content" do %>
-                <div class="flex items-center justify-center p-4">
-                  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
                 </div>
-              <% end %>
+              </div>
             </div>
-          </div>
+          <% end %>
         </div>
-      <% end %>
+      </div>
     </div>
   </div>
 </div>
