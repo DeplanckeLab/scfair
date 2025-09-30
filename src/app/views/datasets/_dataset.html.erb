@@ -4,11 +4,9 @@
   <div class="flex items-start justify-between">
     <div class="flex gap-2 flex-grow">
       <div class="shrink-0">
-        <%= link_to dataset.source_url, target: "_blank", data: { action: "click->dataset#stopPropagation" } do %>
-          <div class="flex items-center justify-center w-8 h-8 rounded <%= dataset.source.name == 'CELLxGENE' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
-            <%= image_tag dataset.source.logo || "not_found.svg", class: "w-6 h-6", alt: "#{dataset.source.name} logo" %>
-          </div>
-        <% end %>
+        <div class="flex items-center justify-center w-8 h-8 rounded <%= dataset.source.name == 'CELLxGENE' ? "bg-brand-dark" : "bg-gray-200" %> cursor-pointer">
+          <%= image_tag dataset.source.logo || "not_found.svg", class: "w-6 h-6", alt: "#{dataset.source.name} logo" %>
+        </div>
       </div>
       <div class="flex flex-col h-8">
         <div class="flex flex-col justify-between h-full py-0.5">

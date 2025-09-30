@@ -82,7 +82,18 @@ class DatasetsController < ApplicationController
       with(:technologies_facet, params[:technologies]) if params[:technologies].present?
       with(:source_name, params[:source_name]) if params[:source_name].present?
 
-      paginate page: params[:page] || 1, per_page: 6
+      if params[:sort].present?
+        case params[:sort]
+        when "cells_desc"
+          order_by :cell_count, :desc
+        when "cells_asc"
+          order_by :cell_count, :asc
+        end
+      end
+
+      page = params[:page].to_i
+      page = 1 if page < 1
+      paginate page: page, per_page: 6
 
       data_accessor_for(Dataset).include = [
         :sexes,
