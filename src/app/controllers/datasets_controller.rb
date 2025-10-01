@@ -23,6 +23,7 @@ class DatasetsController < ApplicationController
           diseases_facet_sm
           sexes_facet_sm
           technologies_facet_sm
+          suspension_types_sm
           source_name_s
         ]
 
@@ -56,8 +57,8 @@ class DatasetsController < ApplicationController
           end
         end
 
-        unless params[:"facet.field"].include?("{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,source_name_s,text}organism_ancestors_sm")
-          params[:"facet.field"] << "{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,source_name_s,text}organism_ancestors_sm"
+        unless params[:"facet.field"].include?("{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,suspension_types_sm,source_name_s,text}organism_ancestors_sm")
+          params[:"facet.field"] << "{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,suspension_types_sm,source_name_s,text}organism_ancestors_sm"
         end
 
         params[:"facet.limit"] = -1
@@ -70,6 +71,7 @@ class DatasetsController < ApplicationController
       facet :diseases_facet, name: "diseases", sort: :index
       facet :sexes_facet, name: "sex", sort: :index
       facet :technologies_facet, name: "technologies", sort: :index
+      facet :suspension_types, sort: :index
       facet :source_name, sort: :index
 
       with(:organism_ancestors, params[:organisms]) if params[:organisms].present?
@@ -80,6 +82,7 @@ class DatasetsController < ApplicationController
       with(:developmental_stages_facet, params[:developmental_stages]) if params[:developmental_stages].present?
       with(:diseases_facet, params[:diseases]) if params[:diseases].present?
       with(:technologies_facet, params[:technologies]) if params[:technologies].present?
+      with(:suspension_types, params[:suspension_types]) if params[:suspension_types].present?
       with(:source_name, params[:source_name]) if params[:source_name].present?
 
       if params[:sort].present?
@@ -103,6 +106,7 @@ class DatasetsController < ApplicationController
         :organisms,
         :diseases,
         :technologies,
+        :suspension_types,
         :file_resources,
         :study,
         :links

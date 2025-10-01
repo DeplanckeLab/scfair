@@ -6,7 +6,8 @@ class Dataset < ApplicationRecord
     DevelopmentalStage => :developmental_stages,
     Disease => :diseases,
     Sex => :sexes,
-    Technology => :technologies
+    Technology => :technologies,
+    SuspensionType => :suspension_types
   }.freeze
 
   CATEGORIES = ASSOCIATION_METHODS.keys.freeze
@@ -20,6 +21,7 @@ class Dataset < ApplicationRecord
   has_and_belongs_to_many :organisms
   has_and_belongs_to_many :diseases
   has_and_belongs_to_many :technologies
+  has_and_belongs_to_many :suspension_types
 
   has_many :links, class_name: "DatasetLink"
   has_many :file_resources
@@ -58,8 +60,8 @@ class Dataset < ApplicationRecord
       end
     end
 
-    # Separate fields for facets (only items with ontology terms, excluding Organism)
-    ASSOCIATION_METHODS.except(Organism).each do |category, method|
+    # Separate fields for facets (only items with ontology terms, excluding Organism and SuspensionType)
+    ASSOCIATION_METHODS.except(Organism, SuspensionType).each do |category, method|
       string "#{method}_facet", multiple: true do
         send(method).select { |item| item.ontology_term_id.present? }.map(&:name)
       end
@@ -80,7 +82,7 @@ class Dataset < ApplicationRecord
     end
 
     # Ontology-aware fields with identifiers and ancestors (excluding Organism)
-    ASSOCIATION_METHODS.except(Organism).each do |category, method|
+    ASSOCIATION_METHODS.except(Organism, SuspensionType).each do |category, method|
       string "#{method}_ontology", multiple: true do
         send(method).includes(:ontology_term).flat_map do |item|
           terms = [item.ontology_term&.identifier]

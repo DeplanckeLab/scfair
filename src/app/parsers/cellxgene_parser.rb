@@ -85,6 +85,7 @@ class CellxgeneParser
       update_organisms(dataset, data.fetch(:organism, []))
       update_diseases(dataset, data.fetch(:disease, []))
       update_technologies(dataset, data.fetch(:assay, []))
+      update_suspension_types(dataset, data.fetch(:suspension_type, []))
       update_file_resources(dataset, data.fetch(:assets))
       update_links(dataset, collection.links)
 
@@ -344,6 +345,24 @@ class CellxgeneParser
       end
 
       @errors << "Technology without identifier: #{technology_name}, dataset: #{dataset.source_reference_id}" if ontology_identifier.blank?
+    end
+  end
+
+  def update_suspension_types(dataset, suspension_types_data)
+    return unless suspension_types_data
+
+    dataset.suspension_types.clear
+
+    suspension_types_data.each do |entry|
+      next unless entry.is_a?(String)
+
+      name = entry.to_s.strip
+      downcased = name.downcase
+
+      next if downcased == "na"
+
+      suspension_type_record = SuspensionType.where(name: downcased).first_or_create!
+      dataset.suspension_types << suspension_type_record unless dataset.suspension_types.include?(suspension_type_record)
     end
   end
 
