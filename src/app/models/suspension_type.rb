@@ -5,6 +5,10 @@ class SuspensionType < ApplicationRecord
 
   validates :name, presence: true, uniqueness: true
 
+  def self.requires_ontology_link?
+    false
+  end
+
   def self.color_settings
     {
       bg_circle: "bg-teal-500",
