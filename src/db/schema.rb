@@ -95,6 +95,14 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
     t.index ["sex_id"], name: "index_datasets_sexes_on_sex_id"
   end
 
+  create_table "datasets_suspension_types", id: false, force: :cascade do |t|
+    t.uuid "dataset_id", null: false
+    t.uuid "suspension_type_id", null: false
+    t.index ["dataset_id", "suspension_type_id"], name: "idx_ds_st", unique: true
+    t.index ["dataset_id"], name: "index_datasets_suspension_types_on_dataset_id"
+    t.index ["suspension_type_id"], name: "index_datasets_suspension_types_on_suspension_type_id"
+  end
+
   create_table "datasets_technologies", id: false, force: :cascade do |t|
     t.uuid "dataset_id", null: false
     t.uuid "technology_id", null: false
@@ -136,6 +144,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
     t.string "id_regexp"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "dataset_id"
+    t.index ["dataset_id"], name: "index_ext_sources_on_dataset_id"
   end
 
   create_table "file_resources", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
@@ -252,6 +262,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
     t.index ["journal_id"], name: "index_studies_on_journal_id"
   end
 
+  create_table "suspension_types", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.citext "name", null: false
+    t.uuid "ontology_term_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_suspension_types_on_name", unique: true
+    t.index ["ontology_term_id"], name: "index_suspension_types_on_ontology_term_id"
+  end
+
   create_table "technologies", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
     t.citext "name", null: false
     t.uuid "ontology_term_id"
@@ -282,6 +301,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_09_074614) do
   add_foreign_key "datasets_organisms", "organisms"
   add_foreign_key "datasets_sexes", "datasets"
   add_foreign_key "datasets_sexes", "sexes"
+  add_foreign_key "datasets_suspension_types", "datasets"
+  add_foreign_key "datasets_suspension_types", "suspension_types"
   add_foreign_key "datasets_technologies", "datasets"
   add_foreign_key "datasets_technologies", "technologies"
   add_foreign_key "datasets_tissues", "datasets"

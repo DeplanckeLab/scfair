@@ -126,6 +126,21 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
       t.index [:dataset_id, :technology_id], unique: true
     end
 
+    create_table :suspension_types, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+      t.citext :name, null: false
+      t.references :ontology_term, type: :uuid, null: true
+      t.timestamps
+
+      t.index [:name], unique: true
+    end
+
+    create_table :datasets_suspension_types, id: false, force: :cascade do |t|
+      t.references :dataset, type: :uuid, null: false, foreign_key: true
+      t.references :suspension_type, type: :uuid, null: false, foreign_key: true
+
+      t.index [:dataset_id, :suspension_type_id], unique: true, name: "idx_ds_st"
+    end
+
     # previously processed data
     create_table :file_resources, id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
       t.references :dataset, type: :uuid, null: false, foreign_key: true
@@ -151,6 +166,7 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     drop_table :datasets_tissues if table_exists?(:datasets_tissues)
     drop_table :cell_types_datasets if table_exists?(:cell_types_datasets)
     drop_table :datasets_sexes if table_exists?(:datasets_sexes)
+    drop_table :datasets_suspension_types if table_exists?(:datasets_suspension_types)
 
     drop_table :technologies if table_exists?(:technologies)
     drop_table :diseases if table_exists?(:diseases)
@@ -159,6 +175,8 @@ class CreateDatasetRelatedTables < ActiveRecord::Migration[7.0]
     drop_table :tissues if table_exists?(:tissues)
     drop_table :cell_types if table_exists?(:cell_types)
     drop_table :sexes if table_exists?(:sexes)
+    drop_table :suspension_types if table_exists?(:suspension_types)
+    drop_table :dataset_links if table_exists?(:dataset_links)
     drop_table :datasets if table_exists?(:datasets)
   end
 end
