@@ -1,0 +1,22 @@
+{
+  "settings": {
+    "index": { "refresh_interval": "1s", "number_of_replicas": 0 },
+    "analysis": {
+      "analyzer": {
+        "en_text": { "type": "standard", "stopwords": "_english_" }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "id": { "type": "keyword" },
+      "identifier": { "type": "keyword" },
+      "category": { "type": "keyword" },
+      "name": { "type": "text", "analyzer": "en_text", "fields": { "kw": { "type": "keyword" } } },
+      "parent_ids": { "type": "keyword" },
+      "child_ids": { "type": "keyword" },
+      "is_used_directly": { "type": "boolean" }
+    }
+  }
+}

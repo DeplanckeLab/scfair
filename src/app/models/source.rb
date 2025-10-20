@@ -6,6 +6,18 @@ class Source < ApplicationRecord
   validates :slug, presence: true, uniqueness: true
   validates :name, presence: true, uniqueness: true
 
+  def self.color_settings
+    {
+      bg_circle: "bg-yellow-500",
+      bg_text: "bg-yellow-100",
+      text_color: "text-yellow-800",
+    }
+  end
+
+  def self.display_name
+    "Data Source"
+  end
+
   def total_datasets_count
     completed_datasets_count + failed_datasets_count
   end

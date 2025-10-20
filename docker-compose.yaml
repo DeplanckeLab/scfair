@@ -12,10 +12,11 @@ services:
     env_file: src/.env
     environment:
       - RAILS_ENV=production
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
     depends_on:
       postgres:
         condition: service_healthy
-      solr:
+      elasticsearch:
         condition: service_healthy
     networks:
       - scfair_production_network
@@ -35,28 +36,22 @@ services:
       - scfair_production_network
     restart: always
 
-  solr:
-    build:
-      context: ./src/solr
-      dockerfile: Dockerfile
-    image: scfair-solr:latest
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "8983:8983"
-    volumes:
-      - solr_data:/var/solr
-    command: solr-precreate production /opt/solr/server/solr/configsets/sunspot
+      - "9200:9200"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8983/solr/"]
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
-    environment:
-      SOLR_HEAP: 2g
-      SOLR_JAVA_MEM: -Xms512m -Xmx2g
     networks:
       - scfair_production_network
-    restart: always
+    restart: unless-stopped
 
 networks:
   scfair_production_network:
@@ -64,6 +59,3 @@ networks:
 
 volumes:
   postgres-data:
-  solr_data:
-    driver: local
-  solr_logs:

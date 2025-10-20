@@ -24,14 +24,12 @@ class DatasetValidator
 
     puts "Starting validation of #{@total_count} datasets..."
 
-    Solr::IndexingControl.without_indexing do
-      Dataset.processing.includes(:organisms, :cell_types).where(source: source).find_each(batch_size: BATCH_SIZE) do |dataset|
-        validate_dataset(dataset)
-        @processed_count += 1
+    Dataset.processing.includes(:organisms, :cell_types).where(source: source).find_each(batch_size: BATCH_SIZE) do |dataset|
+      validate_dataset(dataset)
+      @processed_count += 1
 
-        if @processed_count % BATCH_SIZE == 0
-          puts "Processed #{@processed_count}/#{@total_count} datasets..."
-        end
+      if @processed_count % BATCH_SIZE == 0
+        puts "Processed #{@processed_count}/#{@total_count} datasets..."
       end
     end
 

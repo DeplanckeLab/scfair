@@ -1,0 +1,80 @@
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+     data-controller="facet-panel"
+     data-facet-panel-category-value="<%= facet[:key] %>"
+     id="facet-<%= facet[:key] %>">
+  <div class="sticky top-0 bg-white z-20 border-b border-gray-100">
+    <div class="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
+         data-action="click->facet-panel#toggleExpand">
+      <div class="flex items-center gap-2 flex-1">
+        <svg class="w-4 h-4 text-gray-500 transition-transform duration-200"
+             data-facet-panel-target="chevron"
+             fill="currentColor"
+             viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clip-rule="evenodd" />
+        </svg>
+        <% color_settings = Facets::Catalog.color_settings(facet[:key]) %>
+        <span class="w-2 h-2 rounded-full <%= color_settings[:bg_circle] %>"></span>
+        <span class="font-medium text-gray-900 text-sm">
+          <%= Facets::Catalog.display_name(facet[:key]) %>
+        </span>
+        <% selected_count = Array(params[Facets::Catalog.param_key(facet[:key])]).size %>
+        <% colors = facet[:colors] || {} %>
+        <span class="<%= selected_count > 0 ? '' : 'hidden' %> px-2 py-0.5 text-xs font-medium <%= colors[:badge] %> rounded-full"
+              data-facet-panel-target="selectedBadge">
+          <%= selected_count %>
+        </span>
+      </div>
+      <button type="button"
+              class="<%= selected_count > 0 ? '' : 'hidden' %> px-2 py-1 text-xs font-medium <%= colors[:button_text] %> <%= colors[:button_hover_text] %> <%= colors[:button_hover_bg] %> rounded transition-colors"
+              data-facet-panel-target="clearButton"
+              data-action="click->facet-panel#clearCategory"
+        onclick="event.stopPropagation()">
+        Clear
+      </button>
+    </div>
+    <div class="hidden px-3 pb-3"
+         data-facet-panel-target="searchContainer">
+      <div class="relative">
+        <input type="text"
+               placeholder="Search <%= Facets::Catalog.display_name(facet[:key]).downcase %>..."
+               class="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 <%= colors[:focus_ring] %> focus:border-transparent outline-none"
+               data-facet-panel-target="searchInput"
+               data-action="input->facet-panel#searchInput"
+        autocomplete="off">
+        <svg class="absolute left-2.5 top-2 w-4 h-4 text-gray-400 pointer-events-none"
+             fill="none"
+             stroke="currentColor"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <button type="button"
+                class="hidden absolute right-2 top-1.5 p-1 text-gray-400 hover:text-gray-600"
+                data-facet-panel-target="clearSearchButton"
+                data-action="click->facet-panel#clearSearch">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="overflow-y-auto transition-all duration-200"
+       style="max-height: 0"
+       data-facet-panel-target="scrollableContent">
+    <turbo-frame id="facet_content_<%= facet[:key] %>"
+                 data-facet-panel-target="contentFrame">
+      <% if facet[:data].present? %>
+        <%= render "facets/facet_content", facet: facet %>
+      <% else %>
+        <%= render "shared/skeleton_loader", margin_left: "0" %>
+      <% end %>
+    </turbo-frame>
+  </div>
+</div>

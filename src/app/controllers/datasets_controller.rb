@@ -1,124 +1,75 @@
 class DatasetsController < ApplicationController
+  allow_browser versions: :modern
+
   def index
-    @search = Dataset.search do
-      if params[:search].present?
-        search_term = params[:search].split.map { |term|
-          term = Solr::Escape.escape(term.downcase) + "*"
-        }.join(" AND ")
+    search = Search::DatasetSearch.new(search_params)
+    result = search.execute
 
-        fulltext search_term  do
-          fields(
-            text_search: 2.0,
-            ancestor_ontology_terms: 0.3
-          )
-        end
-      end
-
-      adjust_solr_params do |params|
-        facet_fields = %w[
-          organisms_sm
-          cell_types_facet_sm
-          tissues_facet_sm
-          developmental_stages_facet_sm
-          diseases_facet_sm
-          sexes_facet_sm
-          technologies_facet_sm
-          suspension_types_sm
-          source_name_s
-        ]
-
-        if params[:q] && params[:q] != "*:*"
-          search_query = params[:q]
-          params[:fq] = Array(params[:fq])
-          params[:fq] << "{!tag=text}((text_search_text:(#{search_query})) OR (ancestor_ontology_terms_text:(#{search_query})))"
-          params[:q] = "*:*"
-        end
-
-        params[:fq] = params[:fq].map do |fq|
-          if fq == "type:Dataset"
-            fq
-          elsif fq.start_with?("{!tag=text}")
-            fq
-          else
-            field = fq.split(":").first
-            "{!tag=#{field}}#{fq}"
-          end
-        end
-
-        params[:"facet.field"] = params[:"facet.field"].map do |field|
-          exclusions = (facet_fields + ["text"]).join(",")
-
-          if field =~ /\{!key=([^}]+)\}(.*)/
-            key         = Regexp.last_match(1)
-            field_name  = Regexp.last_match(2)
-            "{!ex=#{exclusions} key=#{key}}#{field_name}"
-          else
-            "{!ex=#{exclusions}}#{field}"
-          end
-        end
-
-        unless params[:"facet.field"].include?("{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,suspension_types_sm,source_name_s,text}organism_ancestors_sm")
-          params[:"facet.field"] << "{!ex=organisms_sm,cell_types_facet_sm,tissues_facet_sm,developmental_stages_facet_sm,diseases_facet_sm,sexes_facet_sm,technologies_facet_sm,suspension_types_sm,source_name_s,text}organism_ancestors_sm"
-        end
-
-        params[:"facet.limit"] = -1
-      end
-
-      facet :organisms, sort: :count
-      facet :cell_types_facet, name: "cell_types", sort: :index
-      facet :tissues_facet, name: "tissues", sort: :index
-      facet :developmental_stages_facet, name: "developmental_stages", sort: :index
-      facet :diseases_facet, name: "diseases", sort: :index
-      facet :sexes_facet, name: "sex", sort: :index
-      facet :technologies_facet, name: "technologies", sort: :index
-      facet :suspension_types, sort: :index
-      facet :source_name, sort: :index
-
-      with(:organism_ancestors, params[:organisms]) if params[:organisms].present?
-
-      with(:sexes_facet, params[:sex]) if params[:sex].present?
-      with(:cell_types_facet, params[:cell_types]) if params[:cell_types].present?
-      with(:tissues_facet, params[:tissues]) if params[:tissues].present?
-      with(:developmental_stages_facet, params[:developmental_stages]) if params[:developmental_stages].present?
-      with(:diseases_facet, params[:diseases]) if params[:diseases].present?
-      with(:technologies_facet, params[:technologies]) if params[:technologies].present?
-      with(:suspension_types, params[:suspension_types]) if params[:suspension_types].present?
-      with(:source_name, params[:source_name]) if params[:source_name].present?
-
-      if params[:sort].present?
-        case params[:sort]
-        when "cells_desc"
-          order_by :cell_count, :desc
-        when "cells_asc"
-          order_by :cell_count, :asc
-        end
-      end
-
-      page = params[:page].to_i
-      page = 1 if page < 1
-      paginate page: page, per_page: 6
-
-      data_accessor_for(Dataset).include = [
-        :sexes,
-        :cell_types,
-        :tissues,
-        :developmental_stages,
-        :organisms,
-        :diseases,
-        :technologies,
-        :suspension_types,
-        :file_resources,
-        :study,
-        :links
-      ]
-    end
-
-    @datasets = @search.results
-    @organism_facet_rows = OrganismFacetBuilder.build_from_facets(@search) || []
+    @total = result.total
+    @datasets = load_datasets(result.dataset_ids)
+    @facets = build_facet_views(result.facets)
 
     respond_to do |format|
       format.html
       format.turbo_stream
     end
+  end
+
+  private
+
+  def load_datasets(ids)
+    return paginated_collection([]) if ids.empty?
+
+    datasets = Dataset
+      .includes(dataset_associations)
+      .where(id: ids)
+      .in_order_of(:id, ids)
+
+    paginated_collection(datasets)
+  end
+
+  def build_facet_views(facet_data)
+    Facets::Catalog.all.map do |config|
+      {
+        key: config[:key],
+        type: config[:type],
+        data: facet_data[config[:key].to_s] || (config[:type] == :tree ? [] : {}),
+        colors: helpers.facet_color_classes(config[:key])
+      }
+    end
+  end
+
+  def paginated_collection(datasets)
+    WillPaginate::Collection.create(current_page, items_per_page, @total || datasets.size) do |pager|
+      pager.replace(datasets)
+    end
+  end
+
+  def search_params
+    params.except(:controller, :action, :format)
+      .permit(:search, :sort, :page, :per, *permitted_facet_params)
+      .merge(
+        page: current_page,
+        per: items_per_page,
+        skip_facets: request.format.html?
+      )
+  end
+
+  def permitted_facet_params
+    Facets::Catalog.all.map { |f| { Facets::Catalog.param_key(f[:key]) => [] } }
+  end
+
+  def current_page
+    [params[:page].to_i, 1].max
+  end
+
+  def items_per_page
+    [(params[:per].presence || 6).to_i, 1].max.clamp(1, 100)
+  end
+
+  def dataset_associations
+    [:sexes, :cell_types, :tissues, :developmental_stages, :organisms,
+     :diseases, :technologies, :suspension_types, :file_resources,
+     :study, :links, :source]
   end
 end

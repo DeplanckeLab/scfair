@@ -1,0 +1,8 @@
+<turbo-frame id="<%= dom_id_for_nodes(@category, @parent_id) %>">
+  <%= render "facets/tree_nodes",
+             category: @category,
+             parent_id: @parent_id,
+             nodes: @nodes,
+             level: @level,
+             colors: @colors %>
+</turbo-frame>

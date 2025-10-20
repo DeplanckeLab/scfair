@@ -1,20 +1,48 @@
+<%# Update datasets list %>
 <%= turbo_stream.replace "datasets" do %>
-  <div class="bg-white rounded-lg shadow">
-    <div class="p-4">
-      <div class="flex justify-end mb-3 items-center gap-3">
-      </div>
-      <div class="space-y-3">
-        <%= render @datasets %>
-      </div>
-      <div class="mt-4">
-        <%= will_paginate @datasets, 
-          class: "pagination",
-          inner_window: 2,
-          outer_window: 1,
-          previous_label: "<svg class="w-4 h-4" ...></svg>",
-          next_label: "<svg class="w-4 h-4" ...></svg>",
-          renderer: WillPaginate::ActionView::LinkRenderer %>
+  <div id="datasets">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div class="p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div></div>
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1">
+              <label class="text-xs text-gray-500">Sort</label>
+              <select class="text-sm border-gray-300 rounded-md" name="sort" form="search_form" data-action="change->sort#apply">
+                <option value="" <%= 'selected' if params[:sort].blank? %>>Relevance</option>
+                <option value="cells_desc" <%= 'selected' if params[:sort] == 'cells_desc' %>>Most cells</option>
+                <option value="cells_asc" <%= 'selected' if params[:sort] == 'cells_asc' %>>Fewest cells</option>
+              </select>
+            </div>
+            <h2 class="text-sm text-gray-600">
+              <span class="text-brand-light font-medium"><%= @total %></span>
+              <%= 'dataset'.pluralize(@total) %>
+              <% if params[:search].present? %>
+                for "<span class="text-gray-900 font-medium"><%= params[:search] %></span>"
+              <% end %>
+            </h2>
+          </div>
+        </div>
+        <div class="space-y-3">
+          <%= render @datasets %>
+        </div>
+        <div class="mt-4">
+          <%= will_paginate @datasets,
+              class: "pagination",
+              inner_window: 2,
+              outer_window: 1,
+              previous_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>',
+              next_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>',
+              renderer: WillPaginate::ActionView::LinkRenderer %>
+        </div>
       </div>
     </div>
   </div>
+<% end %>
+
+<%# Update facets with new counts and available options %>
+<% @facets.each do |facet| %>
+  <%= turbo_stream.replace "facet-#{facet[:key]}" do %>
+    <%= render "facets/panel", facet: facet %>
+  <% end %>
 <% end %>
