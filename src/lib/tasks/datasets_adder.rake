@@ -52,9 +52,20 @@ task update_scp: :environment do
 end
 
 
-desc "INDEX DB WITH SOLR"
+desc "INDEX DB WITH ELASTICSEARCH"
 task index_db: :environment do
-  Rake::Task["sunspot:reindex"].invoke
+  puts "Setting up Elasticsearch indices..."
+
+  Rake::Task["search:setup"].invoke
+  Rake::Task["search:setup_ontology"].invoke
+
+  puts "\nIndexing ontology terms..."
+  Rake::Task["search:index_ontology_terms"].invoke
+
+  puts "\nIndexing datasets..."
+  Rake::Task["search:reindex"].invoke
+
+  puts "\n✓ Elasticsearch indexing completed!"
 end
 
 desc "Run all required tasks sequentially"
