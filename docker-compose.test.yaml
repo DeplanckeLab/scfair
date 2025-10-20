@@ -12,6 +12,7 @@ services:
     env_file: src/.env
     environment:
       - RAILS_ENV=test
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
     depends_on:
       postgres:
         condition: service_healthy
