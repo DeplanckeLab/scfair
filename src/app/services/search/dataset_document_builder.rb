@@ -130,16 +130,27 @@ module Search
       ancestors_with_depth = []
       visited = Set.new
 
+      if @ancestor_cache&.key?(term.id)
+        ancestor_ids = @ancestor_cache[term.id]
+        ancestor_ids.each do |ancestor_id|
+          next if visited.include?(ancestor_id)
+          visited.add(ancestor_id)
+
+          ancestor = OntologyTerm.find_by(id: ancestor_id)
+          next unless ancestor
+
+          ancestors_with_depth << [ancestor, 1]
+        end
+
+        return ancestors_with_depth
+      end
+
       queue = [[term, 0]]
 
       while queue.any?
         current_term, depth = queue.shift
 
-        parent_ids = if @ancestor_cache[current_term.id]
-                       @ancestor_cache[current_term.id]
-                     else
-                       current_term.parent_relationships.pluck(:parent_id)
-                     end
+        parent_ids = current_term.parent_relationships.pluck(:parent_id)
 
         parent_ids.each do |parent_id|
           next if visited.include?(parent_id)
