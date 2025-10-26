@@ -128,7 +128,7 @@ export default class extends Controller {
     const checkboxes = this.element.querySelectorAll('input[type="checkbox"]:checked')
     let count = checkboxes.length
 
-    if (checkboxes.length === 0 && !this.contentLoaded()) {
+    if (count === 0) {
       const paramKey = this.getParamKey()
       const urlParams = new URLSearchParams(window.location.search)
       const selectedFromUrl = urlParams.getAll(`${paramKey}[]`)
@@ -165,7 +165,7 @@ export default class extends Controller {
     const checkboxes = this.element.querySelectorAll('input[type="checkbox"]:checked')
     let selectedIds = Array.from(checkboxes).map(cb => cb.value)
 
-    if (checkboxes.length === 0 && !this.contentLoaded()) {
+    if (selectedIds.length === 0) {
       const paramKey = this.getParamKey()
       const urlParams = new URLSearchParams(window.location.search)
       selectedIds = urlParams.getAll(`${paramKey}[]`)
@@ -200,11 +200,17 @@ export default class extends Controller {
       this.clearSearch()
     }
 
-    this.updateSelectedCount()
+    const paramKey = this.getParamKey()
+    sessionStorage.setItem(`selections_${paramKey}`, JSON.stringify([]))
 
-    if (this.form) {
-      this.form.requestSubmit()
-    }
+    const urlParams = new URLSearchParams(window.location.search)
+    urlParams.delete(`${paramKey}[]`)
+
+    const newUrl = urlParams.toString()
+      ? `${window.location.pathname}?${urlParams.toString()}`
+      : window.location.pathname
+
+    Turbo.visit(newUrl)
   }
 
   toggleNode(event) {
