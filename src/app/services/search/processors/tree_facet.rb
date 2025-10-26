@@ -58,7 +58,12 @@ module Search
 
         display_ids = if find_roots
           return [] if direct_ids.empty?
-          hierarchy.identify_roots(direct_ids, counts_by_id, direct_counts_by_id)
+          roots = hierarchy.identify_roots(direct_ids, counts_by_id, direct_counts_by_id)
+
+          selected_in_ancestors = selected_ids.to_a & ancestor_ids
+          missing_selected = selected_in_ancestors - roots
+
+          roots + missing_selected
         else
           ancestor_ids
         end
