@@ -15,13 +15,20 @@ module Search
       {
         bool: {
           must: multi_match_query,
-          filter: @filters
+          filter: base_filters + @filters
         }
       }
     end
 
     def browse_query
-      @filters.any? ? { bool: { filter: @filters } } : { match_all: {} }
+      all_filters = base_filters + @filters
+      all_filters.any? ? { bool: { filter: all_filters } } : { match_all: {} }
+    end
+
+    def base_filters
+      [
+        { term: { status: "completed" } }
+      ]
     end
 
     def multi_match_query

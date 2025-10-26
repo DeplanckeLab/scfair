@@ -29,6 +29,7 @@
       "source_url": { "type": "keyword" },
       "explorer_url": { "type": "keyword" },
       "cell_count": { "type": "integer" },
+      "status": { "type": "keyword" },
       "source_name": { "type": "keyword" },
       "source_ids": { "type": "keyword" },
       "source_names": { "type": "text", "analyzer": "en_text" },

@@ -15,6 +15,7 @@ module Search
         source_url: @dataset.source_url,
         explorer_url: @dataset.explorer_url,
         cell_count: @dataset.cell_count,
+        status: @dataset.status,
         source_name: @dataset.source&.name,
         authors: Array(@dataset.study&.authors),
         text_search: build_text_search
