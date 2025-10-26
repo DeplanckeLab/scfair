@@ -11,7 +11,7 @@ module Search
         query = {
           query: { terms: { id: term_ids } },
           size: term_ids.size,
-          _source: ["id", "name", "parent_ids", "child_ids"]
+          _source: ["id", "name", "identifier", "parent_ids", "child_ids"]
         }
 
         response = client.search(index: ONTOLOGY_INDEX, body: query)
@@ -23,6 +23,7 @@ module Search
             source["id"],
             {
               name: source["name"],
+              identifier: source["identifier"],
               parent_ids: source["parent_ids"] || [],
               child_ids: source["child_ids"] || []
             }
