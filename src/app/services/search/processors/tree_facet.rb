@@ -1,6 +1,8 @@
 module Search
   module Processors
     class TreeFacet
+      include Search::Concerns::DuplicateLabeler
+
       def initialize(params, category)
         @params = params
         @category = category
@@ -24,41 +26,6 @@ module Search
       end
 
       private
-
-      def append_ontology_code_to_duplicates(nodes, terms_metadata)
-        name_groups = nodes.group_by { |node| node.name.to_s.downcase }
-
-        duplicate_names = name_groups.select { |_, group| group.size > 1 }.keys
-
-        return nodes if duplicate_names.empty?
-
-        nodes.map do |node|
-          if duplicate_names.include?(node.name.to_s.downcase)
-            identifier = terms_metadata.dig(node.id, :identifier)
-            ontology_prefix = extract_ontology_prefix(identifier)
-
-            if ontology_prefix
-              Facets::TreeNode.new(
-                id: node.id,
-                name: "#{node.name} (#{ontology_prefix})",
-                count: node.count,
-                has_children: node.has_children,
-                has_selected_children: node.has_selected_children
-              )
-            else
-              node
-            end
-          else
-            node
-          end
-        end
-      end
-
-      def extract_ontology_prefix(identifier)
-        return nil unless identifier
-
-        identifier.split(":").first
-      end
 
       def extract_buckets(agg)
         {
@@ -104,16 +71,18 @@ module Search
           count = counts_by_id[id]
           next if count.nil? || count.zero?
 
+          name = (terms_metadata.dig(id, :name) || id).to_s.capitalize
+
           Facets::TreeNode.new(
             id: id,
-            name: terms_metadata.dig(id, :name) || id,
+            name: name,
             count: count,
             has_children: has_children_set.include?(id),
             has_selected_children: nodes_with_selected_children.include?(id)
           )
         end
 
-        nodes = append_ontology_code_to_duplicates(nodes, terms_metadata)
+        nodes = label_duplicates(nodes) { |node| terms_metadata.dig(node.id, :identifier) }
 
         hierarchy.sort_by_selection(nodes, selected_ids, nodes_with_selected_children).map(&:to_h)
       end

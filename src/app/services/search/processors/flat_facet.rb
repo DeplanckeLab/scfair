@@ -37,7 +37,10 @@ module Search
             name = names_by_id[id] || id
             [selected_ids.include?(id) ? 0 : 1, name.downcase]
           }
-          .to_h { |b| [b["key"], { name: names_by_id[b["key"]] || b["key"], count: b["doc_count"] }] }
+          .to_h { |b|
+            name = (names_by_id[b["key"]] || b["key"]).to_s.capitalize
+            [b["key"], { name: name, count: b["doc_count"] }]
+          }
       end
     end
   end

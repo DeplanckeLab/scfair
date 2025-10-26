@@ -2,6 +2,8 @@
 
 module Search
   class FacetService
+    include Search::Concerns::DuplicateLabeler
+
     MAX_AGGREGATION_SIZE = 10_000
     attr_reader :current_search_term
 
@@ -151,20 +153,28 @@ module Search
 
     def process_tree_search_results(agg, category)
       buckets = agg.dig("matching_#{category}", "filtered", "nodes", "buckets") || []
+      return [] if buckets.empty?
 
-      buckets.map do |bucket|
+      term_ids = buckets.map { |b| b["key"] }
+      terms_metadata = OntologyTermLookup.fetch_terms(term_ids)
+
+      results = buckets.map do |bucket|
         source = bucket.dig("details", "sample", "hits", "hits", 0, "_source") || {}
         hierarchy = source["#{category}_hierarchy"] || []
         matching = hierarchy.find { |h| h["id"] == bucket["key"] } || {}
+        name = (terms_metadata.dig(bucket["key"], :name) || matching["name"] || bucket["key"]).to_s.capitalize
 
         {
           id: bucket["key"],
-          name: matching["name"] || bucket["key"],
+          name: name,
+          identifier: terms_metadata.dig(bucket["key"], :identifier),
           count: bucket["doc_count"],
           depth: matching["depth"],
           is_direct: matching["is_direct"]
         }
       end
+
+      label_duplicates(results) { |result| result[:identifier] }
     end
 
     def process_flat_search_results(agg, category)
@@ -177,7 +187,7 @@ module Search
         names = source["#{category}_names"] || []
 
         index = ids.index(current_id)
-        name = index ? names[index] : current_id
+        name = (index ? names[index] : current_id).to_s.capitalize
 
         next unless name_matches_search?(name, @current_search_term)
 
