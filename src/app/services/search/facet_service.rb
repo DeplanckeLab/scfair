@@ -14,20 +14,25 @@ module Search
 
     def load_facet(category)
       config = Facets::Catalog.find!(category.to_sym)
+      is_tree = config[:type] == :tree
 
-      agg_result = fetch_aggregation(category, config[:type])
-      processor = config[:type] == :tree ?
-        Processors::TreeFacet.new(@params, category) :
-        Processors::FlatFacet.new(@params, category)
-
-      processor.process(agg_result)
+      if is_tree
+        load_facet_with_filtered_counts(category)
+      else
+        agg_result = fetch_filtered_aggregation(category, config[:type])
+        processor = Processors::FlatFacet.new(@params, category)
+        processor.process(agg_result)
+      end
     end
 
     def load_children(category, parent_id)
+      filters = filter_builder.build_except(category)
+      category_excluded_query = QueryBuilder.new(@query_text, filters).build
+
       body = {
         size: 0,
-        query: query,
-        aggs: AggregationBuilder.build_children(category, parent_id, filter_builder.build_except(category))
+        query: category_excluded_query,
+        aggs: AggregationBuilder.build_children(category, parent_id, [])
       }
 
       response = client.search(index: "datasets", body: body)
@@ -57,12 +62,76 @@ module Search
 
     private
 
-    def fetch_aggregation(category, type)
-      filters = filter_builder.build_except(category)
+    def has_selection?(category)
+      param_key = Facets::Catalog.param_key(category)
+      @params[param_key].present?
+    end
+
+    def load_facet_with_filtered_counts(category)
+      unfiltered_structure = fetch_unfiltered_structure(category)
+
+      filtered_agg = fetch_filtered_aggregation(category, :tree)
+
+      processor = Processors::TreeFacet.new(@params, category)
+      processor.process_with_structure(filtered_agg, unfiltered_structure)
+    end
+
+    def fetch_unfiltered_structure(category)
+      unfiltered_query = QueryBuilder.new(@query_text, []).build
+
       body = {
         size: 0,
-        query: query,
-        aggs: AggregationBuilder.build_for_facet(category, type, filters)
+        query: unfiltered_query,
+        aggs: AggregationBuilder.build_for_facet(category, :tree, [])
+      }
+
+      response = client.search(index: "datasets", body: body)
+      agg = response.dig("aggregations", "facet_#{category}")
+
+      ancestor_buckets = agg.dig("ancestor_terms", "buckets") || []
+      direct_buckets = agg.dig("direct_terms", "buckets") || []
+
+      counts_by_id = ancestor_buckets.to_h { |b| [b["key"], b["doc_count"]] }
+      direct_counts_by_id = direct_buckets.to_h { |b| [b["key"], b["doc_count"]] }
+      direct_ids = direct_buckets.map { |b| b["key"] }
+      ancestor_ids = ancestor_buckets.map { |b| b["key"] }
+
+      terms_metadata = Search::OntologyTermLookup.fetch_terms((direct_ids + ancestor_ids).uniq)
+      hierarchy = Facets::TreeHierarchy.new(terms_metadata)
+      visible_roots = hierarchy.identify_roots(direct_ids, counts_by_id, direct_counts_by_id)
+
+      {
+        visible_roots: visible_roots,
+        terms_metadata: terms_metadata
+      }
+    rescue StandardError => e
+      Rails.logger.warn("Unfiltered structure fetch failed: #{e.class}: #{e.message}")
+      { visible_roots: [], terms_metadata: {} }
+    end
+
+    def fetch_filtered_aggregation(category, type)
+      filters = filter_builder.build_all
+      filtered_query = QueryBuilder.new(@query_text, filters).build
+      body = {
+        size: 0,
+        query: filtered_query,
+        aggs: AggregationBuilder.build_for_facet(category, type, [])
+      }
+
+      response = client.search(index: "datasets", body: body)
+      response.dig("aggregations", "facet_#{category}")
+    rescue StandardError => e
+      Rails.logger.warn("Filtered aggregation failed: #{e.class}: #{e.message}")
+      type == :tree ? [] : {}
+    end
+
+    def fetch_aggregation(category, type)
+      filters = filter_builder.build_except(category)
+      category_excluded_query = QueryBuilder.new(@query_text, filters).build
+      body = {
+        size: 0,
+        query: category_excluded_query,
+        aggs: AggregationBuilder.build_for_facet(category, type, [])
       }
 
       response = client.search(index: "datasets", body: body)
