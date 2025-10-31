@@ -36,7 +36,14 @@ module Search
       }
 
       response = client.search(index: "datasets", body: body)
-      Processors::TreeFacet.new(@params, category).process_children(response["aggregations"], parent_id)
+
+      unfiltered_structure = fetch_unfiltered_structure(category)
+
+      Processors::TreeFacet.new(@params, category).process_children(
+        response["aggregations"],
+        parent_id,
+        unfiltered_structure[:visible_roots]
+      )
     rescue StandardError => e
       Rails.logger.warn("Children aggregation failed: #{e.class}: #{e.message}")
       []

@@ -18,11 +18,11 @@ module Search
         build_tree_nodes(buckets, find_roots: true)
       end
 
-      def process_children(aggregation, parent_id)
+      def process_children(aggregation, parent_id, visible_roots = [])
         return [] unless aggregation
 
         buckets = extract_children_buckets(aggregation, parent_id)
-        build_tree_nodes(buckets, find_roots: false)
+        build_tree_nodes(buckets, find_roots: false, parent_id: parent_id, visible_roots: visible_roots)
       end
 
       def process_with_structure(filtered_aggregation, unfiltered_structure)
@@ -74,8 +74,36 @@ module Search
         return [] if display_ids.empty?
 
         has_children_set = hierarchy.nodes_with_children(display_ids, filtered_direct_ids)
-        nodes_with_selected_children = selected_ids.any? ?
-          Search::OntologyTermLookup.parents_of_set(selected_ids.to_a).to_set : Set.new
+        nodes_with_selected_children = if selected_ids.any?
+          first_parents = Set.new
+          selected_ids.each do |selected_id|
+            next if display_ids.include?(selected_id)
+
+            parent_ids = terms_metadata.dig(selected_id, :parent_ids) || []
+            available_parents = parent_ids & display_ids
+
+            selected_ancestors = available_parents.select { |p| selected_ids.include?(p) }
+            next if selected_ancestors.any?
+
+            visible_root_parents = available_parents.select { |p| visible_roots.include?(p) }
+            preferred_parent = if visible_root_parents.any?
+              most_root_like = visible_root_parents.reject do |candidate|
+                candidate_parents = terms_metadata.dig(candidate, :parent_ids) || []
+                (candidate_parents & visible_root_parents).any?
+              end
+
+              target_parents = most_root_like.any? ? most_root_like : visible_root_parents
+              display_ids.find { |id| target_parents.include?(id) }
+            else
+              available_parents.first
+            end
+
+            first_parents.add(preferred_parent) if preferred_parent
+          end
+          first_parents
+        else
+          Set.new
+        end
 
         nodes = display_ids.filter_map do |id|
           count = filtered_counts_by_id[id]
@@ -159,7 +187,7 @@ module Search
         }
       end
 
-      def build_tree_nodes(buckets, find_roots: true)
+      def build_tree_nodes(buckets, find_roots: true, parent_id: nil, visible_roots: [])
         counts_by_id = buckets[:ancestor].to_h { |b| [b["key"], b["doc_count"]] }
         direct_counts_by_id = buckets[:direct].to_h { |b| [b["key"], b["doc_count"]] }
         ancestor_ids = buckets[:ancestor].map { |b| b["key"] }
@@ -171,9 +199,11 @@ module Search
         terms_metadata = OntologyTermLookup.fetch_terms((direct_ids + ancestor_ids).uniq)
         hierarchy = Facets::TreeHierarchy.new(terms_metadata)
 
+        visible_roots_for_selection = nil
         display_ids = if find_roots
           return [] if direct_ids.empty?
           roots = hierarchy.identify_roots(direct_ids, counts_by_id, direct_counts_by_id)
+          visible_roots_for_selection = roots
 
           selected_in_ancestors = selected_ids.to_a & ancestor_ids
           missing_selected = selected_in_ancestors - roots
@@ -192,9 +222,57 @@ module Search
         return [] if display_ids.empty?
 
         has_children_set = hierarchy.nodes_with_children(display_ids, direct_ids)
-        nodes_with_selected_children = selected_ids.any? ? OntologyTermLookup.parents_of_set(selected_ids.to_a).to_set : Set.new
+        nodes_with_selected_children = if selected_ids.any?
+          first_parents = Set.new
+          selected_ids.each do |selected_id|
+            next if display_ids.include?(selected_id)
 
-        nodes = display_ids.filter_map do |id|
+            parent_ids = terms_metadata.dig(selected_id, :parent_ids) || []
+            available_parents = parent_ids & display_ids
+
+            selected_ancestors = available_parents.select { |p| selected_ids.include?(p) }
+            next if selected_ancestors.any?
+
+            preferred_parent = if visible_roots_for_selection
+              visible_root_parents = available_parents.select { |p| visible_roots_for_selection.include?(p) }
+              if visible_root_parents.any?
+                most_root_like = visible_root_parents.reject do |candidate|
+                  candidate_parents = terms_metadata.dig(candidate, :parent_ids) || []
+                  (candidate_parents & visible_root_parents).any?
+                end
+
+                target_parents = most_root_like.any? ? most_root_like : visible_root_parents
+                display_ids.find { |id| target_parents.include?(id) }
+              else
+                available_parents.first
+              end
+            else
+              available_parents.first
+            end
+
+            first_parents.add(preferred_parent) if preferred_parent
+          end
+          first_parents
+        else
+          Set.new
+        end
+
+        display_ids_filtered = if !find_roots && parent_id && visible_roots.any? && selected_ids.any?
+          display_ids.reject do |id|
+            next false unless selected_ids.include?(id)
+
+            parent_ids = terms_metadata.dig(id, :parent_ids) || []
+            next false if parent_ids.size <= 1
+
+            visible_root_parents = parent_ids & visible_roots
+
+            visible_root_parents.any? && !visible_root_parents.include?(parent_id)
+          end
+        else
+          display_ids
+        end
+
+        nodes = display_ids_filtered.filter_map do |id|
           count = counts_by_id[id]
           next if count.nil? || count.zero?
 

@@ -116,12 +116,58 @@ export default class extends Controller {
   }
 
   handleSelection(event) {
+    const checkbox = event.target
+
+    if (checkbox.checked) {
+      this.cascadeSelection(checkbox)
+    } else {
+      this.clearCascadedMarkers(checkbox)
+    }
+
     this.updateSelectedCount()
     this.saveState()
 
     if (this.form) {
       this.form.requestSubmit()
     }
+  }
+
+  cascadeSelection(checkbox) {
+    const treeNode = checkbox.closest('[data-facet-panel-target="treeNode"]')
+    if (!treeNode) return
+
+    const nodeId = treeNode.dataset.nodeId
+    if (!nodeId) return
+
+    const childrenContainer = this.element.querySelector(`[data-parent-id="${nodeId}"]`)
+    if (!childrenContainer) return
+
+    const descendantCheckboxes = childrenContainer.querySelectorAll('input[type="checkbox"]')
+    descendantCheckboxes.forEach(cb => {
+      if (!cb.checked) {
+        cb.checked = true
+        cb.dataset.originalName = cb.name
+        cb.removeAttribute('name')
+      }
+    })
+  }
+
+  clearCascadedMarkers(checkbox) {
+    const treeNode = checkbox.closest('[data-facet-panel-target="treeNode"]')
+    if (!treeNode) return
+
+    const nodeId = treeNode.dataset.nodeId
+    if (!nodeId) return
+
+    const childrenContainer = this.element.querySelector(`[data-parent-id="${nodeId}"]`)
+    if (!childrenContainer) return
+
+    const descendantCheckboxes = childrenContainer.querySelectorAll('input[type="checkbox"][data-original-name]')
+    descendantCheckboxes.forEach(cb => {
+      cb.checked = false
+      cb.name = cb.dataset.originalName
+      delete cb.dataset.originalName
+    })
   }
 
   updateSelectedCount() {
