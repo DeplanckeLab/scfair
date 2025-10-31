@@ -128,7 +128,7 @@ export default class extends Controller {
     const checkboxes = this.element.querySelectorAll('input[type="checkbox"]:checked')
     let count = checkboxes.length
 
-    if (count === 0) {
+    if (!this.contentLoaded()) {
       const paramKey = this.getParamKey()
       const urlParams = new URLSearchParams(window.location.search)
       const selectedFromUrl = urlParams.getAll(`${paramKey}[]`)
@@ -165,7 +165,7 @@ export default class extends Controller {
     const checkboxes = this.element.querySelectorAll('input[type="checkbox"]:checked')
     let selectedIds = Array.from(checkboxes).map(cb => cb.value)
 
-    if (selectedIds.length === 0) {
+    if (!this.contentLoaded() && selectedIds.length === 0) {
       const paramKey = this.getParamKey()
       const urlParams = new URLSearchParams(window.location.search)
       selectedIds = urlParams.getAll(`${paramKey}[]`)
