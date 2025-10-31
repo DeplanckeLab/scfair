@@ -55,7 +55,16 @@ module Search
             terms_metadata
           )
 
-          (visible_roots & filtered_ancestor_ids) | selected_with_ancestors
+          combined_ids = (visible_roots & filtered_ancestor_ids) | selected_with_ancestors
+
+          selected_terms_with_parents = selected_ids.select do |selected_id|
+            parent_ids = terms_metadata.dig(selected_id, :parent_ids) || []
+            is_visible_root = visible_roots.include?(selected_id)
+
+            !is_visible_root && (parent_ids & filtered_ancestor_ids).any?
+          end
+
+          combined_ids - selected_terms_with_parents.to_a
         else
           visible_roots & filtered_ancestor_ids
         end
@@ -98,9 +107,7 @@ module Search
           parent_ids = terms_metadata.dig(selected_id, :parent_ids) || []
           available_parents = parent_ids & filtered_direct_ids
 
-          has_visible_parent = available_parents.any? { |pid| visible_roots.include?(pid) }
-
-          if has_visible_parent
+          if available_parents.any?
             available_parents.each do |parent_id|
               parent_path = trace_to_visible_root(parent_id, visible_roots, filtered_direct_ids, terms_metadata)
               paths.merge(parent_path)
@@ -173,14 +180,14 @@ module Search
 
           selected_children_with_parents = missing_selected.select do |child_id|
             parent_ids = terms_metadata.dig(child_id, :parent_ids) || []
-            parent_ids.any? { |pid| direct_ids.include?(pid) }
+            parent_ids.any? { |pid| direct_ids.include?(pid) || ancestor_ids.include?(pid) }
           end
 
           selected_roots = missing_selected - selected_children_with_parents
 
-          roots + selected_roots
+          (roots + selected_roots).uniq
         else
-          ancestor_ids
+          ancestor_ids.uniq
         end
         return [] if display_ids.empty?
 
