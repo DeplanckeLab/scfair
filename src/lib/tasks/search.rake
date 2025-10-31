@@ -2,7 +2,7 @@
 
 namespace :search do
   desc "Create Elasticsearch datasets index and alias"
-  task setup: :environment do
+  task setup_datasets: :environment do
     client = ElasticsearchClient
     index_name = "datasets-v1"
     alias_name = "datasets"
@@ -23,19 +23,112 @@ namespace :search do
     end
   end
 
-  desc "Bulk reindex completed datasets"
-  task reindex: :environment do
+  desc "Index all datasets with optimization (reset + ancestor cache + progress)"
+  task index_datasets: :environment do
+    STDOUT.sync = true
+    client = ElasticsearchClient
+    alias_name = "datasets"
+
+    begin
+      aliased = client.indices.get_alias(name: alias_name).keys
+    rescue StandardError
+      aliased = []
+    end
+
+    aliased.each do |idx|
+      puts "Deleting index #{idx}"
+      client.indices.delete(index: idx) rescue nil
+    end
+
+    index_name = "datasets-v1"
+    mapping_path = Rails.root.join("config/elasticsearch/datasets.json")
+    body = JSON.parse(File.read(mapping_path))
+    client.indices.create(index: index_name, body: body)
+    client.indices.put_alias(index: index_name, name: alias_name)
+    puts "Aliased #{index_name} -> #{alias_name}"
+
+    client.indices.put_settings(index: "datasets", body: { index: { refresh_interval: -1 } })
+
+    puts "Building ancestor cache..."
+    start_cache = Time.now
+
+    used_term_ids = Set.new
+    Facets::Catalog.models_with_ontology.each_value do |model|
+      used_term_ids.merge(model.where.not(ontology_term_id: nil).distinct.pluck(:ontology_term_id))
+    end
+    puts "Found #{used_term_ids.size} unique terms used in datasets"
+
+    parent_pairs = OntologyTermRelationship.pluck(:parent_id, :child_id)
+    parents_by_child = Hash.new { |h, k| h[k] = [] }
+    parent_pairs.each { |pid, cid| parents_by_child[cid] << pid }
+
+    ancestor_cache = Hash.new { |h, k| h[k] = [] }
+    used_term_ids.each do |term_id|
+      visited = Set.new
+      queue = parents_by_child[term_id].dup
+      ancestors = []
+
+      while (parent_id = queue.shift)
+        next if visited.include?(parent_id)
+        visited.add(parent_id)
+        ancestors << parent_id
+        queue.concat(parents_by_child[parent_id])
+      end
+
+      ancestor_cache[term_id] = ancestors
+    end
+
+    puts "Ancestor cache built in #{(Time.now - start_cache).round(2)}s (#{ancestor_cache.size} terms)"
+
     scope = Dataset.completed.includes(
       :study, :source, :cell_types, :suspension_types,
       :organisms, :tissues, :developmental_stages, :diseases, :sexes, :technologies
     )
-    puts "Reindexing #{scope.count} datasets..."
-    Search::DatasetIndexer.bulk_index(scope)
-    puts "Done."
+    total = scope.count
+    puts "Reindexing #{total} datasets..."
+
+    start_time = Time.now
+    buffer = []
+    processed = 0
+    batch_size = 250
+
+    scope.find_in_batches(batch_size: batch_size) do |batch|
+      batch.each do |dataset|
+        buffer << { index: { _index: "datasets", _id: dataset.id } }
+        buffer << Search::DatasetDocumentBuilder.new(dataset, ancestor_cache: ancestor_cache).as_json
+      end
+
+      begin
+        ElasticsearchClient.bulk(body: buffer, refresh: false)
+        processed += batch.size
+
+        elapsed = Time.now - start_time
+        rate = processed / elapsed
+        remaining = total - processed
+        eta_seconds = remaining / rate
+        eta_formatted = Time.at(eta_seconds).utc.strftime("%H:%M:%S")
+
+        puts "Indexed #{processed}/#{total} (#{(processed.to_f / total * 100).round(1)}%) | Rate: #{rate.round(1)} docs/s | ETA: #{eta_formatted}"
+      rescue StandardError => e
+        puts "ERROR in batch starting at #{processed}: #{e.message}"
+        puts "Retrying in 2s..."
+        sleep 2
+        retry
+      ensure
+        buffer.clear
+      end
+    end
+
+    puts "Finalizing index..."
+    client.indices.put_settings(index: "datasets", body: { index: { refresh_interval: "1s" } })
+    client.indices.refresh(index: "datasets")
+
+    total_time = Time.now - start_time
+    puts "✓ Datasets reindexed in #{(total_time / 60).round(1)} minutes avg: #{(total / total_time).round(1)} docs/s"
   end
 
   desc "Create Elasticsearch ontology_terms index"
-  task setup_ontology: :environment do
+  task setup_ontology_terms: :environment do
     client = ElasticsearchClient
     index_name = "ontology_terms-v1"
     alias_name = "ontology_terms"
@@ -54,14 +147,12 @@ namespace :search do
     end
   end
 
-  desc "Index ontology terms into ES (includes directly-used terms AND all their ancestors)"
+  desc "Index ontology terms (includes directly-used terms + all ancestors)"
   task index_ontology_terms: :environment do
     STDOUT.sync = true
-
     client = ElasticsearchClient
     index_alias = "ontology_terms"
 
-    # Collect directly-used term IDs per category (tree categories only)
     used_by_category = Facets::Catalog.models_with_ontology.transform_values do |model|
       model.where.not(ontology_term_id: nil).distinct.pluck(:ontology_term_id)
     end
@@ -71,7 +162,6 @@ namespace :search do
 
     direct_ids = used_by_category.values.reduce(Set.new, :|)
 
-    # Build ancestor cache to find all ancestors of directly-used terms
     puts "Building ancestor relationships..."
     parent_pairs = OntologyTermRelationship.pluck(:parent_id, :child_id)
     parents_by_child = Hash.new { |h, k| h[k] = [] }
@@ -154,155 +244,5 @@ namespace :search do
 
     client.indices.refresh(index: index_alias)
     puts "✓ Indexed #{total} ontology terms."
-  end
-
-  desc "Reset ontology_terms index (delete old indices and recreate)"
-  task reset_ontology: :environment do
-    client = ElasticsearchClient
-    alias_name = "ontology_terms"
-
-    # Resolve alias to indices
-    begin
-      aliased = client.indices.get_alias(name: alias_name).keys
-    rescue StandardError
-      aliased = []
-    end
-
-    aliased.each do |idx|
-      puts "Deleting index #{idx}"
-      client.indices.delete(index: idx) rescue nil
-    end
-
-    Rake::Task["search:setup_ontology"].invoke
-  end
-
-  desc "Reindex ontology terms (reset + index, with refresh paused)"
-  task reindex_ontology: :environment do
-    client = ElasticsearchClient
-    Rake::Task["search:reset_ontology"].invoke
-
-    # Pause refresh for speed
-    client.indices.put_settings(index: "ontology_terms", body: { index: { refresh_interval: -1 } })
-    Rake::Task["search:index_ontology_terms"].invoke
-    # Restore refresh
-    client.indices.put_settings(index: "ontology_terms", body: { index: { refresh_interval: "1s" } })
-    client.indices.refresh(index: "ontology_terms")
-  end
-
-  desc "Reset datasets index (delete aliased indices and recreate with current mapping)"
-  task reset_datasets: :environment do
-    client = ElasticsearchClient
-    alias_name = "datasets"
-
-    # Delete indices behind alias
-    begin
-      aliased = client.indices.get_alias(name: alias_name).keys
-    rescue StandardError
-      aliased = []
-    end
-
-    aliased.each do |idx|
-      puts "Deleting index #{idx}"
-      client.indices.delete(index: idx) rescue nil
-    end
-
-    # Create a fresh versioned index using current mapping file
-    index_name = "datasets-v1"
-    mapping_path = Rails.root.join("config/elasticsearch/datasets.json")
-    body = JSON.parse(File.read(mapping_path))
-    client.indices.create(index: index_name, body: body)
-    client.indices.put_alias(index: index_name, name: alias_name)
-    puts "Aliased #{index_name} -> #{alias_name}"
-  end
-
-  desc "Reindex datasets into fresh UUID-based mapping (reset + index, with refresh paused)"
-  task reindex_datasets: :environment do
-    STDOUT.sync = true
-    client = ElasticsearchClient
-    Rake::Task["search:reset_datasets"].invoke
-
-    # Pause refresh for speed
-    client.indices.put_settings(index: "datasets", body: { index: { refresh_interval: -1 } })
-
-    # Pre-build ancestor cache to avoid N+1 queries
-    puts "Building ancestor cache..."
-    start_cache = Time.now
-
-    used_term_ids = Set.new
-    Facets::Catalog.models_with_ontology.each_value do |model|
-      used_term_ids.merge(model.where.not(ontology_term_id: nil).distinct.pluck(:ontology_term_id))
-    end
-    puts "Found #{used_term_ids.size} unique terms used in datasets"
-
-    parent_pairs = OntologyTermRelationship.pluck(:parent_id, :child_id)
-    parents_by_child = Hash.new { |h, k| h[k] = [] }
-    parent_pairs.each { |pid, cid| parents_by_child[cid] << pid }
-
-    ancestor_cache = Hash.new { |h, k| h[k] = [] }
-    used_term_ids.each do |term_id|
-      visited = Set.new
-      queue = parents_by_child[term_id].dup
-      ancestors = []
-
-      while (parent_id = queue.shift)
-        next if visited.include?(parent_id)
-        visited.add(parent_id)
-        ancestors << parent_id
-        queue.concat(parents_by_child[parent_id])
-      end
-
-      ancestor_cache[term_id] = ancestors
-    end
-
-    puts "Ancestor cache built in #{(Time.now - start_cache).round(2)}s (#{ancestor_cache.size} terms)"
-
-    scope = Dataset.completed.includes(
-      :study, :source, :cell_types, :suspension_types,
-      :organisms, :tissues, :developmental_stages, :diseases, :sexes, :technologies
-    )
-    total = scope.count
-    puts "Reindexing #{total} datasets..."
-
-    start_time = Time.now
-    buffer = []
-    processed = 0
-    batch_size = 250
-
-    scope.find_in_batches(batch_size: batch_size) do |batch|
-      batch.each do |dataset|
-        buffer << { index: { _index: "datasets", _id: dataset.id } }
-        buffer << Search::DatasetDocumentBuilder.new(dataset, ancestor_cache: ancestor_cache).as_json
-      end
-
-      # Send bulk request with retry logic
-      begin
-        ElasticsearchClient.bulk(body: buffer, refresh: false)
-        processed += batch.size
-
-        # Progress reporting with ETA
-        elapsed = Time.now - start_time
-        rate = processed / elapsed
-        remaining = total - processed
-        eta_seconds = remaining / rate
-        eta_formatted = Time.at(eta_seconds).utc.strftime("%H:%M:%S")
-
-        puts "Indexed #{processed}/#{total} (#{(processed.to_f / total * 100).round(1)}%) | Rate: #{rate.round(1)} docs/s | ETA: #{eta_formatted}"
-      rescue StandardError => e
-        puts "ERROR in batch starting at #{processed}: #{e.message}"
-        puts "Retrying in 2s..."
-        sleep 2
-        retry
-      ensure
-        buffer.clear
-      end
-    end
-
-    # Restore refresh and refresh once
-    puts "Finalizing index..."
-    client.indices.put_settings(index: "datasets", body: { index: { refresh_interval: "1s" } })
-    client.indices.refresh(index: "datasets")
-
-    total_time = Time.now - start_time
-    puts "✓ Datasets reindexed in #{(total_time / 60).round(1)} minutes (avg: #{(total / total_time).round(1)} docs/s)"
   end
 end

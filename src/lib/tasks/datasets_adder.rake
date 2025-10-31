@@ -56,14 +56,14 @@ desc "INDEX DB WITH ELASTICSEARCH"
 task index_db: :environment do
   puts "Setting up Elasticsearch indices..."
 
-  Rake::Task["search:setup"].invoke
-  Rake::Task["search:setup_ontology"].invoke
+  Rake::Task["search:setup_datasets"].invoke
+  Rake::Task["search:setup_ontology_terms"].invoke
 
   puts "\nIndexing ontology terms..."
   Rake::Task["search:index_ontology_terms"].invoke
 
   puts "\nIndexing datasets..."
-  Rake::Task["search:reindex"].invoke
+  Rake::Task["search:index_datasets"].invoke
 
   puts "\n✓ Elasticsearch indexing completed!"
 end
