@@ -19,27 +19,12 @@ module Facets
         parent_ids = @terms_metadata.dig(id, :parent_ids) || []
         parents_in_candidates = parent_ids & candidate_ids
 
-        next if parents_in_candidates.empty?
-
-        child_count = counts_by_id[id] || 0
-        meaningful_parents = []
-
-        parents_in_candidates.each do |parent_id|
+        parents_to_hide_under = parents_in_candidates.reject do |parent_id|
           parent_count = counts_by_id[parent_id] || 0
-          parent_direct_count = direct_counts_by_id[parent_id] || 0
-
-          next if parent_count > generic_parent_threshold
-
-          is_meaningful = if parent_direct_count <= 10
-            parent_count > child_count * 1.43
-          else
-            parent_count > child_count * 0.5
-          end
-
-          meaningful_parents << parent_id if is_meaningful
+          parent_count > generic_parent_threshold
         end
 
-        hidden_by[id] = meaningful_parents if meaningful_parents.any?
+        hidden_by[id] = parents_to_hide_under if parents_to_hide_under.any?
       end
 
       visible_ids = candidate_ids.to_set
