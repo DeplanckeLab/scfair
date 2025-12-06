@@ -34,9 +34,13 @@ module Search
         {}
       end
 
-      def children(parent_id)
+      def children(parent_id, category: nil)
         terms = fetch_terms([parent_id])
-        terms.dig(parent_id, :child_ids) || []
+        child_ids = terms.dig(parent_id, :child_ids) || []
+
+        return child_ids if category.nil?
+
+        filter_by_ontology_prefix(child_ids, category)
       end
 
       def parents(child_id)
@@ -57,6 +61,22 @@ module Search
       end
 
       private
+
+      def filter_by_ontology_prefix(term_ids, category)
+        return term_ids if term_ids.empty?
+
+        allowed_prefixes = Facets::Catalog.ontology_prefixes(category)
+        return term_ids if allowed_prefixes.empty?
+
+        # Fetch term metadata to get identifiers
+        terms_data = fetch_terms(term_ids)
+
+        term_ids.select do |term_id|
+          identifier = terms_data.dig(term_id, :identifier).to_s
+          prefix = identifier.split(":").first
+          allowed_prefixes.include?(prefix)
+        end
+      end
 
       def client
         ElasticsearchClient

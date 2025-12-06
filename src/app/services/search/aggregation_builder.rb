@@ -61,7 +61,7 @@ module Search
       }
 
       if parent_id
-        child_ids = OntologyTermLookup.children(parent_id)
+        child_ids = OntologyTermLookup.children(parent_id, category: @category)
         base[:aggs][term_key][:terms][:include] = child_ids.map(&:to_s)
       end
 

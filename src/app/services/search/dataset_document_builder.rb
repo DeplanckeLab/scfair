@@ -47,7 +47,11 @@ module Search
       Facets::Catalog.tree_categories.each do |category|
         association = Facets::Catalog.association_name(category)
         items = @dataset.send(association)
-        term_ids = items.map(&:ontology_term_id).compact.uniq
+
+        # Filter items to only include those with valid ontology prefixes
+        valid_items = filter_by_valid_ontology(items, category)
+
+        term_ids = valid_items.map(&:ontology_term_id).compact.uniq
 
         hierarchy_data = build_hierarchy_data(term_ids, category)
 
@@ -56,7 +60,7 @@ module Search
 
         fields["#{category}_hierarchy"] = hierarchy_data[:hierarchy]
 
-        fields["#{category}_names"] = items.map(&:name)
+        fields["#{category}_names"] = valid_items.map(&:name)
         fields["#{category}_ancestor_names"] = hierarchy_data[:ancestor_names]
       end
 
@@ -70,9 +74,12 @@ module Search
 
         items = Array(association_result).compact
 
-        hash["#{category}_ids"] = items.map { |item| item.id.to_s }
+        # Filter items to only include those with valid ontology prefixes
+        valid_items = filter_by_valid_ontology(items, category)
 
-        hash["#{category}_names"] = items.map(&:name)
+        hash["#{category}_ids"] = valid_items.map { |item| item.id.to_s }
+
+        hash["#{category}_names"] = valid_items.map(&:name)
       end
     end
 
@@ -166,6 +173,17 @@ module Search
       end
 
       ancestors_with_depth
+    end
+
+    # Filter items to only include those with valid ontology prefixes for the category
+    def filter_by_valid_ontology(items, category)
+      model_class = OntologyTerm.model_for_category(category)
+      return items unless model_class&.respond_to?(:valid_ontology?)
+
+      items.select do |item|
+        next false unless item.ontology_term&.identifier.present?
+        model_class.valid_ontology?(item.ontology_term.identifier)
+      end
     end
   end
 end

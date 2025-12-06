@@ -1,4 +1,7 @@
 class Organism < ApplicationRecord
+  include OntologyValidated
+  ALLOWED_ONTOLOGIES = %w[NCBITaxon].freeze
+
   belongs_to :ontology_term, optional: true
 
   has_and_belongs_to_many :datasets

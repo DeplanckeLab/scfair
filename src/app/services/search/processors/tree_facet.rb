@@ -257,16 +257,11 @@ module Search
           Set.new
         end
 
-        display_ids_filtered = if !find_roots && parent_id && visible_roots.any? && selected_ids.any?
+        display_ids_filtered = if !find_roots && parent_id && visible_roots.any?
+          # Filter out items that are already visible at root level to prevent duplicates
           display_ids.reject do |id|
-            next false unless selected_ids.include?(id)
-
-            parent_ids = terms_metadata.dig(id, :parent_ids) || []
-            next false if parent_ids.size <= 1
-
-            visible_root_parents = parent_ids & visible_roots
-
-            visible_root_parents.any? && !visible_root_parents.include?(parent_id)
+            # Items visible at root should not also appear as children
+            visible_roots.include?(id)
           end
         else
           display_ids

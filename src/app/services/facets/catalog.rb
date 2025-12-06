@@ -2,6 +2,18 @@
 
 module Facets
   class Catalog
+    # Ontology prefixes that are valid for each category
+    # Children with other prefixes will be filtered out during tree navigation
+    ONTOLOGY_PREFIXES = {
+      organism: %w[NCBITaxon],
+      cell_types: %w[CL FBbt],
+      tissue: %w[UBERON FBbt CL],
+      developmental_stage: %w[HsapDv MmusDv FBdv ZFS UBERON],
+      disease: %w[MONDO PATO],
+      sex: %w[PATO],
+      technology: %w[EFO]
+    }.freeze
+
     CONFIGURATION = [
       { key: :organism, type: :tree, model: Organism },
       { key: :cell_types, type: :tree, model: CellType },
@@ -49,6 +61,10 @@ module Facets
 
       def flat?(key)
         type_for(key) == :flat
+      end
+
+      def ontology_prefixes(key)
+        ONTOLOGY_PREFIXES[key.to_sym] || []
       end
 
       def display_name(key)

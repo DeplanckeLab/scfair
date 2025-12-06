@@ -10,6 +10,11 @@ namespace :search do
     mapping_path = Rails.root.join("config/elasticsearch/datasets.json")
     body = JSON.parse(File.read(mapping_path))
 
+    if client.indices.exists?(index: alias_name) && !client.indices.exists_alias?(name: alias_name)
+      puts "Deleting existing '#{alias_name}' index (not an alias)..."
+      client.indices.delete(index: alias_name)
+    end
+
     if client.indices.exists?(index: index_name)
       puts "Index #{index_name} already exists"
     else

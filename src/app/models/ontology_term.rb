@@ -34,6 +34,25 @@ class OntologyTerm < ApplicationRecord
   end
 
   class << self
+    def valid_for_category?(identifier, category)
+      model = model_for_category(category)
+      return true unless model  # Unknown category, don't validate
+      model.respond_to?(:valid_ontology?) ? model.valid_ontology?(identifier) : true
+    end
+
+    def model_for_category(category)
+      case category.to_s
+      when "organism", "organisms" then Organism
+      when "cell_type", "cell_types" then CellType
+      when "tissue", "tissues" then Tissue
+      when "developmental_stage", "developmental_stages" then DevelopmentalStage
+      when "disease", "diseases" then Disease
+      when "sex", "sexes" then Sex
+      when "technology", "technologies" then Technology
+      else nil
+      end
+    end
+
     def scope_ids_for_category(category)
       model = case category.to_s
               when "organism" then Organism

@@ -12,6 +12,8 @@ class Dataset < ApplicationRecord
 
   CATEGORIES = ASSOCIATION_METHODS.keys.freeze
 
+  thread_mattr_accessor :skip_indexing, default: false
+
   enum :status, { processing: "processing", completed: "completed", failed: "failed" }
 
   has_and_belongs_to_many :sexes
@@ -34,7 +36,7 @@ class Dataset < ApplicationRecord
   after_destroy :decrement_source_counters
 
   after_commit on: [:create, :update] do
-    IndexDatasetJob.perform_later(id)
+    IndexDatasetJob.perform_later(id) unless Dataset.skip_indexing
   end
 
   after_destroy do

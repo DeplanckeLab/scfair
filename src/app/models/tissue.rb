@@ -1,4 +1,8 @@
 class Tissue < ApplicationRecord
+  include OntologyValidated
+  # UBERON (general), Cellosaurus, CL + organism-specific: WBbt (worm), ZFA (zebrafish), FBbt (fly)
+  ALLOWED_ONTOLOGIES = %w[UBERON Cellosaurus CL WBbt ZFA FBbt].freeze
+
   belongs_to :ontology_term, optional: true
 
   has_and_belongs_to_many :datasets

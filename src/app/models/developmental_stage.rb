@@ -1,4 +1,7 @@
 class DevelopmentalStage < ApplicationRecord
+  include OntologyValidated
+  ALLOWED_ONTOLOGIES = %w[HsapDv MmusDv FBdv UBERON ZFS WBls].freeze
+
   belongs_to :ontology_term, optional: true
 
   has_and_belongs_to_many :datasets

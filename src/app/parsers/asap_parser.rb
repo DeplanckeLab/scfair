@@ -142,6 +142,18 @@ class AsapParser
       next if cell_type_data[:name].blank?
 
       if cell_type_data[:identifier].present?
+        unless CellType.valid_ontology?(cell_type_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_data[:name],
+            external_reference_id: cell_type_data[:identifier],
+            message: "Invalid ontology prefix '#{CellType.extract_ontology_prefix(cell_type_data[:identifier])}'. Expected one of: #{CellType::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: cell_type_data[:identifier])
 
         if ontology_term
@@ -210,6 +222,18 @@ class AsapParser
       ontology_term = nil
 
       if sex_data[:identifier].present?
+        unless Sex.valid_ontology?(sex_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Sex.name,
+            value: sex_data[:name],
+            external_reference_id: sex_data[:identifier],
+            message: "Invalid ontology prefix '#{Sex.extract_ontology_prefix(sex_data[:identifier])}'. Expected one of: #{Sex::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: sex_data[:identifier])
 
         unless ontology_term
@@ -269,6 +293,18 @@ class AsapParser
       ontology_term = nil
 
       if stage_data[:identifier].present?
+        unless DevelopmentalStage.valid_ontology?(stage_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: DevelopmentalStage.name,
+            value: stage_data[:name],
+            external_reference_id: stage_data[:identifier],
+            message: "Invalid ontology prefix '#{DevelopmentalStage.extract_ontology_prefix(stage_data[:identifier])}'. Expected one of: #{DevelopmentalStage::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: stage_data[:identifier])
 
         unless ontology_term
@@ -318,6 +354,18 @@ class AsapParser
       ontology_term = nil
 
       if disease_data[:identifier].present?
+        unless Disease.valid_ontology?(disease_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Disease.name,
+            value: disease_data[:name],
+            external_reference_id: disease_data[:identifier],
+            message: "Invalid ontology prefix '#{Disease.extract_ontology_prefix(disease_data[:identifier])}'. Expected one of: #{Disease::ALLOWED_ONTOLOGIES.join(', ')} or #{Disease::ALLOWED_SPECIAL_IDENTIFIERS.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: disease_data[:identifier])
 
         unless ontology_term
@@ -368,6 +416,18 @@ class AsapParser
       ontology_term = nil
 
       if tissue_data[:identifier].present?
+        unless Tissue.valid_ontology?(tissue_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Tissue.name,
+            value: tissue_data[:name],
+            external_reference_id: tissue_data[:identifier],
+            message: "Invalid ontology prefix '#{Tissue.extract_ontology_prefix(tissue_data[:identifier])}'. Expected one of: #{Tissue::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: tissue_data[:identifier])
 
         unless ontology_term
@@ -429,6 +489,24 @@ class AsapParser
       technology_record = nil
 
       if identifier.present?
+        unless Technology.valid_ontology?(identifier)
+          ParsingIssue.create!(
+            dataset:               dataset,
+            resource:              Technology.name,
+            value:                 normalized_tech,
+            external_reference_id: identifier,
+            message:               "Invalid ontology prefix '#{Technology.extract_ontology_prefix(identifier)}'. Expected one of: #{Technology::ALLOWED_ONTOLOGIES.join(', ')}",
+            status:                :pending
+          )
+
+          technology_record = Technology.find_or_create_by(
+            name:             normalized_tech,
+            ontology_term_id: nil
+          )
+          dataset.technologies << technology_record unless dataset.technologies.include?(technology_record)
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: identifier)
 
         if ontology_term
