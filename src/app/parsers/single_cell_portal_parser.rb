@@ -226,6 +226,19 @@ class SingleCellPortalParser
           next
         end
 
+        # For FBbt terms, validate it's actually a cell type (not an anatomical structure)
+        unless CellType.valid_cell_type_term?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_value,
+            external_reference_id: ontology_identifier,
+            message: "FBbt term '#{ontology_identifier}' is not a cell type (not a descendant of FBbt:00007002 'cell')",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
         if ontology_term
