@@ -68,9 +68,12 @@
   <div class="overflow-y-auto transition-all duration-200"
        style="max-height: 0"
        data-facet-panel-target="scrollableContent">
+    <%# Tree facets always lazy-load to get pagination; flat facets render inline %>
+    <% is_tree = facet[:type] == :tree %>
     <turbo-frame id="facet_content_<%= facet[:key] %>"
-                 data-facet-panel-target="contentFrame">
-      <% if facet[:data].present? %>
+                 data-facet-panel-target="contentFrame"
+                 data-loaded="<%= !is_tree && facet[:data].present? %>">
+      <% if !is_tree && facet[:data].present? %>
         <%= render "facets/facet_content", facet: facet %>
       <% else %>
         <%= render "shared/skeleton_loader", margin_left: "0" %>

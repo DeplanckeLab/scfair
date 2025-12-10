@@ -5,10 +5,17 @@ class FacetsController < ApplicationController
 
   def show
     facet_service = Search::FacetService.new(facet_params)
-    facet_data = facet_service.load_facet(category.to_s)
+    limit = tree_facet? ? (params[:limit]&.to_i || 30) : nil
+    offset = params[:offset]&.to_i || 0
 
-    render partial: "facets/facet_content",
-           locals: { facet: build_facet_view(facet_data) }
+    facet_data = facet_service.load_facet(category.to_s, limit: limit, offset: offset)
+
+    if append_request?
+      render_append_response(facet_data)
+    else
+      render partial: "facets/facet_content",
+             locals: { facet: build_facet_view(facet_data), pagination: extract_pagination(facet_data) }
+    end
   end
 
   def children
@@ -58,11 +65,43 @@ class FacetsController < ApplicationController
     @facet_config ||= Facets::Catalog.find!(category)
   end
 
+  def tree_facet?
+    facet_config[:type] == :tree
+  end
+
+  def append_request?
+    request.xhr? && params[:offset].to_i > 0
+  end
+
+  def render_append_response(facet_data)
+    pagination = extract_pagination(facet_data)
+    nodes = facet_data.is_a?(Hash) && facet_data[:nodes] ? facet_data[:nodes] : []
+
+    response.headers["X-Has-More"] = pagination[:has_more].to_s
+    response.headers["X-Total-Count"] = pagination[:total].to_s
+
+    render partial: "facets/tree_nodes_batch",
+           locals: {
+             category: category.to_s,
+             nodes: nodes,
+             colors: helpers.facet_color_classes(category)
+           }
+  end
+
+  def extract_pagination(data)
+    return nil unless data.is_a?(Hash) && data[:pagination]
+
+    data[:pagination]
+  end
+
   def build_facet_view(data)
+    # Tree facets return {nodes: [...], pagination: {...}}, flat facets return a hash directly
+    actual_data = data.is_a?(Hash) && data[:nodes] ? data[:nodes] : data
+
     {
       key: category,
       type: facet_config[:type],
-      data: data,
+      data: actual_data,
       colors: helpers.facet_color_classes(category)
     }
   end
@@ -78,7 +117,7 @@ class FacetsController < ApplicationController
   end
 
   def facet_params
-    params.except(:controller, :action, :category, :parent_id, :q, :format)
+    params.except(:controller, :action, :category, :parent_id, :q, :format, :offset, :limit)
       .permit(:search, :sort, *permitted_facet_params)
   end
 

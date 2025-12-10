@@ -1,8 +1,11 @@
 <% margin_left = local_assigns.fetch(:margin_left, "1.5rem") %>
+<% count = local_assigns.fetch(:count, 1) %>
 <div class="animate-pulse space-y-2 p-2" style="margin-left: <%= margin_left %>;">
-  <div class="flex items-center">
-    <div class="w-4 h-4 bg-gray-200 rounded mr-2"></div>
-    <div class="h-4 bg-gray-200 rounded w-3/4"></div>
-    <div class="ml-auto h-4 w-8 bg-gray-200 rounded"></div>
-  </div>
+  <% count.times do %>
+    <div class="flex items-center py-1">
+      <div class="w-4 h-4 bg-gray-200 rounded mr-2"></div>
+      <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+      <div class="ml-auto h-4 w-8 bg-gray-200 rounded"></div>
+    </div>
+  <% end %>
 </div>

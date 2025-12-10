@@ -14,14 +14,21 @@ export default class extends Controller {
     "nodeChevron",
     "childrenContainer",
     "clearSearchButton",
-    "contentFrame"
+    "contentFrame",
+    "loadMoreTrigger",
+    "loadingIndicator",
+    "paginationData"
   ]
 
   static values = {
     category: String,
     expanded: { type: Boolean, default: false },
     expandedHeight: { type: String, default: "24rem" },
-    collapsedHeight: { type: String, default: "0" }
+    collapsedHeight: { type: String, default: "0" },
+    offset: { type: Number, default: 0 },
+    limit: { type: Number, default: 30 },
+    hasMore: { type: Boolean, default: true },
+    loading: { type: Boolean, default: false }
   }
 
   connect() {
@@ -38,11 +45,21 @@ export default class extends Controller {
 
     this.frameLoadHandler = this.handleFrameLoad.bind(this)
     document.addEventListener('turbo:frame-load', this.frameLoadHandler)
+
+    setTimeout(() => this.setupInfiniteScroll(), 100)
   }
 
   handleFrameLoad(event) {
     if (this.element.contains(event.target)) {
       this.updateSelectedCount()
+
+      if (this.hasPaginationDataTarget) {
+        const paginationData = this.paginationDataTarget
+        this.hasMoreValue = paginationData.dataset.hasMore === 'true'
+        this.offsetValue = parseInt(paginationData.dataset.offset, 10) || 0
+
+        setTimeout(() => this.setupInfiniteScroll(), 100)
+      }
     }
   }
 
@@ -51,6 +68,11 @@ export default class extends Controller {
 
     if (this.frameLoadHandler) {
       document.removeEventListener('turbo:frame-load', this.frameLoadHandler)
+    }
+
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect()
+      this.intersectionObserver = null
     }
   }
 
@@ -417,5 +439,100 @@ export default class extends Controller {
       frame.dataset.loaded = 'true'
       frame.reload()
     }
+  }
+
+  setupInfiniteScroll() {
+    if (this.intersectionObserver) {
+      this.intersectionObserver.disconnect()
+    }
+
+    if (!this.hasLoadMoreTriggerTarget || !this.hasScrollableContentTarget) return
+
+    this.intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && this.hasMoreValue && !this.loadingValue) {
+            this.loadMoreNodes()
+          }
+        })
+      },
+      {
+        root: this.scrollableContentTarget,
+        rootMargin: '100px',
+        threshold: 0
+      }
+    )
+
+    this.intersectionObserver.observe(this.loadMoreTriggerTarget)
+  }
+
+  async loadMoreNodes() {
+    if (this.loadingValue || !this.hasMoreValue) return
+
+    this.loadingValue = true
+    this.showLoadingIndicator()
+
+    const newOffset = this.offsetValue + this.limitValue
+    const currentParams = new URLSearchParams(window.location.search)
+    currentParams.set('offset', newOffset)
+    currentParams.set('limit', this.limitValue)
+
+    const url = `/facets/${this.categoryValue}?${currentParams.toString()}`
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'text/html',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+
+      if (response.ok) {
+        const html = await response.text()
+
+        if (this.hasLoadMoreTriggerTarget) {
+          this.loadMoreTriggerTarget.insertAdjacentHTML('beforebegin', html)
+        }
+
+        this.offsetValue = newOffset
+        this.hasMoreValue = response.headers.get('X-Has-More') === 'true'
+
+        if (!this.hasMoreValue) {
+          this.hideTriggerAndLoading()
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load more nodes:', error)
+    } finally {
+      this.loadingValue = false
+      this.hideLoadingIndicator()
+    }
+  }
+
+  showLoadingIndicator() {
+    if (this.hasLoadingIndicatorTarget) {
+      this.loadingIndicatorTarget.classList.remove('hidden')
+    }
+  }
+
+  hideLoadingIndicator() {
+    if (this.hasLoadingIndicatorTarget) {
+      this.loadingIndicatorTarget.classList.add('hidden')
+    }
+  }
+
+  hideTriggerAndLoading() {
+    if (this.hasLoadMoreTriggerTarget) {
+      this.loadMoreTriggerTarget.remove()
+    }
+    if (this.hasLoadingIndicatorTarget) {
+      this.loadingIndicatorTarget.remove()
+    }
+  }
+
+  resetPagination() {
+    this.offsetValue = 0
+    this.hasMoreValue = true
+    this.loadingValue = false
   }
 }

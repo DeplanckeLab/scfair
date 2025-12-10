@@ -1,4 +1,11 @@
+<% pagination ||= nil %>
 <turbo-frame id="facet_content_<%= facet[:key] %>">
+  <%# Pagination data wrapper - JS reads these attributes after frame loads %>
+  <div data-facet-panel-target="paginationData"
+       data-has-more="<%= pagination&.dig(:has_more) || false %>"
+       data-total="<%= pagination&.dig(:total) || 0 %>"
+       data-offset="<%= pagination&.dig(:offset) || 0 %>"
+       class="hidden"></div>
   <% colors = facet[:colors] || {} %>
   <% if facet[:type] == :tree %>
     <div class="p-2" id="facet_nodes_<%= facet[:key] %>_root">
@@ -8,6 +15,16 @@
                  nodes: facet[:data],
                  level: 0,
                  colors: colors %>
+
+      <% if pagination&.dig(:has_more) %>
+        <%# Infinite scroll trigger element %>
+        <div data-facet-panel-target="loadMoreTrigger" class="h-1 w-full"></div>
+
+        <%# Loading indicator (single skeleton row for subtle feedback) %>
+        <div data-facet-panel-target="loadingIndicator" class="hidden">
+          <%= render "shared/skeleton_loader", count: 1, margin_left: "0" %>
+        </div>
+      <% end %>
     </div>
   <% else %>
     <div class="p-2" data-facet-panel-target="flatItems">

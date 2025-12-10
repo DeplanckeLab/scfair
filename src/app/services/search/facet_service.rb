@@ -12,12 +12,12 @@ module Search
       @query_text = params[:search].to_s.strip
     end
 
-    def load_facet(category)
+    def load_facet(category, limit: nil, offset: 0)
       config = Facets::Catalog.find!(category.to_sym)
       is_tree = config[:type] == :tree
 
       if is_tree
-        load_facet_with_filtered_counts(category)
+        load_facet_with_filtered_counts(category, limit: limit, offset: offset)
       else
         agg_result = fetch_filtered_aggregation(category, config[:type])
         processor = Processors::FlatFacet.new(@params, category)
@@ -74,13 +74,13 @@ module Search
       @params[param_key].present?
     end
 
-    def load_facet_with_filtered_counts(category)
+    def load_facet_with_filtered_counts(category, limit: nil, offset: 0)
       unfiltered_structure = fetch_unfiltered_structure(category)
 
       filtered_agg = fetch_filtered_aggregation(category, :tree)
 
       processor = Processors::TreeFacet.new(@params, category)
-      processor.process_with_structure(filtered_agg, unfiltered_structure)
+      processor.process_with_structure(filtered_agg, unfiltered_structure, limit: limit, offset: offset)
     end
 
     def fetch_unfiltered_structure(category)

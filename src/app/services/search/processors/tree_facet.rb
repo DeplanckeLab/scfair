@@ -25,11 +25,11 @@ module Search
         build_tree_nodes(buckets, find_roots: false, parent_id: parent_id, visible_roots: visible_roots)
       end
 
-      def process_with_structure(filtered_aggregation, unfiltered_structure)
-        return [] unless filtered_aggregation
+      def process_with_structure(filtered_aggregation, unfiltered_structure, limit: nil, offset: 0)
+        return empty_paginated_result(limit) unless filtered_aggregation
 
         buckets = extract_buckets(filtered_aggregation)
-        return [] if buckets[:direct].empty?
+        return empty_paginated_result(limit) if buckets[:direct].empty?
 
         filtered_counts_by_id = buckets[:ancestor].to_h { |b| [b["key"], b["doc_count"]] }
         filtered_ancestor_ids = buckets[:ancestor].map { |b| b["key"] }
@@ -121,10 +121,58 @@ module Search
         end
 
         nodes = label_duplicates(nodes) { |node| terms_metadata.dig(node.id, :identifier) }
-        hierarchy.sort_by_selection(nodes, selected_ids, nodes_with_selected_children).map(&:to_h)
+        sorted_nodes = hierarchy.sort_by_selection(nodes, selected_ids, nodes_with_selected_children)
+
+        # Apply pagination if limit is provided
+        paginate_nodes(sorted_nodes, selected_ids, limit, offset)
       end
 
       private
+
+      def empty_paginated_result(limit)
+        {
+          nodes: [],
+          pagination: {
+            total: 0,
+            offset: 0,
+            limit: limit || 30,
+            has_more: false
+          }
+        }
+      end
+
+      def paginate_nodes(sorted_nodes, selected_ids, limit, offset)
+        total = sorted_nodes.size
+
+        if limit
+          # Priority: Selected items always in first batch
+          selected_node_ids = selected_ids.map(&:to_s).to_set
+          selected_nodes = sorted_nodes.select { |n| selected_node_ids.include?(n.id.to_s) }
+          non_selected_nodes = sorted_nodes.reject { |n| selected_node_ids.include?(n.id.to_s) }
+
+          if offset == 0
+            # First page: include all selected + fill remaining with non-selected
+            remaining_slots = [limit - selected_nodes.size, 0].max
+            paginated_nodes = selected_nodes + non_selected_nodes.first(remaining_slots)
+          else
+            # Subsequent pages: only non-selected, adjust offset for already-shown selected
+            adjusted_offset = [offset - selected_nodes.size, 0].max
+            paginated_nodes = non_selected_nodes[adjusted_offset, limit] || []
+          end
+        else
+          paginated_nodes = sorted_nodes
+        end
+
+        {
+          nodes: paginated_nodes.map(&:to_h),
+          pagination: {
+            total: total,
+            offset: offset,
+            limit: limit || total,
+            has_more: limit ? (offset + paginated_nodes.size) < total : false
+          }
+        }
+      end
 
       def build_ancestor_paths(selected_ids, visible_roots, filtered_direct_ids, terms_metadata)
         paths = Set.new
