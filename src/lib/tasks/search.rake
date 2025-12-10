@@ -58,7 +58,7 @@ namespace :search do
     start_cache = Time.now
 
     used_term_ids = Set.new
-    Facets::Catalog.models_with_ontology.each_value do |model|
+    Facet.models_with_ontology.each_value do |model|
       used_term_ids.merge(model.where.not(ontology_term_id: nil).distinct.pluck(:ontology_term_id))
     end
     puts "Found #{used_term_ids.size} unique terms used in datasets"
@@ -158,7 +158,7 @@ namespace :search do
     client = ElasticsearchClient
     index_alias = "ontology_terms"
 
-    used_by_category = Facets::Catalog.models_with_ontology.transform_values do |model|
+    used_by_category = Facet.models_with_ontology.transform_values do |model|
       model.where.not(ontology_term_id: nil).distinct.pluck(:ontology_term_id)
     end
 

@@ -1,9 +1,10 @@
 <turbo-frame id="facet_content_<%= category %>">
   <div class="p-2">
+    <% facet_model = Facet.find(category) %>
+    <% param_key = facet_model&.param_key %>
     <% if nodes.any? %>
       <% nodes.each do |node| %>
         <% checkbox_id = "search_#{category}_#{safe_dom_id(node[:id])}" %>
-        <% param_key = Facets::Catalog.param_key(category) %>
         <% is_selected = Array(params[param_key]).include?(node[:id]) %>
         <label class="flex items-center py-1 px-1 rounded hover:bg-gray-50 cursor-pointer group transition-colors"
                for="<%= checkbox_id %>">
@@ -16,7 +17,7 @@
                  class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
                  data-action="change->facet-panel#handleSelection"
           <%= 'checked' if is_selected %>>
-          <span class="flex-1 text-sm text-gray-700 cursor-pointer select-none truncate group-hover:text-gray-900 pr-2"
+          <span class="flex-1 truncate text-sm text-gray-700 cursor-pointer select-none group-hover:text-gray-900 pr-2"
                 title="<%= node[:name] %>">
             <%= node[:name] %>
           </span>

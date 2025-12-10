@@ -1,14 +1,15 @@
 <% colors ||= {} %>
 <% level ||= 0 %>
+<% facet_model = Facet.find(category) %>
+<% param_key = facet_model&.param_key %>
 <% nodes.each do |node| %>
   <% node_dom_id = safe_dom_id(node[:id]) %>
   <% unique_suffix = SecureRandom.hex(4) %>
   <% node_instance_id = "#{node_dom_id}_#{unique_suffix}" %>
   <% checkbox_id = "#{category}_#{node_instance_id}" %>
-  <% param_key = Facets::Catalog.param_key(category) %>
   <% is_selected = Array(params[param_key]).include?(node[:id].to_s) %>
   <div class="tree-node"
-       data-facet-panel-target="treeNode"
+       data-facet-tree-target="treeNode"
        data-node-id="<%= node[:id] %>"
        data-label="<%= node[:name] %>"
        <%= 'data-has-selected-children="true"' if node[:has_selected_children] %>
@@ -17,11 +18,11 @@
       <% if node[:has_children] %>
         <button type="button"
                 class="w-4 h-4 p-0 mr-1.5 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-0 <%= colors[:focus_ring] %> rounded flex items-center justify-center"
-                data-action="click->facet-panel#toggleNode"
+                data-action="click->facet-tree#toggleNode"
                 data-node-id="<%= node[:id] %>"
                 data-tree-frame-id="facet_nodes_<%= category %>_<%= node_instance_id %>">
           <svg class="w-3 h-3 transition-transform duration-150"
-               data-facet-panel-target="nodeChevron"
+               data-facet-tree-target="nodeChevron"
                fill="currentColor"
                viewBox="0 0 20 20">
             <path fill-rule="evenodd"
@@ -38,12 +39,11 @@
              value="<%= node[:id] %>"
              form="search_form"
              class="mr-2 h-4 w-4 <%= colors[:checkbox] %> border-gray-300 rounded focus:ring-2 <%= colors[:focus_ring] %> focus:ring-offset-0"
-             data-action="change->facet-panel#handleSelection"
+             data-action="change->facet-tree#handleSelection"
              <%= 'checked' if is_selected %>>
       <label for="<%= checkbox_id %>"
-             class="flex-1 text-sm text-gray-700 cursor-pointer select-none truncate group-hover:text-gray-900 pr-2"
-             title="<%= node[:name] %>"
-             data-facet-panel-target="nodeLabel">
+             class="flex-1 truncate text-sm text-gray-700 cursor-pointer select-none group-hover:text-gray-900 pr-2"
+             title="<%= node[:name] %>">
         <%= node[:name] %>
       </label>
       <span id="count_<%= category %>_<%= node[:id].to_s.parameterize %>_<%= unique_suffix %>"
@@ -54,7 +54,7 @@
     <% if node[:has_children] %>
       <% frame_id = "facet_nodes_#{category}_#{node_instance_id}" %>
       <div class="hidden"
-           data-facet-panel-target="childrenContainer"
+           data-facet-tree-target="childrenContainer"
            data-parent-id="<%= node[:id] %>">
         <turbo-frame id="<%= frame_id %>"
                      data-loaded="false"

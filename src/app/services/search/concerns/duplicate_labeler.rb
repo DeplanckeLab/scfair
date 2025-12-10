@@ -43,7 +43,7 @@ module Search
         if item.is_a?(Hash)
           item.merge(name: new_name)
         else
-          Facets::TreeNode.new(
+          FacetNode.new(
             id: item.id,
             name: new_name,
             count: item.count,

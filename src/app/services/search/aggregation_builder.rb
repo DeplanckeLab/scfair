@@ -1,7 +1,7 @@
+# frozen_string_literal: true
+
 module Search
   class AggregationBuilder
-    MAX_TERMS_SIZE = 10_000
-
     class << self
       def build_for_facet(category, type, filters)
         new(category, filters).send("build_#{type}_aggregation")
@@ -29,7 +29,7 @@ module Search
           filter: filter_clause,
           aggs: {
             "#{@category}_terms" => {
-              terms: { field: "#{@category}_ids", size: MAX_TERMS_SIZE, min_doc_count: 1 },
+              terms: { field: "#{@category}_ids", size: Constants::MAX_AGGREGATION_SIZE, min_doc_count: 1 },
               aggs: {
                 sample_doc: {
                   top_hits: {
@@ -52,10 +52,10 @@ module Search
         filter: filter_clause,
         aggs: {
           term_key => {
-            terms: { field: "#{@category}_ancestor_ids", size: MAX_TERMS_SIZE, min_doc_count: 1 }
+            terms: { field: "#{@category}_ancestor_ids", size: Constants::MAX_AGGREGATION_SIZE, min_doc_count: 1 }
           },
           direct_terms: {
-            terms: { field: "#{@category}_ids", size: MAX_TERMS_SIZE, min_doc_count: 1 }
+            terms: { field: "#{@category}_ids", size: Constants::MAX_AGGREGATION_SIZE, min_doc_count: 1 }
           }
         }
       }
@@ -69,23 +69,22 @@ module Search
     end
 
     private
-
-    def facet_aggregation_structure
-      {
-        filter: filter_clause,
-        aggs: {
-          ancestor_terms: {
-            terms: { field: "#{@category}_ancestor_ids", size: MAX_TERMS_SIZE, min_doc_count: 1 }
-          },
-          direct_terms: {
-            terms: { field: "#{@category}_ids", size: MAX_TERMS_SIZE, min_doc_count: 1 }
+      def facet_aggregation_structure
+        {
+          filter: filter_clause,
+          aggs: {
+            ancestor_terms: {
+              terms: { field: "#{@category}_ancestor_ids", size: Constants::MAX_AGGREGATION_SIZE, min_doc_count: 1 }
+            },
+            direct_terms: {
+              terms: { field: "#{@category}_ids", size: Constants::MAX_AGGREGATION_SIZE, min_doc_count: 1 }
+            }
           }
         }
-      }
-    end
+      end
 
-    def filter_clause
-      @filters.any? ? { bool: { must: @filters } } : { match_all: {} }
-    end
+      def filter_clause
+        @filters.any? ? { bool: { must: @filters } } : { match_all: {} }
+      end
   end
 end

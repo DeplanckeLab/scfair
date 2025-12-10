@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Search
   class FilterBuilder
     def initialize(params)
@@ -13,39 +15,40 @@ module Search
     end
 
     private
-
-    def tree_filters
-      Facets::Catalog.tree_categories.filter_map do |category|
-        build_tree_filter(category)
+      def tree_filters
+        Facet.tree_categories.filter_map do |category|
+          build_tree_filter(category)
+        end
       end
-    end
 
-    def flat_filters
-      Facets::Catalog.flat_categories.filter_map do |category|
-        build_flat_filter(category)
+      def flat_filters
+        Facet.flat_categories.filter_map do |category|
+          build_flat_filter(category)
+        end
       end
-    end
 
-    def build_tree_filter(category)
-      param_key = Facets::Catalog.param_key(category)
-      selected = Array(@params[param_key]).reject(&:blank?)
-      return nil if selected.empty?
+      def build_tree_filter(category)
+        facet = Facet.find(category)
+        return nil unless facet
 
-      { terms: { "#{category}_ancestor_ids": selected } }
-    end
+        selected = Array(@params[facet.param_key]).reject(&:blank?)
+        return nil if selected.empty?
 
-    def build_flat_filter(category)
-      selected = Array(@params[category]).reject(&:blank?)
-      return nil if selected.empty?
+        { terms: { "#{category}_ancestor_ids": selected } }
+      end
 
-      { terms: { "#{category}_ids": selected } }
-    end
+      def build_flat_filter(category)
+        selected = Array(@params[category]).reject(&:blank?)
+        return nil if selected.empty?
 
-    def applies_to_category?(clause, category)
-      return false unless clause.key?(:terms)
+        { terms: { "#{category}_ids": selected } }
+      end
 
-      field_name = clause[:terms].keys.first.to_s
-      field_name.start_with?(category.to_s)
-    end
+      def applies_to_category?(clause, category)
+        return false unless clause.key?(:terms)
+
+        field_name = clause[:terms].keys.first.to_s
+        field_name.start_with?(category.to_s)
+      end
   end
 end

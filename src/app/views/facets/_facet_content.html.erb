@@ -1,14 +1,12 @@
 <% pagination ||= nil %>
-<turbo-frame id="facet_content_<%= facet[:key] %>">
-  <%# Pagination data wrapper - JS reads these attributes after frame loads %>
-  <div data-facet-panel-target="paginationData"
-       data-has-more="<%= pagination&.dig(:has_more) || false %>"
-       data-total="<%= pagination&.dig(:total) || 0 %>"
-       data-offset="<%= pagination&.dig(:offset) || 0 %>"
-       class="hidden"></div>
+<turbo-frame id="facet_content_<%= facet[:key] %>" data-loaded="true">
   <% colors = facet[:colors] || {} %>
   <% if facet[:type] == :tree %>
-    <div class="p-2" id="facet_nodes_<%= facet[:key] %>_root">
+    <div class="p-2"
+         id="facet_nodes_<%= facet[:key] %>_root"
+         data-controller="facet-tree facet-pagination"
+         data-facet-tree-category-value="<%= facet[:key] %>"
+         data-facet-pagination-auto-load-value="true">
       <%= render "facets/tree_nodes",
                  category: facet[:key].to_s,
                  parent_id: nil,
@@ -16,21 +14,18 @@
                  level: 0,
                  colors: colors %>
 
-      <% if pagination&.dig(:has_more) %>
-        <%# Infinite scroll trigger element %>
-        <div data-facet-panel-target="loadMoreTrigger" class="h-1 w-full"></div>
-
-        <%# Loading indicator (single skeleton row for subtle feedback) %>
-        <div data-facet-panel-target="loadingIndicator" class="hidden">
-          <%= render "shared/skeleton_loader", count: 1, margin_left: "0" %>
-        </div>
-      <% end %>
+      <turbo-frame id="<%= facet_pagination_frame_id(facet[:key]) %>">
+        <% if pagination&.dig(:has_more) %>
+          <%= link_to_next_facet_page(facet[:key], pagination, colors: colors) %>
+        <% end %>
+      </turbo-frame>
     </div>
   <% else %>
     <div class="p-2" data-facet-panel-target="flatItems">
-      <% facet[:data].each do |id, data| %>
-        <% name = data[:name] %>
-        <% count = data[:count] %>
+      <% facet[:data].each do |node| %>
+        <% id = node[:id] %>
+        <% name = node[:name] %>
+        <% count = node[:count] %>
         <% checkbox_id = "#{facet[:key]}_#{id.to_s.parameterize}" %>
         <% is_selected = Array(params[facet[:key]]).include?(id.to_s) %>
 
@@ -49,7 +44,7 @@
                  data-action="change->facet-panel#handleSelection"
                  <%= 'checked' if is_selected %>>
 
-          <span class="flex-1 text-sm text-gray-700 cursor-pointer select-none truncate group-hover:text-gray-900 pr-2"
+          <span class="flex-1 truncate text-sm text-gray-700 cursor-pointer select-none group-hover:text-gray-900 pr-2"
                 title="<%= name %>">
             <%= name %>
           </span>

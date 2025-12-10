@@ -4,121 +4,107 @@ class FacetsController < ApplicationController
   allow_browser versions: :modern
 
   def show
-    facet_data = facet_service.load_facet(category.to_s, limit: limit, offset: offset)
+    presenter = build_presenter(facet_service.load_facet(facet.key.to_s, limit: limit, offset: offset))
 
-    if append_request?
-      render_append_response(facet_data)
-    else
-      render partial: "facets/facet_content",
-             locals: { facet: build_facet_view(facet_data), pagination: extract_pagination(facet_data) }
+    respond_to do |format|
+      format.html { render_html(presenter) }
+      format.turbo_stream { render_turbo_stream(presenter) }
     end
   end
 
   def children
-    @nodes = facet_service.load_children(category.to_s, params[:parent_id])
-    @category = category.to_s
-    @parent_id = params[:parent_id]
-    @frame_id = params[:frame_id]
-    @level = 1
-    @colors = helpers.facet_color_classes(category)
+    data = facet_service.load_children(facet.key.to_s, params[:parent_id])
+    presenter = build_presenter(data)
 
     respond_to do |format|
-      format.html { render template: "facets/children" }
+      format.html do
+        render template: "facets/children",
+               locals: presenter.to_children_locals(
+                 parent_id: params[:parent_id],
+                 frame_id: params[:frame_id]
+               )
+      end
       format.turbo_stream do
-        turbo_stream.replace(
-          @frame_id.presence || helpers.dom_id_for_nodes(category.to_s, params[:parent_id]),
+        render turbo_stream: turbo_stream.replace(
+          params[:frame_id].presence || helpers.dom_id_for_nodes(facet.key.to_s, params[:parent_id]),
           partial: "facets/tree_nodes",
-          locals: nodes_locals(@nodes)
+          locals: presenter.to_nodes_locals(level: 1, parent_id: params[:parent_id])
         )
       end
     end
   end
 
   def search
-    @nodes = facet_service.search_within(category.to_s, params[:q])
-    @category = category.to_s
-    @colors = helpers.facet_color_classes(category)
+    data = facet_service.search_within(facet.key.to_s, params[:q])
+    presenter = build_presenter(data)
 
     respond_to do |format|
       format.html do
         render partial: "facets/search_results",
-               locals: { category: @category, nodes: @nodes },
+               locals: { category: facet.key.to_s, nodes: presenter.nodes },
                layout: false
       end
-      format.json { render json: { nodes: @nodes } }
+      format.json { render json: { nodes: presenter.nodes } }
     end
   end
 
+  # Expose param_key mapping for JS consumption
+  # GET /facets/param_keys.json
+  def param_keys
+    render json: FacetSelection.param_key_map
+  end
+
   private
-    def category
-      params[:category].to_sym
+
+    def facet
+      @facet ||= Facet.find!(params[:category])
     end
 
-    def facet_config
-      @facet_config ||= Facets::Catalog.find!(category)
+    def selection
+      @selection ||= FacetSelection.from_params(facet_params)
     end
 
     def facet_service
       @facet_service ||= Search::FacetService.new(facet_params)
     end
 
+    def build_presenter(data)
+      FacetPresenter.new(facet, data, selection)
+    end
+
     def limit
-      tree_facet? ? (params[:limit]&.to_i || 30) : nil
+      facet.tree? ? (params[:limit]&.to_i || 30) : nil
     end
 
     def offset
       params[:offset]&.to_i || 0
     end
 
-    def tree_facet?
-      facet_config[:type] == :tree
+    def pagination_request?
+      params[:offset].to_i > 0
     end
 
-    def append_request?
-      request.xhr? && params[:offset].to_i > 0
+    def render_html(presenter)
+      if pagination_request?
+        render partial: "facets/pagination_page", locals: presenter.to_pagination_locals
+      else
+        render partial: "facets/facet_content", locals: presenter.to_content_locals
+      end
     end
 
-    def render_append_response(facet_data)
-      pagination = extract_pagination(facet_data)
-      nodes = facet_data.is_a?(Hash) && facet_data[:nodes] ? facet_data[:nodes] : []
-
-      response.headers["X-Has-More"] = pagination[:has_more].to_s
-      response.headers["X-Total-Count"] = pagination[:total].to_s
-
-      render partial: "facets/tree_nodes_batch",
-             locals: {
-               category: category.to_s,
-               nodes: nodes,
-               level: 0,
-               colors: helpers.facet_color_classes(category)
-             }
-    end
-
-    def extract_pagination(data)
-      return nil unless data.is_a?(Hash) && data[:pagination]
-
-      data[:pagination]
-    end
-
-    def build_facet_view(data)
-      actual_data = data.is_a?(Hash) && data[:nodes] ? data[:nodes] : data
-
-      {
-        key: category,
-        type: facet_config[:type],
-        data: actual_data,
-        colors: helpers.facet_color_classes(category)
-      }
-    end
-
-    def nodes_locals(nodes)
-      {
-        category: category.to_s,
-        parent_id: params[:parent_id],
-        nodes: nodes,
-        level: 1,
-        colors: helpers.facet_color_classes(category)
-      }
+    def render_turbo_stream(presenter)
+      render turbo_stream: [
+        turbo_stream.before(
+          helpers.facet_pagination_frame_id(facet.key),
+          partial: "facets/tree_nodes_batch",
+          locals: presenter.to_nodes_locals(level: 0)
+        ),
+        turbo_stream.replace(
+          helpers.facet_pagination_frame_id(facet.key),
+          partial: "facets/pagination_link",
+          locals: presenter.to_pagination_locals
+        )
+      ]
     end
 
     def facet_params
@@ -127,6 +113,6 @@ class FacetsController < ApplicationController
     end
 
     def permitted_facet_params
-      Facets::Catalog.all.map { |f| { Facets::Catalog.param_key(f[:key]) => [] } }
+      Facet.all.map { |f| { f.param_key => [] } }
     end
 end

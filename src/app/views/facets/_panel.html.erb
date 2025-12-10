@@ -1,6 +1,8 @@
+<% facet_model = Facet.find(facet[:key]) %>
 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
      data-controller="facet-panel"
      data-facet-panel-category-value="<%= facet[:key] %>"
+     data-facet-panel-param-key-value="<%= facet_model&.param_key %>"
      id="facet-<%= facet[:key] %>">
   <div class="sticky top-0 bg-white z-20 border-b border-gray-100">
     <div class="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
@@ -14,12 +16,13 @@
                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
                 clip-rule="evenodd" />
         </svg>
-        <% color_settings = Facets::Catalog.color_settings(facet[:key]) %>
+        <% facet_model = Facet.find(facet[:key]) %>
+        <% color_settings = facet_model&.color_settings || {} %>
         <span class="w-2 h-2 rounded-full <%= color_settings[:bg_circle] %>"></span>
         <span class="font-medium text-gray-900 text-sm">
-          <%= Facets::Catalog.display_name(facet[:key]) %>
+          <%= facet_model&.display_name %>
         </span>
-        <% selected_count = Array(params[Facets::Catalog.param_key(facet[:key])]).size %>
+        <% selected_count = Array(params[facet_model&.param_key]).size %>
         <% colors = facet[:colors] || {} %>
         <span class="<%= selected_count > 0 ? '' : 'hidden' %> px-2 py-0.5 text-xs font-medium <%= colors[:badge] %> rounded-full"
               data-facet-panel-target="selectedBadge">
@@ -35,14 +38,17 @@
       </button>
     </div>
     <div class="hidden px-3 pb-3"
-         data-facet-panel-target="searchContainer">
+         data-facet-panel-target="searchContainer"
+         data-controller="facet-search"
+         data-facet-search-category-value="<%= facet[:key] %>">
       <div class="relative">
         <input type="text"
-               placeholder="Search <%= Facets::Catalog.display_name(facet[:key]).downcase %>..."
+               placeholder="Search <%= facet_model&.display_name&.downcase %>..."
                class="w-full pl-8 pr-8 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 <%= colors[:focus_ring] %> focus:border-transparent outline-none"
                data-facet-panel-target="searchInput"
-               data-action="input->facet-panel#searchInput"
-        autocomplete="off">
+               data-facet-search-target="input"
+               data-action="input->facet-search#search"
+               autocomplete="off">
         <svg class="absolute left-2.5 top-2 w-4 h-4 text-gray-400 pointer-events-none"
              fill="none"
              stroke="currentColor"
@@ -54,8 +60,8 @@
         </svg>
         <button type="button"
                 class="hidden absolute right-2 top-1.5 p-1 text-gray-400 hover:text-gray-600"
-                data-facet-panel-target="clearSearchButton"
-                data-action="click->facet-panel#clearSearch">
+                data-facet-search-target="clearButton"
+                data-action="click->facet-search#clear">
           <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd"
                   d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"

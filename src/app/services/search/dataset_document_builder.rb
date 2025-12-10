@@ -18,7 +18,9 @@ module Search
         status: @dataset.status,
         source_name: @dataset.source&.name,
         authors: Array(@dataset.study&.authors),
-        text_search: build_text_search
+        text_search: build_text_search,
+        created_at: @dataset.created_at&.iso8601,
+        updated_at: @dataset.updated_at&.iso8601
       }.merge(tree_category_fields)
         .merge(flat_category_fields)
         .merge(name_fields)
@@ -30,9 +32,8 @@ module Search
       parts = [@dataset.source&.name]
       parts.concat Array(@dataset.study&.authors)
 
-      Facets::Catalog.all.each do |config|
-        association = Facets::Catalog.association_name(config[:key])
-        association_result = @dataset.send(association)
+      Facet.all.each do |facet|
+        association_result = @dataset.send(facet.association_name)
 
         items = Array(association_result).compact
         parts.concat(items.map(&:name))
@@ -44,9 +45,9 @@ module Search
     def tree_category_fields
       fields = {}
 
-      Facets::Catalog.tree_categories.each do |category|
-        association = Facets::Catalog.association_name(category)
-        items = @dataset.send(association)
+      Facet.tree_categories.each do |category|
+        facet = Facet.find(category)
+        items = @dataset.send(facet.association_name)
 
         # Filter items to only include those with valid ontology prefixes
         valid_items = filter_by_valid_ontology(items, category)
@@ -68,9 +69,9 @@ module Search
     end
 
     def flat_category_fields
-      Facets::Catalog.flat_categories.each_with_object({}) do |category, hash|
-        association = Facets::Catalog.association_name(category)
-        association_result = @dataset.send(association)
+      Facet.flat_categories.each_with_object({}) do |category, hash|
+        facet = Facet.find(category)
+        association_result = @dataset.send(facet.association_name)
 
         items = Array(association_result).compact
 
@@ -86,9 +87,9 @@ module Search
     def name_fields
       fields = {}
 
-      Facets::Catalog.tree_categories.each do |category|
-        association = Facets::Catalog.association_name(category)
-        items = @dataset.send(association)
+      Facet.tree_categories.each do |category|
+        facet = Facet.find(category)
+        items = @dataset.send(facet.association_name)
 
         fields["#{category}_names"] = items.map(&:name).uniq
       end
@@ -100,6 +101,7 @@ module Search
       hierarchy = []
       all_ancestor_ids = Set.new
       all_ancestor_names = Set.new
+      model_class = OntologyTerm.model_for_category(category)
 
       term_ids.each do |term_id|
         term = OntologyTerm.find_by(id: term_id)
@@ -115,6 +117,8 @@ module Search
         ancestors_with_depth = get_ancestors_with_depth(term)
 
         ancestors_with_depth.each do |ancestor, depth|
+          next unless valid_ancestor_for_category?(ancestor, model_class)
+
           all_ancestor_ids << ancestor.id.to_s
           all_ancestor_names << ancestor.name
 
@@ -132,6 +136,13 @@ module Search
         ancestor_ids: (term_ids.map(&:to_s) + all_ancestor_ids.to_a).uniq,
         ancestor_names: all_ancestor_names.to_a
       }
+    end
+
+    def valid_ancestor_for_category?(ancestor, model_class)
+      return true unless model_class&.respond_to?(:valid_ontology?)
+      return false unless ancestor.identifier.present?
+
+      model_class.valid_ontology?(ancestor.identifier)
     end
 
     def get_ancestors_with_depth(term)

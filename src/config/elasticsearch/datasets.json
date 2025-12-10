@@ -59,6 +59,8 @@
         }
       },
       "authors": { "type": "keyword" },
+      "created_at": { "type": "date" },
+      "updated_at": { "type": "date" },
 
       "cell_type_ids": { "type": "keyword" },
       "cell_type_ancestor_ids": { "type": "keyword" },

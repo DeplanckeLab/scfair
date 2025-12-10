@@ -2,8 +2,6 @@
 
 module Search
   class OntologyTermLookup
-    ONTOLOGY_INDEX = "ontology_terms"
-
     class << self
       def fetch_terms(term_ids)
         return {} if term_ids.empty?
@@ -14,7 +12,7 @@ module Search
           _source: ["id", "name", "identifier", "parent_ids", "child_ids"]
         }
 
-        response = client.search(index: ONTOLOGY_INDEX, body: query)
+        response = client.search(index: Constants::ONTOLOGY_INDEX, body: query)
         hits = response.dig("hits", "hits") || []
 
         hits.to_h do |hit|
@@ -61,26 +59,25 @@ module Search
       end
 
       private
+        def filter_by_ontology_prefix(term_ids, category)
+          return term_ids if term_ids.empty?
 
-      def filter_by_ontology_prefix(term_ids, category)
-        return term_ids if term_ids.empty?
+          allowed_prefixes = Facet.ontology_prefixes(category)
+          return term_ids if allowed_prefixes.empty?
 
-        allowed_prefixes = Facets::Catalog.ontology_prefixes(category)
-        return term_ids if allowed_prefixes.empty?
+          # Fetch term metadata to get identifiers
+          terms_data = fetch_terms(term_ids)
 
-        # Fetch term metadata to get identifiers
-        terms_data = fetch_terms(term_ids)
-
-        term_ids.select do |term_id|
-          identifier = terms_data.dig(term_id, :identifier).to_s
-          prefix = identifier.split(":").first
-          allowed_prefixes.include?(prefix)
+          term_ids.select do |term_id|
+            identifier = terms_data.dig(term_id, :identifier).to_s
+            prefix = identifier.split(":").first
+            allowed_prefixes.include?(prefix)
+          end
         end
-      end
 
-      def client
-        ElasticsearchClient
-      end
+        def client
+          ElasticsearchClient
+        end
     end
   end
 end

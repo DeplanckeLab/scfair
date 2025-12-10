@@ -1,56 +1,52 @@
 import { Controller } from "@hotwired/stimulus"
 
+// FacetPanelController handles the panel expand/collapse state,
+// selection badges, and clear functionality.
+//
+// This is the "outer" controller for a facet panel, coordinating
+// with nested tree/search/pagination controllers via events.
+//
+// @example HTML usage
+//   <div data-controller="facet-panel"
+//        data-facet-panel-category-value="tissue"
+//        data-facet-panel-param-key-value="tissues">
+//
 export default class extends Controller {
   static targets = [
-    "searchInput",
-    "searchContainer",
-    "searchResults",
     "scrollableContent",
     "selectedBadge",
     "clearButton",
     "chevron",
-    "treeNode",
-    "nodeLabel",
-    "nodeChevron",
-    "childrenContainer",
-    "clearSearchButton",
-    "contentFrame",
-    "loadMoreTrigger",
-    "loadingIndicator",
-    "paginationData"
+    "searchContainer",
+    "searchInput",
+    "contentFrame"
   ]
 
   static values = {
     category: String,
+    paramKey: String,
     expanded: { type: Boolean, default: false },
     expandedHeight: { type: String, default: "24rem" },
-    collapsedHeight: { type: String, default: "0" },
-    offset: { type: Number, default: 0 },
-    limit: { type: Number, default: 30 },
-    hasMore: { type: Boolean, default: true },
-    loading: { type: Boolean, default: false }
+    collapsedHeight: { type: String, default: "0" }
   }
 
   connect() {
     this.form = document.getElementById("search_form")
-    this.#updateGlobalSelections()
     this.#loadSavedState()
     this.#updateSelectedCount()
 
+    // Auto-expand if has selections
     if (this.#hasSelectedItems() && !this.expandedValue) {
       this.expandedValue = true
       this.expand(false)
     }
 
-    this.#boundFrameLoadHandler = this.#handleFrameLoad.bind(this)
-    document.addEventListener("turbo:frame-load", this.#boundFrameLoadHandler)
-    setTimeout(() => this.#setupInfiniteScroll(), 100)
+    // Listen for selection changes from nested controllers
+    this.element.addEventListener("facet:selection-changed", this.#handleSelectionChanged.bind(this))
   }
 
   disconnect() {
     this.#saveState()
-    document.removeEventListener("turbo:frame-load", this.#boundFrameLoadHandler)
-    this.#intersectionObserver?.disconnect()
   }
 
   toggleExpand(event) {
@@ -58,13 +54,7 @@ export default class extends Controller {
     event?.stopPropagation()
 
     this.expandedValue = !this.expandedValue
-
-    if (this.expandedValue) {
-      this.expand()
-    } else {
-      this.collapse()
-    }
-
+    this.expandedValue ? this.expand() : this.collapse()
     this.#saveState()
   }
 
@@ -75,8 +65,8 @@ export default class extends Controller {
 
     if (this.hasSearchContainerTarget) {
       this.searchContainerTarget.classList.remove("hidden")
-      if (autoFocus) {
-        setTimeout(() => this.searchInputTarget?.focus(), 200)
+      if (autoFocus && this.hasSearchInputTarget) {
+        setTimeout(() => this.searchInputTarget.focus(), 200)
       }
     }
   }
@@ -87,38 +77,27 @@ export default class extends Controller {
     this.searchContainerTarget?.classList.add("hidden")
   }
 
-  handleSelection(event) {
-    const checkbox = event.target
-
-    if (checkbox.checked) {
-      this.#cascadeSelection(checkbox)
-    } else {
-      this.#clearCascadedMarkers(checkbox)
-    }
-
-    this.#updateSelectedCount()
-    this.#saveState()
-    this.form?.requestSubmit()
-  }
-
   clearCategory(event) {
     event.preventDefault()
     event.stopPropagation()
 
+    // Uncheck all checkboxes
     this.element.querySelectorAll("input[type='checkbox']:checked").forEach(cb => {
       cb.checked = false
     })
 
+    // Clear search if present
     if (this.hasSearchInputTarget) {
       this.searchInputTarget.value = ""
-      this.clearSearch()
+      this.dispatch("search-cleared")
     }
 
-    const paramKey = this.#getParamKey()
-    sessionStorage.setItem(`selections_${paramKey}`, JSON.stringify([]))
+    // Clear sessionStorage
+    sessionStorage.setItem(`selections_${this.#getParamKey()}`, JSON.stringify([]))
 
+    // Navigate to URL without this facet's params
     const urlParams = new URLSearchParams(window.location.search)
-    urlParams.delete(`${paramKey}[]`)
+    urlParams.delete(`${this.#getParamKey()}[]`)
 
     const newUrl = urlParams.toString()
       ? `${window.location.pathname}?${urlParams.toString()}`
@@ -127,84 +106,19 @@ export default class extends Controller {
     Turbo.visit(newUrl)
   }
 
-  toggleNode(event) {
-    event.preventDefault()
-    event.stopPropagation()
-
-    const button = event.currentTarget
-    const nodeId = button.dataset.nodeId
-    const childContainer = this.element.querySelector(`[data-parent-id="${nodeId}"]`)
-
-    if (!childContainer) return
-
-    const isHidden = childContainer.classList.contains("hidden")
-    const chevron = button.querySelector("[data-facet-panel-target='nodeChevron']")
-
-    if (isHidden) {
-      childContainer.classList.remove("hidden")
-      if (chevron) chevron.style.transform = "rotate(90deg)"
-
-      const frame = childContainer.querySelector("turbo-frame")
-      if (frame?.src && !frame.querySelector(".tree-node")) {
-        frame.setAttribute("loading", "eager")
-        const currentSrc = frame.src
-        frame.src = ""
-        requestAnimationFrame(() => { frame.src = currentSrc })
-      }
-    } else {
-      childContainer.classList.add("hidden")
-      if (chevron) chevron.style.transform = "rotate(0deg)"
-    }
-
+  // Handle selection changes from tree controller
+  handleSelection(event) {
+    this.#updateSelectedCount()
     this.#saveState()
-  }
-
-  searchInput(event) {
-    clearTimeout(this.searchTimeout)
-
-    const searchValue = event.target.value.trim()
-    this.#toggleClearButton(searchValue)
-
-    if (!searchValue) {
-      this.clearSearch()
-      return
-    }
-
-    if (searchValue.length < 2) return
-
-    this.searchTimeout = setTimeout(() => this.#updateFrameSrc(searchValue), 200)
-  }
-
-  clearSearch(event) {
-    event?.preventDefault()
-    event?.stopPropagation()
-
-    if (this.hasSearchInputTarget) {
-      this.searchInputTarget.value = ""
-    }
-
-    this.#toggleClearButton("")
-
-    if (this.hasContentFrameTarget) {
-      const currentParams = new URLSearchParams(window.location.search)
-      this.contentFrameTarget.src = `/facets/${this.categoryValue}?${currentParams.toString()}`
-    }
+    this.form?.requestSubmit()
   }
 
   // Private
 
-  #handleFrameLoad(event) {
-    const frame = event.target
-    if (!this.element.contains(frame)) return
-
+  #handleSelectionChanged() {
     this.#updateSelectedCount()
-
-    const isRootContentFrame = frame.id?.startsWith(`facet_content_${this.categoryValue}`)
-    if (isRootContentFrame && this.hasPaginationDataTarget) {
-      this.hasMoreValue = this.paginationDataTarget.dataset.hasMore === "true"
-      this.offsetValue = parseInt(this.paginationDataTarget.dataset.offset, 10) || 0
-      setTimeout(() => this.#setupInfiniteScroll(), 100)
-    }
+    this.#saveState()
+    this.form?.requestSubmit()
   }
 
   #hasSelectedItems() {
@@ -222,41 +136,13 @@ export default class extends Controller {
     frame.dataset.loaded = "true"
   }
 
-  #cascadeSelection(checkbox) {
-    const treeNode = checkbox.closest("[data-facet-panel-target='treeNode']")
-    const nodeId = treeNode?.dataset.nodeId
-    if (!nodeId) return
-
-    const childrenContainer = this.element.querySelector(`[data-parent-id="${nodeId}"]`)
-    childrenContainer?.querySelectorAll("input[type='checkbox']").forEach(cb => {
-      if (!cb.checked) {
-        cb.checked = true
-        cb.dataset.originalName = cb.name
-        cb.removeAttribute("name")
-      }
-    })
-  }
-
-  #clearCascadedMarkers(checkbox) {
-    const treeNode = checkbox.closest("[data-facet-panel-target='treeNode']")
-    const nodeId = treeNode?.dataset.nodeId
-    if (!nodeId) return
-
-    const childrenContainer = this.element.querySelector(`[data-parent-id="${nodeId}"]`)
-    childrenContainer?.querySelectorAll("input[type='checkbox'][data-original-name]").forEach(cb => {
-      cb.checked = false
-      cb.name = cb.dataset.originalName
-      delete cb.dataset.originalName
-    })
-  }
-
   #updateSelectedCount() {
     let count = this.element.querySelectorAll("input[type='checkbox']:checked").length
 
+    // If content not loaded yet, get count from URL
     if (!this.#contentLoaded()) {
-      const paramKey = this.#getParamKey()
       const urlParams = new URLSearchParams(window.location.search)
-      count = urlParams.getAll(`${paramKey}[]`).length
+      count = urlParams.getAll(`${this.#getParamKey()}[]`).length
     }
 
     if (count > 0) {
@@ -270,6 +156,7 @@ export default class extends Controller {
       this.clearButtonTarget?.classList.add("hidden")
     }
 
+    // Update sessionStorage
     this.#updateGlobalSelections()
   }
 
@@ -285,39 +172,21 @@ export default class extends Controller {
     ).map(cb => cb.value)
 
     if (!this.#contentLoaded() && selectedIds.length === 0) {
-      const paramKey = this.#getParamKey()
       const urlParams = new URLSearchParams(window.location.search)
-      selectedIds = urlParams.getAll(`${paramKey}[]`)
+      selectedIds = urlParams.getAll(`${this.#getParamKey()}[]`)
     }
 
     sessionStorage.setItem(`selections_${this.#getParamKey()}`, JSON.stringify(selectedIds))
   }
 
   #getParamKey() {
-    const pluralMap = {
-      organism: "organisms",
-      tissue: "tissues",
-      developmental_stage: "developmental_stages",
-      disease: "diseases",
-      sex: "sexes",
-      technology: "technologies"
-    }
-    return pluralMap[this.categoryValue] || this.categoryValue
-  }
-
-  #toggleClearButton(searchValue) {
-    if (!this.hasClearSearchButtonTarget) return
-    this.clearSearchButtonTarget.classList.toggle("hidden", !searchValue)
-  }
-
-  #updateFrameSrc(query) {
-    if (!this.hasContentFrameTarget) return
-    this.contentFrameTarget.src = `/facets/${this.categoryValue}/search?q=${encodeURIComponent(query)}`
+    // Use data attribute if provided, otherwise fall back to category value
+    return this.paramKeyValue || this.categoryValue
   }
 
   #saveState() {
     const expandedNodes = []
-    this.element.querySelectorAll("[data-facet-panel-target='childrenContainer']:not(.hidden)").forEach(container => {
+    this.element.querySelectorAll("[data-facet-tree-target='childrenContainer']:not(.hidden)").forEach(container => {
       if (container.dataset.parentId) {
         expandedNodes.push(container.dataset.parentId)
       }
@@ -349,97 +218,12 @@ export default class extends Controller {
         this.scrollableContentTarget.scrollTop = state.scrollTop
       }
 
+      // Tree node expansion is handled by facet-tree controller
       if (state.expandedNodes?.length > 0) {
-        requestAnimationFrame(() => {
-          state.expandedNodes.forEach(nodeId => this.#expandNodeById(nodeId))
-        })
+        this.dispatch("restore-expanded-nodes", { detail: { nodeIds: state.expandedNodes } })
       }
     } catch {
       // Ignore invalid saved state
     }
   }
-
-  #expandNodeById(nodeId) {
-    const childContainer = this.element.querySelector(`[data-parent-id="${nodeId}"]`)
-    if (!childContainer || !childContainer.classList.contains("hidden")) return
-
-    const button = this.element.querySelector(`button[data-node-id="${nodeId}"]`)
-    if (!button) return
-
-    const chevron = button.querySelector("[data-facet-panel-target='nodeChevron']")
-    const frame = childContainer.querySelector("turbo-frame")
-
-    childContainer.classList.remove("hidden")
-    if (chevron) chevron.style.transform = "rotate(90deg)"
-
-    if (frame?.src && !frame.querySelector(".tree-node")) {
-      frame.setAttribute("loading", "eager")
-      const currentSrc = frame.src
-      frame.src = ""
-      requestAnimationFrame(() => { frame.src = currentSrc })
-    }
-  }
-
-  #setupInfiniteScroll() {
-    this.#intersectionObserver?.disconnect()
-
-    if (!this.hasLoadMoreTriggerTarget || !this.hasScrollableContentTarget) return
-
-    this.#intersectionObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && this.hasMoreValue && !this.loadingValue) {
-            this.#loadMoreNodes()
-          }
-        })
-      },
-      {
-        root: this.scrollableContentTarget,
-        rootMargin: "100px",
-        threshold: 0
-      }
-    )
-
-    this.#intersectionObserver.observe(this.loadMoreTriggerTarget)
-  }
-
-  async #loadMoreNodes() {
-    if (this.loadingValue || !this.hasMoreValue) return
-
-    this.loadingValue = true
-    this.loadingIndicatorTarget?.classList.remove("hidden")
-
-    const newOffset = this.offsetValue + this.limitValue
-    const currentParams = new URLSearchParams(window.location.search)
-    currentParams.set("offset", newOffset)
-    currentParams.set("limit", this.limitValue)
-
-    try {
-      const response = await fetch(`/facets/${this.categoryValue}?${currentParams.toString()}`, {
-        headers: {
-          Accept: "text/html",
-          "X-Requested-With": "XMLHttpRequest"
-        }
-      })
-
-      if (response.ok) {
-        const html = await response.text()
-        this.loadMoreTriggerTarget?.insertAdjacentHTML("beforebegin", html)
-
-        this.offsetValue = newOffset
-        this.hasMoreValue = response.headers.get("X-Has-More") === "true"
-
-        if (!this.hasMoreValue) {
-          this.loadMoreTriggerTarget?.remove()
-          this.loadingIndicatorTarget?.remove()
-        }
-      }
-    } finally {
-      this.loadingValue = false
-      this.loadingIndicatorTarget?.classList.add("hidden")
-    }
-  }
-
-  #intersectionObserver = null
-  #boundFrameLoadHandler = null
 }
