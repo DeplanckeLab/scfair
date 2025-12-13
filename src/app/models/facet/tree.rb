@@ -214,9 +214,12 @@ class Facet::Tree
             next if visited.include?(current_id)
             visited.add(current_id)
 
+            parent_ids = metadata.dig(current_id, :parent_ids) || []
+            valid_parents = parent_ids.select { |pid| valid_ids.include?(pid) }
+
             if current_id == selected_id
-              parent_ids = metadata.dig(current_id, :parent_ids) || []
-              next_ids.concat(parent_ids.select { |pid| valid_ids.include?(pid) })
+              visible_root_parents = valid_parents.select { |pid| visible_roots_set.include?(pid) }
+              next_ids.concat(visible_root_parents.any? ? visible_root_parents : valid_parents)
               next
             end
 
@@ -227,8 +230,8 @@ class Facet::Tree
 
             paths.add(current_id) if valid_ids.include?(current_id)
 
-            parent_ids = metadata.dig(current_id, :parent_ids) || []
-            next_ids.concat(parent_ids.select { |pid| valid_ids.include?(pid) })
+            visible_root_parents = valid_parents.select { |pid| visible_roots_set.include?(pid) }
+            next_ids.concat(visible_root_parents.any? ? visible_root_parents : valid_parents)
           end
           current_ids = next_ids.uniq
         end
