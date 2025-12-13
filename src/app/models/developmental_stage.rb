@@ -13,6 +13,8 @@ class DevelopmentalStage < ApplicationRecord
       bg_circle: "bg-orange-500",
       bg_text: "bg-orange-100",
       text_color: "text-orange-800",
+      checkbox_checked: "text-orange-600",
+      focus_ring: "focus:ring-orange-300"
     }
   end
 

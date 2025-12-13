@@ -11,6 +11,8 @@ class Source < ApplicationRecord
       bg_circle: "bg-yellow-500",
       bg_text: "bg-yellow-100",
       text_color: "text-yellow-800",
+      checkbox_checked: "text-yellow-600",
+      focus_ring: "focus:ring-yellow-300"
     }
   end
 

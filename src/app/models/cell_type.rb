@@ -51,6 +51,8 @@ class CellType < ApplicationRecord
       bg_circle: "bg-green-500",
       bg_text: "bg-green-100",
       text_color: "text-green-800",
+      checkbox_checked: "text-green-600",
+      focus_ring: "focus:ring-green-300"
     }
   end
 

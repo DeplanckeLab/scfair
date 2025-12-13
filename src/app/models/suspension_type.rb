@@ -14,6 +14,8 @@ class SuspensionType < ApplicationRecord
       bg_circle: "bg-teal-500",
       bg_text: "bg-teal-100",
       text_color: "text-teal-800",
+      checkbox_checked: "text-teal-600",
+      focus_ring: "focus:ring-teal-300"
     }
   end
 

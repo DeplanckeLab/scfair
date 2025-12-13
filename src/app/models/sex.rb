@@ -13,6 +13,8 @@ class Sex < ApplicationRecord
       bg_circle: "bg-pink-500",
       bg_text: "bg-pink-100",
       text_color: "text-pink-800",
+      checkbox_checked: "text-pink-600",
+      focus_ring: "focus:ring-pink-300"
     }
   end
 

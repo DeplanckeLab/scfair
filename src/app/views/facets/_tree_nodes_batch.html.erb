@@ -38,7 +38,7 @@
              name="<%= param_key %>[]"
              value="<%= node[:id] %>"
              form="search_form"
-             class="mr-2 h-4 w-4 <%= colors[:checkbox] %> border-gray-300 rounded focus:ring-2 <%= colors[:focus_ring] %> focus:ring-offset-0"
+             class="mr-2 h-4 w-4 <%= colors[:checkbox_checked] %> border-gray-300 rounded focus:ring-2 <%= colors[:focus_ring] %> focus:ring-offset-0"
              data-action="change->facet-tree#handleSelection"
              <%= 'checked' if is_selected %>>
       <label for="<%= checkbox_id %>"

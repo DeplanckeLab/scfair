@@ -14,6 +14,8 @@ class Tissue < ApplicationRecord
       bg_circle: "bg-purple-500",
       bg_text: "bg-purple-100",
       text_color: "text-purple-800",
+      checkbox_checked: "text-purple-600",
+      focus_ring: "focus:ring-purple-300"
     }
   end
 

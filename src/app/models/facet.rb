@@ -194,8 +194,8 @@ class Facet
         bg_circle: "bg-blue-500",
         bg_text: "bg-blue-100",
         text_color: "text-blue-800",
-        checkbox_checked: "peer-checked:bg-blue-500",
-        checkbox_focus_ring: "peer-focus:ring-blue-300"
+        checkbox_checked: "text-blue-600",
+        focus_ring: "focus:ring-blue-300"
       }
     end
 end

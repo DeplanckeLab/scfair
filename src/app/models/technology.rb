@@ -13,6 +13,8 @@ class Technology < ApplicationRecord
       bg_circle: "bg-indigo-500",
       bg_text: "bg-indigo-100",
       text_color: "text-indigo-800",
+      checkbox_checked: "text-indigo-600",
+      focus_ring: "focus:ring-indigo-300"
     }
   end
 

@@ -23,8 +23,8 @@ module ApplicationHelper
     settings = facet&.color_settings || default_facet_colors
     {
       badge: "#{settings[:bg_text]} #{settings[:text_color]}",
-      checkbox: settings[:bg_circle].gsub("bg-", "text-").gsub("500", "600"),
-      focus_ring: settings[:bg_circle].gsub("bg-", "focus:ring-"),
+      checkbox_checked: settings[:checkbox_checked],
+      focus_ring: settings[:focus_ring],
       button_text: settings[:bg_circle].gsub("bg-", "text-").gsub("500", "600"),
       button_hover_text: settings[:bg_circle].gsub("bg-", "hover:text-").gsub("500", "800"),
       button_hover_bg: settings[:bg_text].gsub("100", "50")
@@ -41,7 +41,9 @@ module ApplicationHelper
       {
         bg_circle: "bg-blue-500",
         bg_text: "bg-blue-100",
-        text_color: "text-blue-800"
+        text_color: "text-blue-800",
+        checkbox_checked: "text-blue-600",
+        focus_ring: "focus:ring-blue-300"
       }
     end
 end
