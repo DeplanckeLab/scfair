@@ -3,7 +3,7 @@
 class Facet::Tree
   def initialize(facet, params = {})
     @facet = facet
-    @params = params
+    @params = params.respond_to?(:with_indifferent_access) ? params.with_indifferent_access : params.to_h.with_indifferent_access
     @category = facet.key.to_s
   end
 
@@ -33,15 +33,8 @@ class Facet::Tree
     return empty_result(limit) if visible_roots.empty?
 
     all_filtered_ids = (term_ids + ancestor_ids).to_set
-    display_ids = visible_roots & ancestor_ids
 
-    if selected_ids.any?
-      ancestor_paths = build_ancestor_paths(selected_ids, visible_roots, all_filtered_ids, metadata)
-      display_ids = (display_ids | ancestor_paths.to_a)
-      display_ids = filter_to_root_level_only(display_ids, metadata)
-    end
-
-    display_ids = display_ids.select { |id| counts[:ancestor][id].to_i > 0 }
+    display_ids = (visible_roots & ancestor_ids).select { |id| counts[:ancestor][id].to_i > 0 }
     return empty_result(limit) if display_ids.empty?
 
     nodes = node_builder.build(
@@ -81,16 +74,9 @@ class Facet::Tree
       metadata = metadata.merge(selected_metadata)
     end
 
-    display_ids = visible_roots & filtered_ancestor_ids
     all_filtered_ids = (filtered_term_ids + filtered_ancestor_ids).to_set
 
-    if selected_ids.any?
-      ancestor_paths = build_ancestor_paths(selected_ids, visible_roots, all_filtered_ids, metadata)
-      display_ids = (display_ids | ancestor_paths.to_a)
-      display_ids = filter_to_root_level_only(display_ids, metadata)
-    end
-
-    display_ids = display_ids.select { |id| counts[:ancestor][id].to_i > 0 }
+    display_ids = (visible_roots & filtered_ancestor_ids).select { |id| counts[:ancestor][id].to_i > 0 }
     return empty_result(limit) if display_ids.empty?
 
     nodes = node_builder.build(
@@ -125,7 +111,17 @@ class Facet::Tree
 
     child_ids = metadata.dig(parent_id, :child_ids) || []
     children_in_scope = child_ids & term_ids
+
     children_to_show = children_in_scope - visible_roots
+
+    children_in_scope_set = children_in_scope.to_set
+    children_to_show = children_to_show.reject do |child_id|
+      child_parent_ids = metadata.dig(child_id, :parent_ids) || []
+      more_specific_parents = child_parent_ids.select do |pid|
+        pid != parent_id && children_in_scope_set.include?(pid)
+      end
+      more_specific_parents.any?
+    end
 
     return [] if children_to_show.empty?
 
@@ -198,57 +194,6 @@ class Facet::Tree
       Array(@params[param_key])
     end
 
-    def build_ancestor_paths(selected_ids, visible_roots, valid_ids, metadata)
-      paths = Set.new
-      visible_roots_set = visible_roots.to_set
-
-      selected_ids.each do |selected_id|
-        next unless valid_ids.include?(selected_id)
-
-        current_ids = [selected_id]
-        visited = Set.new
-
-        while current_ids.any?
-          next_ids = []
-          current_ids.each do |current_id|
-            next if visited.include?(current_id)
-            visited.add(current_id)
-
-            parent_ids = metadata.dig(current_id, :parent_ids) || []
-            valid_parents = parent_ids.select { |pid| valid_ids.include?(pid) }
-
-            if current_id == selected_id
-              visible_root_parents = valid_parents.select { |pid| visible_roots_set.include?(pid) }
-              next_ids.concat(visible_root_parents.any? ? visible_root_parents : valid_parents)
-              next
-            end
-
-            if visible_roots_set.include?(current_id)
-              paths.add(current_id)
-              next
-            end
-
-            paths.add(current_id) if valid_ids.include?(current_id)
-
-            visible_root_parents = valid_parents.select { |pid| visible_roots_set.include?(pid) }
-            next_ids.concat(visible_root_parents.any? ? visible_root_parents : valid_parents)
-          end
-          current_ids = next_ids.uniq
-        end
-      end
-
-      paths
-    end
-
-    def filter_to_root_level_only(display_ids, metadata)
-      display_ids_set = display_ids.to_set
-
-      display_ids.reject do |id|
-        parent_ids = metadata.dig(id, :parent_ids) || []
-        parent_ids.any? { |pid| display_ids_set.include?(pid) }
-      end
-    end
-
     def build_candidates_with_virtual_parents(term_ids, ancestor_ids, counts, metadata)
       candidates = term_ids.to_set
       ancestor_set = ancestor_ids.to_set
@@ -267,5 +212,4 @@ class Facet::Tree
 
       candidates.to_a
     end
-
 end
