@@ -94,11 +94,13 @@ class Facet::Tree
     return [] unless aggregation
 
     buckets = extract_children_buckets(aggregation)
-    return [] if buckets[:direct].empty?
+    return [] if buckets[:children].empty?
 
     counts = build_counts_for_children(buckets)
-    term_ids = buckets[:direct].map { |b| b["key"] }
-    all_ids = (term_ids + buckets[:children].map { |b| b["key"] } + [parent_id]).uniq
+
+    children_term_ids = buckets[:children].map { |b| b["key"] }
+    direct_term_ids = buckets[:direct].map { |b| b["key"] }
+    all_ids = (children_term_ids + direct_term_ids + [parent_id]).uniq
 
     metadata = lookup_terms(all_ids)
     return [] if metadata.empty?
@@ -110,7 +112,7 @@ class Facet::Tree
     end
 
     child_ids = metadata.dig(parent_id, :child_ids) || []
-    children_in_scope = child_ids & term_ids
+    children_in_scope = child_ids & children_term_ids
 
     children_to_show = children_in_scope - visible_roots
 
@@ -125,11 +127,12 @@ class Facet::Tree
 
     return [] if children_to_show.empty?
 
+    all_scoped_ids = (children_term_ids + direct_term_ids).to_set
     nodes = node_builder.build(
       children_to_show,
       counts[:children],
       metadata,
-      scoped_term_ids: term_ids.to_set,
+      scoped_term_ids: all_scoped_ids,
       visible_roots: visible_roots
     )
 
