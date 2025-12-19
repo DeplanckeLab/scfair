@@ -17,8 +17,12 @@
                   value: params[:search],
                   class: "w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none",
                   placeholder: "Search datasets...",
-                  oninput: "this.form.requestSubmit()",
-                  data: { turbo_permanent: true } %>
+                  data: {
+                    controller: "debounced-search",
+                    debounced_search_delay_value: 300,
+                    action: "input->debounced-search#search keydown->debounced-search#submitNow",
+                    turbo_permanent: true
+                  } %>
             <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none"
                  fill="none"
                  stroke="currentColor"

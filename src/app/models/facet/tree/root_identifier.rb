@@ -7,6 +7,10 @@ class Facet::Tree::RootIdentifier
   # Parents covering >70% of max are considered generic (shouldn't hide children)
   GENERIC_PARENT_THRESHOLD = 0.7
 
+  # Minimum result count before applying universal term filter
+  # Prevents filtering out specific terms when searching for them
+  MIN_COUNT_FOR_UNIVERSAL_FILTER = 10
+
   def initialize(metadata)
     @metadata = metadata
   end
@@ -26,6 +30,8 @@ class Facet::Tree::RootIdentifier
 
   private
     def filter_universal_terms(term_ids, counts_by_id, max_count)
+      return term_ids if max_count < MIN_COUNT_FOR_UNIVERSAL_FILTER
+
       universal_threshold = max_count * UNIVERSAL_TERM_THRESHOLD
       term_ids.reject { |id| (counts_by_id[id] || 0) > universal_threshold }
     end

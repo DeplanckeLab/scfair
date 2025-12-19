@@ -88,11 +88,39 @@ class Search::Query
       {
         multi_match: {
           query: search,
-          fields: %w[title^2 description study_title source_name],
+          fields: searchable_fields,
           type: "best_fields",
-          fuzziness: "AUTO"
+          fuzziness: 1,
+          prefix_length: 2
         }
       }
+    end
+
+    def searchable_fields
+      [
+        # Direct hit fields - highest priority
+        "title^10",
+        "study_title^8",
+        "description^3",
+        "source_name^2",
+        # Direct ontology term names - high priority for exact matches
+        "organism_names^6",
+        "tissue_names^5",
+        "cell_types_names^5",
+        "disease_names^5",
+        "technology_names^4",
+        "developmental_stage_names^4",
+        "sex_names^3",
+        "suspension_types_names^3",
+        # Ancestor names - lower priority
+        "organism_ancestor_names^3",
+        "tissue_ancestor_names^2",
+        "cell_types_ancestor_names^2",
+        "disease_ancestor_names^2",
+        "technology_ancestor_names^2",
+        "developmental_stage_ancestor_names^2",
+        "sex_ancestor_names^1"
+      ]
     end
 
     def tree_filters

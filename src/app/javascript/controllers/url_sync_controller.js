@@ -3,13 +3,30 @@ import { Turbo } from "@hotwired/turbo-rails"
 
 // Syncs form state with browser URL for faceted search
 export default class extends Controller {
+  static facetCategories = [
+    'organisms', 'tissues', 'developmental_stages', 'diseases', 'sexes', 'technologies',
+    'cell_types', 'suspension_types', 'source'
+  ]
+
   connect() {
-    // Intercept form submission to prevent Turbo Drive visit
+    this.syncSessionStorageFromUrl()
+
     this.element.addEventListener('submit', this.handleSubmit.bind(this))
   }
 
   disconnect() {
     this.element.removeEventListener('submit', this.handleSubmit.bind(this))
+  }
+
+  syncSessionStorageFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search)
+
+    this.constructor.facetCategories.forEach(category => {
+      const storageKey = `selections_${category}`
+      const urlValues = urlParams.getAll(`${category}[]`)
+
+      sessionStorage.setItem(storageKey, JSON.stringify(urlValues))
+    })
   }
 
   async handleSubmit(event) {
@@ -36,14 +53,9 @@ export default class extends Controller {
       }
     }
 
-    // Add facet selections from sessionStorage (updated by facet_enhanced controllers)
+    // Add facet selections from sessionStorage (updated by facet controllers)
     // This ensures we have complete selection state even for lazy-loaded frames
-    const facetCategories = [
-      'organisms', 'tissues', 'developmental_stages', 'diseases', 'sexes', 'technologies',
-      'cell_types', 'suspension_types', 'source'
-    ]
-
-    facetCategories.forEach(category => {
+    this.constructor.facetCategories.forEach(category => {
       const storageKey = `selections_${category}`
       const stored = sessionStorage.getItem(storageKey)
 
