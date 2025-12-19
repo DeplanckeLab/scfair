@@ -7,7 +7,7 @@ class Facet::Tree::NodeBuilder
     @selected_ids = extract_selected_ids.to_set
   end
 
-  def build(display_ids, counts_by_id, metadata, scoped_term_ids:, visible_roots: [])
+  def build(display_ids, counts_by_id, metadata, scoped_term_ids:, visible_roots: [], global_duplicate_names: nil)
     excluded_children = visible_roots.to_set
     nodes_with_children = identify_nodes_with_children(display_ids, metadata, scoped_term_ids, excluded_children)
     nodes_with_selected_children = identify_nodes_with_selected_children(metadata)
@@ -16,7 +16,7 @@ class Facet::Tree::NodeBuilder
       build_node(id, counts_by_id, metadata, nodes_with_children, nodes_with_selected_children)
     end
 
-    label_duplicate_names(nodes, metadata)
+    label_duplicate_names(nodes, metadata, global_duplicate_names)
   end
 
   private
@@ -63,17 +63,22 @@ class Facet::Tree::NodeBuilder
       end
     end
 
-    def label_duplicate_names(nodes, metadata)
-      by_name = nodes.group_by { |n| n.name&.downcase }
+    def label_duplicate_names(nodes, metadata, global_duplicate_names = nil)
+      if global_duplicate_names
+        duplicate_names = global_duplicate_names
+      else
+        by_name = nodes.group_by { |n| n.name&.downcase }
+        duplicate_names = by_name.select { |_, group| group.size > 1 }.keys.to_set
+      end
 
-      by_name.each do |_name, group|
-        next if group.size < 2
+      return nodes if duplicate_names.empty?
 
-        group.each do |node|
-          identifier = metadata.dig(node.id, :identifier)
-          prefix = extract_ontology_prefix(identifier)
-          node.name = "#{node.name} (#{prefix})" if prefix
-        end
+      nodes.each do |node|
+        next unless duplicate_names.include?(node.name&.downcase)
+
+        identifier = metadata.dig(node.id, :identifier)
+        prefix = extract_ontology_prefix(identifier)
+        node.name = "#{node.name} (#{prefix})" if prefix
       end
 
       nodes

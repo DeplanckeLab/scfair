@@ -37,12 +37,15 @@ class Facet::Tree
     display_ids = (visible_roots & ancestor_ids).select { |id| counts[:ancestor][id].to_i > 0 }
     return empty_result(limit) if display_ids.empty?
 
+    global_duplicates = compute_global_duplicate_names(metadata)
+
     nodes = node_builder.build(
       display_ids,
       counts[:ancestor],
       metadata,
       scoped_term_ids: all_filtered_ids,
-      visible_roots: visible_roots
+      visible_roots: visible_roots,
+      global_duplicate_names: global_duplicates
     )
 
     if limit
@@ -79,18 +82,21 @@ class Facet::Tree
     display_ids = (visible_roots & filtered_ancestor_ids).select { |id| counts[:ancestor][id].to_i > 0 }
     return empty_result(limit) if display_ids.empty?
 
+    global_duplicates = compute_global_duplicate_names(metadata)
+
     nodes = node_builder.build(
       display_ids,
       counts[:ancestor],
       metadata,
       scoped_term_ids: all_filtered_ids,
-      visible_roots: visible_roots
+      visible_roots: visible_roots,
+      global_duplicate_names: global_duplicates
     )
 
     paginator.paginate(nodes, limit: limit || nodes.size, offset: offset)
   end
 
-  def process_children(aggregation, parent_id:, visible_roots: [])
+  def process_children(aggregation, parent_id:, visible_roots: [], global_duplicate_names: nil)
     return [] unless aggregation
 
     buckets = extract_children_buckets(aggregation)
@@ -127,13 +133,16 @@ class Facet::Tree
 
     return [] if children_to_show.empty?
 
+    duplicates = global_duplicate_names || compute_global_duplicate_names(metadata)
+
     all_scoped_ids = (children_term_ids + direct_term_ids).to_set
     nodes = node_builder.build(
       children_to_show,
       counts[:children],
       metadata,
       scoped_term_ids: all_scoped_ids,
-      visible_roots: visible_roots
+      visible_roots: visible_roots,
+      global_duplicate_names: duplicates
     )
 
     nodes.map(&:to_h)
@@ -214,5 +223,14 @@ class Facet::Tree
       end
 
       candidates.to_a
+    end
+
+    def compute_global_duplicate_names(metadata)
+      name_counts = Hash.new(0)
+      metadata.each_value do |term_data|
+        name = term_data[:name]&.to_s&.downcase&.capitalize&.downcase
+        name_counts[name] += 1 if name
+      end
+      name_counts.select { |_, count| count > 1 }.keys.to_set
     end
 end

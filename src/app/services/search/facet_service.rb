@@ -37,10 +37,13 @@ module Search
 
       unfiltered_structure = fetch_unfiltered_structure(category)
 
+      global_duplicates = compute_global_duplicate_names(unfiltered_structure[:terms_metadata])
+
       Facet::Tree.new(facet, @params).process_children(
         response.dig("aggregations", "#{category}_children"),
         parent_id: parent_id,
-        visible_roots: unfiltered_structure[:visible_roots]
+        visible_roots: unfiltered_structure[:visible_roots],
+        global_duplicate_names: global_duplicates
       )
     rescue StandardError => e
       Rails.logger.warn("Children aggregation failed: #{e.class}: #{e.message}")
@@ -322,6 +325,17 @@ module Search
         end
 
         candidates.to_a
+      end
+
+      def compute_global_duplicate_names(metadata)
+        return Set.new if metadata.nil? || metadata.empty?
+
+        name_counts = Hash.new(0)
+        metadata.each_value do |term_data|
+          name = term_data[:name]&.to_s&.downcase
+          name_counts[name] += 1 if name
+        end
+        name_counts.select { |_, count| count > 1 }.keys.to_set
       end
   end
 end
