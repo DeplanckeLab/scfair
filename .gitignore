@@ -36,3 +36,5 @@ src/solr/development/data/
 src/solr/test/data/
 
 src/.vscode/settings.json
+
+data/*
