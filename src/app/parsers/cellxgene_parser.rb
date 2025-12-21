@@ -107,7 +107,7 @@ class CellxgeneParser
 
     sexes_data.each do |sex_hash|
       sex_name = sex_hash.fetch(:label, "")
-      next if sex_name.blank? || sex_name.strip.downcase == "unknown"
+      next if sex_name.blank? || sex_name.strip.downcase == "unknown" || sex_name.strip.downcase == "na"
 
       ontology_identifier = sex_hash.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
@@ -258,7 +258,7 @@ class CellxgeneParser
 
     stages_data.each do |stage_data|
       stage_name = stage_data.fetch(:label, "")
-      next if stage_name.blank? || stage_name.strip.downcase == "unknown"
+      next if stage_name.blank? || stage_name.strip.downcase == "unknown" || stage_name.strip.downcase == "na"
 
       ontology_identifier = stage_data.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
