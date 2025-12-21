@@ -1,0 +1,1 @@
+data/*.obo !text !filter !merge !diff
