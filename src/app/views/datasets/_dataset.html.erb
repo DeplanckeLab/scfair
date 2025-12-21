@@ -1,4 +1,4 @@
-<div class="bg-white rounded-lg shadow p-3 mb-3 relative group/dataset cursor-pointer transition-all duration-200 hover:bg-gray-50"
+<div class="bg-white rounded-lg shadow p-3 relative group/dataset cursor-pointer transition-all duration-200 hover:bg-gray-50"
      data-controller="card"
      data-action="click->card#toggle">
   <div class="flex items-start justify-between">
@@ -128,10 +128,17 @@
     </div>
   <% end %>
 
-  <% if local_assigns[:show_parsing_issues] && dataset.parsing_issues.any? %>
+  <%
+    issues_to_show = if local_assigns[:show_parsing_issues]
+      local_assigns[:parsing_issues_by_dataset]&.dig(dataset.id) || []
+    else
+      []
+    end
+  %>
+  <% if issues_to_show.any? %>
     <div class="ml-4 mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
       <div class="space-y-2">
-        <% dataset.parsing_issues.each do |issue| %>
+        <% issues_to_show.each do |issue| %>
           <div class="flex items-start gap-2">
             <div class="text-amber-600 text-xs leading-none mt-0.5 shrink-0">
               🔧

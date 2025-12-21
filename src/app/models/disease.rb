@@ -1,4 +1,8 @@
 class Disease < ApplicationRecord
+  include OntologyValidated
+  ALLOWED_ONTOLOGIES = %w[MONDO].freeze
+  ALLOWED_SPECIAL_IDENTIFIERS = %w[PATO:0000461].freeze  # PATO:0000461 = "normal/healthy"
+
   belongs_to :ontology_term, optional: true
 
   has_and_belongs_to_many :datasets
@@ -10,6 +14,8 @@ class Disease < ApplicationRecord
       bg_circle: "bg-red-500",
       bg_text: "bg-red-100",
       text_color: "text-red-800",
+      checkbox_checked: "text-red-600",
+      focus_ring: "focus:ring-red-300"
     }
   end
 

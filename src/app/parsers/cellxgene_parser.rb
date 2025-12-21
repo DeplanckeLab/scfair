@@ -111,6 +111,18 @@ class CellxgeneParser
 
       ontology_identifier = sex_hash.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
+        unless Sex.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Sex.name,
+            value: sex_name,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{Sex.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Sex::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
         if ontology_term
@@ -145,6 +157,31 @@ class CellxgeneParser
 
       ontology_identifier = cell_type_data.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
+        unless CellType.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_name,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{CellType.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{CellType::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
+        # For FBbt terms, validate it's actually a cell type (not an anatomical structure)
+        unless CellType.valid_cell_type_term?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_name,
+            external_reference_id: ontology_identifier,
+            message: "FBbt term '#{ontology_identifier}' is not a cell type (not a descendant of FBbt:00007002 'cell')",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
         if ontology_term
@@ -179,6 +216,18 @@ class CellxgeneParser
 
       ontology_identifier = tissue_data.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
+        unless Tissue.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Tissue.name,
+            value: tissue_name,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{Tissue.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Tissue::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
         if ontology_term
@@ -213,6 +262,18 @@ class CellxgeneParser
 
       ontology_identifier = stage_data.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
+        unless DevelopmentalStage.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: DevelopmentalStage.name,
+            value: stage_name,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{DevelopmentalStage.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{DevelopmentalStage::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
         if ontology_term
@@ -247,6 +308,18 @@ class CellxgeneParser
 
       ontology_identifier = org_hash.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
+        unless Organism.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Organism.name,
+            value: organism_name,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{Organism.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Organism::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
         if ontology_term
@@ -285,6 +358,18 @@ class CellxgeneParser
         labels = disease_name.to_s.split(/\s*\|\|\s*/).map(&:strip)
 
         identifiers.each_with_index do |ontology_identifier, idx|
+          unless Disease.valid_ontology?(ontology_identifier)
+            ParsingIssue.create!(
+              dataset: dataset,
+              resource: Disease.name,
+              value: labels[idx] || disease_name,
+              external_reference_id: ontology_identifier,
+              message: "Invalid ontology prefix '#{Disease.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Disease::ALLOWED_ONTOLOGIES.join(', ')} or #{Disease::ALLOWED_SPECIAL_IDENTIFIERS.join(', ')}",
+              status: :pending
+            )
+            next
+          end
+
           ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
           if ontology_term
@@ -297,7 +382,7 @@ class CellxgeneParser
             ParsingIssue.create!(
               dataset: dataset,
               resource: Disease.name,
-              value: disease_name,
+              value: labels[idx] || disease_name,
               external_reference_id: ontology_identifier,
               message: "Ontology term with identifier '#{ontology_identifier}' not found",
               status: :pending
@@ -323,6 +408,18 @@ class CellxgeneParser
 
       ontology_identifier = assay_data.fetch(:ontology_term_id, "")
       if ontology_identifier.present?
+        unless Technology.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Technology.name,
+            value: technology_name,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{Technology.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Technology::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
         if ontology_term

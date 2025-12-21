@@ -1,0 +1,164 @@
+{
+  "settings": {
+    "index": { "refresh_interval": "1s", "number_of_replicas": 0 },
+    "analysis": {
+      "analyzer": {
+        "en_text": { "type": "standard", "stopwords": "_english_" },
+        "edge_ngram_analyzer": {
+          "type": "custom",
+          "tokenizer": "edge_ngram_tokenizer",
+          "filter": ["lowercase"]
+        }
+      },
+      "tokenizer": {
+        "edge_ngram_tokenizer": {
+          "type": "edge_ngram",
+          "min_gram": 2,
+          "max_gram": 20,
+          "token_chars": ["letter", "digit"]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "id": { "type": "keyword" },
+      "collection_id": { "type": "keyword" },
+      "source_reference_id": { "type": "keyword" },
+      "source_url": { "type": "keyword" },
+      "explorer_url": { "type": "keyword" },
+      "cell_count": { "type": "integer" },
+      "status": { "type": "keyword" },
+      "source_name": { "type": "keyword" },
+      "source_ids": { "type": "keyword" },
+      "source_names": { "type": "text", "analyzer": "en_text" },
+      "cell_types_ids": { "type": "keyword" },
+      "cell_types_names": { "type": "text", "analyzer": "en_text" },
+      "cell_types_ancestor_ids": { "type": "keyword" },
+      "cell_types_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+      "cell_types_ancestor_names": { "type": "text", "analyzer": "en_text" },
+      "suspension_types_ids": { "type": "keyword" },
+      "suspension_types_names": { "type": "text", "analyzer": "en_text" },
+      "text_search": {
+        "type": "text",
+        "analyzer": "en_text",
+        "fields": {
+          "autocomplete": {
+            "type": "text",
+            "analyzer": "edge_ngram_analyzer"
+          }
+        }
+      },
+      "authors": { "type": "keyword" },
+      "created_at": { "type": "date" },
+      "updated_at": { "type": "date" },
+
+      "cell_type_ids": { "type": "keyword" },
+      "cell_type_ancestor_ids": { "type": "keyword" },
+      "cell_type_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+
+      "tissue_ids": { "type": "keyword" },
+      "tissue_ancestor_ids": { "type": "keyword" },
+      "tissue_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+
+      "developmental_stage_ids": { "type": "keyword" },
+      "developmental_stage_ancestor_ids": { "type": "keyword" },
+      "developmental_stage_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+
+      "disease_ids": { "type": "keyword" },
+      "disease_ancestor_ids": { "type": "keyword" },
+      "disease_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+
+      "sex_ids": { "type": "keyword" },
+      "sex_ancestor_ids": { "type": "keyword" },
+      "sex_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+
+      "technology_ids": { "type": "keyword" },
+      "technology_ancestor_ids": { "type": "keyword" },
+      "technology_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+
+      "organism_ids": { "type": "keyword" },
+      "organism_ancestor_ids": { "type": "keyword" },
+      "organism_hierarchy": {
+        "type": "nested",
+        "properties": {
+          "id": { "type": "keyword" },
+          "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "depth": { "type": "integer" },
+          "is_direct": { "type": "boolean" }
+        }
+      },
+
+      "organism_names": { "type": "text", "analyzer": "en_text" },
+      "tissue_names": { "type": "text", "analyzer": "en_text" },
+      "developmental_stage_names": { "type": "text", "analyzer": "en_text" },
+      "disease_names": { "type": "text", "analyzer": "en_text" },
+      "sex_names": { "type": "text", "analyzer": "en_text" },
+      "technology_names": { "type": "text", "analyzer": "en_text" },
+
+      "organism_ancestor_names": { "type": "text", "analyzer": "en_text" },
+      "tissue_ancestor_names": { "type": "text", "analyzer": "en_text" },
+      "developmental_stage_ancestor_names": { "type": "text", "analyzer": "en_text" },
+      "disease_ancestor_names": { "type": "text", "analyzer": "en_text" },
+      "sex_ancestor_names": { "type": "text", "analyzer": "en_text" },
+      "technology_ancestor_names": { "type": "text", "analyzer": "en_text" }
+    }
+  }
+}

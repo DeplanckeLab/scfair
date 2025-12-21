@@ -128,6 +128,31 @@ class SingleCellPortalParser
     skip_values = ["nan", "--unspecified--", "n/a", "na"]
     return if skip_values.include?(organism_name.downcase.strip) || skip_values.include?(ontology_identifier.downcase.strip)
 
+    unless Organism.valid_ontology?(ontology_identifier)
+      message = "Invalid ontology prefix '#{Organism.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Organism::ALLOWED_ONTOLOGIES.join(', ')}"
+
+      ParsingIssue.create!(
+        dataset: dataset,
+        resource: Organism.name,
+        value: organism_name,
+        external_reference_id: ontology_identifier,
+        message: message,
+        status: :pending
+      )
+
+      notes = dataset.notes || {}
+      notes[:parsing_errors] ||= []
+      notes[:parsing_errors] << {
+        annotation: Organism.name,
+        message: message,
+        value: organism_name,
+        external_ontology_reference: ontology_identifier,
+        timestamp: Time.current.utc.to_s
+      }
+      dataset.update!(notes: notes)
+      return
+    end
+
     ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
 
     if ontology_term
@@ -178,13 +203,49 @@ class SingleCellPortalParser
       ontology_identifier = cell_value.gsub('_', ':')
       
       if ontology_identifier.present?
+        unless CellType.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_value,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{CellType.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{CellType::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+
+          notes = dataset.notes || {}
+          notes[:parsing_errors] ||= []
+          notes[:parsing_errors] << {
+            annotation: CellType.name,
+            message: "Invalid ontology prefix '#{CellType.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{CellType::ALLOWED_ONTOLOGIES.join(', ')}",
+            value: cell_value,
+            external_ontology_reference: ontology_identifier,
+            timestamp: Time.current.utc.to_s
+          }
+          dataset.update!(notes: notes)
+          next
+        end
+
+        # For FBbt terms, validate it's actually a cell type (not an anatomical structure)
+        unless CellType.valid_cell_type_term?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_value,
+            external_reference_id: ontology_identifier,
+            message: "FBbt term '#{ontology_identifier}' is not a cell type (not a descendant of FBbt:00007002 'cell')",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-        
+
         if ontology_term
           cell_type_record = CellType
             .where(ontology_term_id: ontology_term.id)
             .first_or_create!(name: ontology_term.name.presence || cell_value)
-          
+
           dataset.cell_types << cell_type_record unless dataset.cell_types.include?(cell_type_record)
         else
           ParsingIssue.create!(
@@ -283,13 +344,25 @@ class SingleCellPortalParser
       ontology_identifier = disease_value.gsub('_', ':')
       
       if ontology_identifier.present?
+        unless Disease.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Disease.name,
+            value: disease_value,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{Disease.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Disease::ALLOWED_ONTOLOGIES.join(', ')} or #{Disease::ALLOWED_SPECIAL_IDENTIFIERS.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-        
+
         if ontology_term
           disease_record = Disease
             .where(ontology_term_id: ontology_term.id)
-            .first_or_create!(name: ontology_term.name.presence || disease_value) 
-          
+            .first_or_create!(name: ontology_term.name.presence || disease_value)
+
           dataset.diseases << disease_record unless dataset.diseases.include?(disease_record)
         else
           ParsingIssue.create!(
@@ -322,13 +395,25 @@ class SingleCellPortalParser
       ontology_identifier = tech_value.gsub('_', ':')
       
       if ontology_identifier.present?
+        unless Technology.valid_ontology?(ontology_identifier)
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Technology.name,
+            value: tech_value,
+            external_reference_id: ontology_identifier,
+            message: "Invalid ontology prefix '#{Technology.extract_ontology_prefix(ontology_identifier)}'. Expected one of: #{Technology::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: ontology_identifier)
-        
+
         if ontology_term
           tech_record = Technology
             .where(ontology_term_id: ontology_term.id)
             .first_or_create!(name: ontology_term.name.presence || tech_value)
-          
+
           dataset.technologies << tech_record unless dataset.technologies.include?(tech_record)
         else
           ParsingIssue.create!(

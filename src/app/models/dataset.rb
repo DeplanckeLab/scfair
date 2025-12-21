@@ -12,6 +12,8 @@ class Dataset < ApplicationRecord
 
   CATEGORIES = ASSOCIATION_METHODS.keys.freeze
 
+  thread_mattr_accessor :skip_indexing, default: false
+
   enum :status, { processing: "processing", completed: "completed", failed: "failed" }
 
   has_and_belongs_to_many :sexes
@@ -33,88 +35,12 @@ class Dataset < ApplicationRecord
   after_update :update_source_counters, if: :saved_change_to_status?
   after_destroy :decrement_source_counters
 
-  searchable if: :completed? do
-    string :id
-    string :collection_id
-    string :source_reference_id
-    string :source_url
-    string :explorer_url
-    integer :cell_count
+  after_commit on: [:create, :update] do
+    IndexDatasetJob.perform_later(id) unless Dataset.skip_indexing
+  end
 
-    string :source_name do
-      source.name
-    end
-
-    string :authors, multiple: true do
-      study&.authors || []
-    end
-
-    text :authors do
-      study&.authors || []
-    end
-
-    # Basic string fields for direct name matches (all items for search)
-    ASSOCIATION_METHODS.each do |category, method|
-      string method, multiple: true do
-        send(method).map(&:name)
-      end
-    end
-
-    # Separate fields for facets (only items with ontology terms, excluding Organism and SuspensionType)
-    ASSOCIATION_METHODS.except(Organism, SuspensionType).each do |category, method|
-      string "#{method}_facet", multiple: true do
-        send(method).select { |item| item.ontology_term_id.present? }.map(&:name)
-      end
-    end
-
-    # Special hierarchical fields for organisms
-    string :organism_ancestors, multiple: true do
-      organisms.includes(:ontology_term).flat_map do |organism|
-        if organism.ontology_term.present?
-          ancestor_names = organism.ontology_term.all_ancestors.flat_map do |ancestor_term|
-            Organism.where(ontology_term_id: ancestor_term.id).pluck(:name)
-          end
-          [organism.name] + ancestor_names
-        else
-          [organism.name]
-        end
-      end.uniq
-    end
-
-    # Ontology-aware fields with identifiers and ancestors (excluding Organism)
-    ASSOCIATION_METHODS.except(Organism, SuspensionType).each do |category, method|
-      string "#{method}_ontology", multiple: true do
-        send(method).includes(:ontology_term).flat_map do |item|
-          terms = [item.ontology_term&.identifier]
-          terms += item.ontology_term&.all_ancestors&.map(&:identifier) || []
-          terms.compact
-        end
-      end
-    end
-
-    # Names of ancestor ontology terms (for full-text search weighting)
-    text :ancestor_ontology_terms do
-      ASSOCIATION_METHODS.values.flat_map do |method|
-        send(method).includes(:ontology_term).flat_map do |item|
-          item.ontology_term&.all_ancestors&.map(&:name)
-        end
-      end.flatten.compact.join(" ")
-    end
-
-    text :text_search do
-      [
-        ASSOCIATION_METHODS.values.flat_map do |method|
-          send(method).includes(:ontology_term).map do |item|
-            [
-              item.name,
-              item.ontology_term&.name
-            ]
-          end
-        end,
-        source.name,
-        study&.authors
-      ].flatten.compact.join(" ")
-    end
+  after_destroy do
+    Search::DatasetIndexer.delete(id)
   end
 
   def associated_category_items_for(category)

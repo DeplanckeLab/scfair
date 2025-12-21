@@ -12,19 +12,20 @@ services:
     env_file: src/.env
     environment:
       - RAILS_ENV=test
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
     depends_on:
       postgres:
         condition: service_healthy
-      solr:
+      elasticsearch:
         condition: service_healthy
     networks:
       - scfair_test_network
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 2G
         reservations:
-          memory: 256M
+          memory: 512M
     restart: always
 
   postgres:
@@ -47,35 +48,22 @@ services:
           memory: 128M
     restart: always
 
-  solr:
-    build:
-      context: ./src/solr
-      dockerfile: Dockerfile
-    image: scfair-solr:latest
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.1.5
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
-      - "8984:8984"
-    volumes:
-      - solr_data:/var/solr
-    command: solr-precreate test /opt/solr/server/solr/configsets/sunspot
+      - "9200:9200"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8984/solr/admin/info/system"]
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 90s
-    environment:
-      - SOLR_HEAP=512m
-      - SOLR_JAVA_MEM=-Xms256m -Xmx512m
-      - SOLR_OPTS=-Djetty.port=8984
-    deploy:
-      resources:
-        limits:
-          memory: 768M
-        reservations:
-          memory: 384M
     networks:
       - scfair_test_network
-    restart: always
+    restart: unless-stopped
 
 networks:
   scfair_test_network:
@@ -83,6 +71,3 @@ networks:
 
 volumes:
   postgres-data:
-  solr_data:
-    driver: local
-  solr_logs:

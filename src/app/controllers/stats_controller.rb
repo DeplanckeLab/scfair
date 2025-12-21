@@ -36,11 +36,16 @@ class StatsController < ApplicationController
                          .pluck(:id)
 
     @datasets = Dataset.where(id: dataset_ids)
-                      .includes(:source, :study, :file_resources, :parsing_issues)
+                      .includes(:source, :study, :file_resources)
                       .preload(
                         :sexes, :cell_types, :tissues, :developmental_stages,
                         :organisms, :diseases, :technologies, :links
                       )
+
+    @parsing_issues_by_dataset = ParsingIssue
+                                   .where(dataset_id: dataset_ids)
+                                   .where(parsing_issues_filter)
+                                   .group_by(&:dataset_id)
 
     render layout: false, formats: [:html]
   end

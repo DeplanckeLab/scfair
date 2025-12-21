@@ -1,151 +1,49 @@
 <div class="container mx-auto px-4 mt-4 mb-8" data-controller="sort">
-  <div class="flex">
-    <div class="w-1/4 pr-6">
+  <div class="flex gap-6">
+    <div class="min-w-[400px] max-w-[500px] flex-shrink-0">
       <%= form_with(
-              url: datasets_path, 
+              url: datasets_path,
               method: :get,
-              data: { 
-                controller: "facet",
-                turbo_frame: "datasets",
+              data: {
+                controller: "url-sync",
                 sort_target: "form"
               },
-              class: "space-y-6",
               id: :search_form
           ) do |form| %>
-        <div class="search-box mb-6">
-          <%= form.search_field :search, 
-                value: params[:search],
-                class: "w-full rounded-lg border-gray-300 bg-white shadow-sm focus:ring-indigo-500 focus:border-indigo-500",
-                placeholder: "Search datasets...",
-                oninput: "this.form.requestSubmit()",
-                data: { turbo_permanent: true } %>
+        <%= hidden_field_tag :format, 'turbo_stream' %>
+        <div class="mb-4">
+          <div class="relative">
+            <%= form.search_field :search,
+                  value: params[:search],
+                  class: "w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none",
+                  placeholder: "Search datasets...",
+                  data: {
+                    controller: "debounced-search",
+                    debounced_search_delay_value: 300,
+                    action: "input->debounced-search#search keydown->debounced-search#submitNow",
+                    turbo_permanent: true
+                  } %>
+            <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none"
+                 fill="none"
+                 stroke="currentColor"
+                 viewBox="0 0 24 24">
+              <path stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
-        <div class="space-y-1 bg-white rounded-lg shadow p-4">
-          <%= render "organism_facet", form: form if @organism_facet_rows.present? %>
-          <% @search.facets.each do |facet| %>
-            <% next if facet.name.to_s == "organisms" %>
-            <div class="facet-group" 
-                 data-controller="facet"
-                 id="facet-<%= facet.name %>">
-              <% dot_color = case facet.name.to_s
-                 when "cell_types" then "bg-green-500"
-                 when "tissues" then "bg-purple-500"
-                 when "developmental_stages" then "bg-orange-500"
-                 when "diseases" then "bg-red-500"
-                 when "sex" then "bg-pink-500"
-                 when "technologies" then "bg-indigo-500"
-                 when "suspension_types" then "bg-teal-500"
-                 when "source_name" then "bg-yellow-500"
-                 else "bg-gray-500"
-                 end %>
-              <% selected_count = params[facet.name]&.size || 0 %>
-              <%= button_tag type: "button",
-                class: "w-full flex items-center justify-between text-left font-semibold text-gray-700 mb-2 group",
-                data: {
-                  action: "click->facet#toggle",
-                  facet_target: "button"
-                },
-                id: "facet-button-#{facet.name}" do %>
-                <div class="flex items-center">
-                  <span class="w-2 h-2 rounded-full <%= dot_color %> mr-2"></span>
-                  <%= facet.name == :source_name ? "Data Source" : facet.name.to_s.singularize.titleize.capitalize %>
-                  <span class="ml-2 text-sm text-gray-500 selected-count <%= selected_count > 0 ? '' : 'hidden' %>"
-                        data-action="mouseover->facet#showClearAll mouseout->facet#restoreSelectedCount click->facet#clearAllSelected click->facet#stopPropagation"
-                    data-facet-target="selectedCount">
-                    <%= selected_count > 0 ? "#{selected_count} selected" : "" %>
-                  </span>
-                </div>
-                <svg class="w-5 h-5 text-gray-500 transform transition-transform duration-150 <%= selected_count > 0 ? 'rotate-180' : '' %>" 
-                     viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" 
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" 
-                        clip-rule="evenodd" />
-                </svg>
-              <% end %>
-              <div class="space-y-2 overflow-hidden transition-all duration-200"
-                   data-facet-target="content"
-                   id="facet-content-<%= facet.name %>"
-                   style="max-height: <%= selected_count > 0 ? 'none' : '0px' %>">
-                <div class="py-1">
-                  <% if facet.rows.length > 10 %>
-                    <div class="mb-3 px-1 relative">
-                      <%= text_field_tag nil, nil,
-                        class: "w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md pr-8 bg-gray-50 focus:bg-white focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500",
-                        placeholder: "Filter #{facet.name.to_s.titleize.downcase}...",
-                        data: {
-                          action: "input->facet#filter",
-                          facet_target: "searchInput"
-                        }
-                      %>
-                      <%= button_tag type: "button",
-                        class: "absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600",
-                        style: "display: none;",
-                        data: {
-                          action: "click->facet#clearSearch",
-                          facet_target: "clearButton"
-                        } do %>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      <% end %>
-                    </div>
-                  <% end %>
-                  <div class="space-y-1.5" data-facet-target="items">
-                    <% facet.rows.each do |row| %>
-                      <div class="relative flex items-start py-0.5 px-1 rounded-md hover:bg-gray-50" 
-                           data-facet-target="item" 
-                           data-value="<%= row.value.downcase %>">
-                        <div class="min-w-0 flex items-center">
-                          <% checkbox_id = "#{facet.name}_#{row.value.parameterize}" %>
-                          <%= form.check_box "#{facet.name}[]", 
-                              { 
-                                id: checkbox_id,
-                                checked: params[facet.name]&.include?(row.value),
-                                class: "h-4 w-4 rounded border-gray-300 focus:ring-brand-light text-brand-light cursor-pointer",
-                                data: {
-                                  action: "change->facet#submitForm"
-                                }
-                              },
-                              row.value,
-                              nil %>
-                          <%= form.label checkbox_id, 
-                              class: "ml-2 block text-sm text-gray-600 truncate group relative cursor-pointer", 
-                              title: row.value.capitalize do %>
-                            <span class="font-medium"><%= row.value.capitalize %></span>
-                            <div class="hidden group-hover:block absolute left-0 bottom-full mb-1 z-10">
-                              <div class="bg-gray-900 text-white text-xs rounded-md py-1 px-2 whitespace-nowrap">
-                                <%= row.value.capitalize %>
-                              </div>
-                              <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-2 -translate-y-1"></div>
-                            </div>
-                          <% end %>
-                        </div>
-                      </div>
-                    <% end %>
-                  </div>
-                  <button type="button"
-                          class="text-xs text-gray-500 hover:text-gray-700 mt-2 hidden"
-                          data-facet-target="hiddenCounter"
-                          data-action="click->facet#toggleShowAll">
-                    <span data-facet-target="hiddenCount"></span>
-                  </button>
-                </div>
-              </div>
-            </div>
+        <div class="space-y-3">
+          <% @facets.each do |facet| %>
+            <%= render "facets/panel", facet: facet %>
           <% end %>
         </div>
       <% end %>
     </div>
-    <div class="w-3/4">
-      <%= turbo_frame_tag "datasets",
-          data: {
-            controller: "loading",
-            turbo_action: "advance",
-            turbo_frame: "datasets",
-            turbo_preserve_scroll: true,
-            turbo_morphing_permanent_attributes: "style"
-          } do %>
-        <div class="bg-white rounded-lg shadow">
+    <div class="flex-1 min-w-0">
+      <div id="datasets">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200">
           <div class="p-4">
             <div class="flex items-center justify-between mb-3">
               <div></div>
@@ -153,20 +51,14 @@
                 <div class="flex items-center gap-1">
                   <label class="text-xs text-gray-500">Sort</label>
                   <select class="text-sm border-gray-300 rounded-md" name="sort" form="search_form" data-action="change->sort#apply">
-                    <option value="" <%= 'selected' if params[:sort].blank? %>>Relevance</option>
-                    <option value="cells_desc" <%= 'selected' if params[:sort] == 'cells_desc' %>>Most cells</option>
+                    <option value="cells_desc" <%= 'selected' if params[:sort].blank? || params[:sort] == 'cells_desc' %>>Most cells</option>
                     <option value="cells_asc" <%= 'selected' if params[:sort] == 'cells_asc' %>>Fewest cells</option>
                   </select>
                 </div>
-                <div id="loading-spinner" class="flex items-center" style="display: none;">
-                  <svg class="animate-spin h-4 w-4 text-brand-dark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
+                <%= render "shared/loading_spinner" %>
                 <h2 class="text-sm text-gray-600">
-                  <span class="text-brand-light font-medium"><%= @search.total %></span>
-                      <%= 'dataset'.pluralize(@search.total) %>
+                      <span class="text-brand-light font-medium"><%= @total %></span>
+                      <%= 'dataset'.pluralize(@total) %>
                       <% if params[:search].present? %>
                         <span class="text-gray-500">
                           for "<span class="text-gray-600"><%= params[:search] %></span>"
@@ -175,54 +67,53 @@
                     </h2>
                   </div>
                 </div>
-                <div class="space-y-3">
-                  <%= render @datasets %>
-                </div>
-                <div class="mt-4">
-                  <%= will_paginate @datasets,
-                  class: "pagination",
-                  inner_window: 2,
-                  outer_window: 1,
-                  previous_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>',
-                  next_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>',
-                  renderer: WillPaginate::ActionView::LinkRenderer %>
-                </div>
+              </div>
+              <div class="space-y-2 px-4">
+                <%= render @datasets %>
+              </div>
+              <div class="mt-3 mb-4" data-turbo-prefetch="false">
+                <%= will_paginate @datasets,
+                class: "pagination",
+                inner_window: 2,
+                outer_window: 1,
+                previous_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>',
+                next_label: '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>',
+                renderer: WillPaginate::ActionView::LinkRenderer %>
               </div>
             </div>
-          <% end %>
-          <%= tag.div id: "tag-modal", 
-                  class: "fixed inset-0 bg-gray-500 bg-opacity-75 z-50 hidden", 
-                  data: { controller: "tag" } do %>
-            <div class="fixed inset-0 z-50 overflow-y-auto">
-              <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
-                  <div class="absolute right-0 top-0 pr-4 pt-4">
-                    <%= button_tag type: "button",
+          </div>
+        </div>
+        <%= tag.div id: "tag-modal",
+              class: "fixed inset-0 bg-gray-500 bg-opacity-75 z-50 hidden",
+              data: { controller: "tag" } do %>
+          <div class="fixed inset-0 z-50 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <div class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                <div class="absolute right-0 top-0 pr-4 pt-4">
+                  <%= button_tag type: "button",
                class: "rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none",
                data: { action: "click->tag#hideModal click->tag#stopPropagation" } do %>
-                      <span class="sr-only">Close</span>
-                      <%= tag.svg class: "h-6 w-6", 
-                             fill: "none", 
-                             viewBox: "0 0 24 24", 
-                             "stroke-width": "1.5", 
-                             stroke: "currentColor" do %>
-                        <path stroke-linecap="round" 
-                          stroke-linejoin="round" 
-                          d="M6 18L18 6M6 6l12 12" />
-                      <% end %>
+                    <span class="sr-only">Close</span>
+                    <%= tag.svg class: "h-6 w-6",
+                         fill: "none",
+                         viewBox: "0 0 24 24",
+                         "stroke-width": "1.5",
+                         stroke: "currentColor" do %>
+                      <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 18L18 6M6 6l12 12" />
                     <% end %>
-                  </div>
-                  <%= turbo_frame_tag "tag-modal-content" do %>
-                    <div class="flex items-center justify-center p-4">
-                      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                    </div>
                   <% end %>
                 </div>
+                <%= turbo_frame_tag "tag-modal-content" do %>
+                  <div class="flex items-center justify-center p-4">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                  </div>
+                <% end %>
               </div>
             </div>
-          <% end %>
-        </div>
+          </div>
+        <% end %>
       </div>
     </div>
   </div>
-</div>

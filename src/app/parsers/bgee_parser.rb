@@ -252,6 +252,31 @@ class BgeeParser
       next if cell_type_data[:name].blank?
 
       if cell_type_data[:identifier].present?
+        unless CellType.valid_ontology?(cell_type_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_data[:name],
+            external_reference_id: cell_type_data[:identifier],
+            message: "Invalid ontology prefix '#{CellType.extract_ontology_prefix(cell_type_data[:identifier])}'. Expected one of: #{CellType::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
+        # For FBbt terms, validate it's actually a cell type (not an anatomical structure)
+        unless CellType.valid_cell_type_term?(cell_type_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: CellType.name,
+            value: cell_type_data[:name],
+            external_reference_id: cell_type_data[:identifier],
+            message: "FBbt term '#{cell_type_data[:identifier]}' is not a cell type (not a descendant of FBbt:00007002 'cell')",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: cell_type_data[:identifier])
 
         if ontology_term
@@ -284,6 +309,18 @@ class BgeeParser
       next if tissue_data[:name].blank?
 
       if tissue_data[:identifier].present?
+        unless Tissue.valid_ontology?(tissue_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: Tissue.name,
+            value: tissue_data[:name],
+            external_reference_id: tissue_data[:identifier],
+            message: "Invalid ontology prefix '#{Tissue.extract_ontology_prefix(tissue_data[:identifier])}'. Expected one of: #{Tissue::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: tissue_data[:identifier])
 
         if ontology_term
@@ -318,6 +355,18 @@ class BgeeParser
       cleaned_stage_name = stage_data[:name].gsub(/\s*\([^)]*\)\s*/, '').strip
 
       if stage_data[:identifier].present?
+        unless DevelopmentalStage.valid_ontology?(stage_data[:identifier])
+          ParsingIssue.create!(
+            dataset: dataset,
+            resource: DevelopmentalStage.name,
+            value: stage_data[:name],
+            external_reference_id: stage_data[:identifier],
+            message: "Invalid ontology prefix '#{DevelopmentalStage.extract_ontology_prefix(stage_data[:identifier])}'. Expected one of: #{DevelopmentalStage::ALLOWED_ONTOLOGIES.join(', ')}",
+            status: :pending
+          )
+          next
+        end
+
         ontology_term = OntologyTerm.find_by(identifier: stage_data[:identifier])
 
         if ontology_term

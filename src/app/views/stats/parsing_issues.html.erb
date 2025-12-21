@@ -7,7 +7,7 @@
         </h3>
 
         <div class="space-y-3">
-          <%= render partial: "datasets/dataset", collection: @datasets, as: :dataset, locals: { show_parsing_issues: true } %>
+          <%= render partial: "datasets/dataset", collection: @datasets, as: :dataset, locals: { show_parsing_issues: true, parsing_issues_by_dataset: @parsing_issues_by_dataset } %>
         </div>
       </div>
     </div>

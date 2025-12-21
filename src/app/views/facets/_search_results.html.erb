@@ -1,0 +1,33 @@
+<turbo-frame id="facet_content_<%= category %>">
+  <div class="p-2">
+    <% facet_model = Facet.find(category) %>
+    <% param_key = facet_model&.param_key %>
+    <% if nodes.any? %>
+      <% nodes.each do |node| %>
+        <% checkbox_id = "search_#{category}_#{safe_dom_id(node[:id])}" %>
+        <% is_selected = Array(params[param_key]).include?(node[:id]) %>
+        <label class="flex items-center py-1 px-1 rounded hover:bg-gray-50 cursor-pointer group transition-colors"
+               for="<%= checkbox_id %>">
+          <span class="w-4 h-4 mr-1.5 inline-block"></span>
+          <input type="checkbox"
+                 id="<%= checkbox_id %>"
+                 name="<%= param_key %>[]"
+                 value="<%= node[:id] %>"
+                 form="search_form"
+                 class="mr-2 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:ring-offset-0"
+                 data-action="change->facet-panel#handleSelection"
+          <%= 'checked' if is_selected %>>
+          <span class="flex-1 truncate text-sm text-gray-700 cursor-pointer select-none group-hover:text-gray-900 pr-2"
+                title="<%= node[:name] %>">
+            <%= node[:name] %>
+          </span>
+          <span class="ml-auto px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded group-hover:bg-gray-200 whitespace-nowrap">
+            <%= number_with_delimiter(node[:count]) %>
+          </span>
+        </label>
+      <% end %>
+    <% else %>
+      <p class="text-sm text-gray-500 italic p-4">No matching items found</p>
+    <% end %>
+  </div>
+</turbo-frame>

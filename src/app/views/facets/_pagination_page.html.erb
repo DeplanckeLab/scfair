@@ -1,0 +1,11 @@
+<turbo-frame id="<%= facet_pagination_frame_id(category) %>">
+  <%= render "facets/tree_nodes_batch",
+             category: category,
+             nodes: nodes,
+             level: 0,
+             colors: colors %>
+
+  <% if pagination&.dig(:has_more) %>
+    <%= link_to_next_facet_page(category, pagination, colors: colors) %>
+  <% end %>
+</turbo-frame>

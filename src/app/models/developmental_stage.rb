@@ -1,4 +1,7 @@
 class DevelopmentalStage < ApplicationRecord
+  include OntologyValidated
+  ALLOWED_ONTOLOGIES = %w[HsapDv MmusDv FBdv UBERON ZFS WBls].freeze
+
   belongs_to :ontology_term, optional: true
 
   has_and_belongs_to_many :datasets
@@ -10,6 +13,8 @@ class DevelopmentalStage < ApplicationRecord
       bg_circle: "bg-orange-500",
       bg_text: "bg-orange-100",
       text_color: "text-orange-800",
+      checkbox_checked: "text-orange-600",
+      focus_ring: "focus:ring-orange-300"
     }
   end
 

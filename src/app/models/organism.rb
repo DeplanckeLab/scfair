@@ -1,4 +1,7 @@
 class Organism < ApplicationRecord
+  include OntologyValidated
+  ALLOWED_ONTOLOGIES = %w[NCBITaxon].freeze
+
   belongs_to :ontology_term, optional: true
 
   has_and_belongs_to_many :datasets
@@ -10,6 +13,8 @@ class Organism < ApplicationRecord
       bg_circle: "bg-blue-500",
       bg_text: "bg-blue-100",
       text_color: "text-blue-800",
+      checkbox_checked: "text-blue-600",
+      focus_ring: "focus:ring-blue-300"
     }
   end
 

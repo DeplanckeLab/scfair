@@ -1,5 +1,9 @@
 Rails.application.routes.draw do
   resources :datasets, only: :index, path: "explore"
+  get "/facets/param_keys", to: "facets#param_keys", as: :facet_param_keys
+  get "/facets/:category", to: "facets#show", as: :facet
+  get "/facets/:category/children", to: "facets#children", as: :facet_children
+  get "/facets/:category/search", to: "facets#search", as: :facet_search
   resources :ontology_terms, only: [:show]
   
   resources :stats, only: [:index] do
