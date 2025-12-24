@@ -21,7 +21,6 @@ def normalize_identifier(identifier)
     return "EFO:#{number}"
   end
 
-  # Return as-is for all other formats
   identifier
 end
 
