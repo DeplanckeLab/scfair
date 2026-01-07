@@ -121,10 +121,8 @@ class SingleCellPortalParser
 
     skip_values = ["nan", "--unspecified--", "n/a", "na"]
 
-    # Clear existing organisms before adding new ones
     dataset.organisms.clear
 
-    # Process ALL organisms in the array (not just first)
     species_annotation[:values].each_with_index do |tax_entry, index|
       tax_entry = tax_entry.to_s.strip
       next if tax_entry.blank?
