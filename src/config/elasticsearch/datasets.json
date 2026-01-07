@@ -41,6 +41,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }
@@ -69,6 +70,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }
@@ -81,6 +83,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }
@@ -93,6 +96,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }
@@ -105,6 +109,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }
@@ -117,6 +122,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }
@@ -129,6 +135,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }
@@ -141,6 +148,7 @@
         "properties": {
           "id": { "type": "keyword" },
           "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+          "synonyms": { "type": "text" },
           "depth": { "type": "integer" },
           "is_direct": { "type": "boolean" }
         }

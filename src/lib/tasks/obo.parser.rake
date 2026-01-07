@@ -48,21 +48,26 @@ namespace :obo do
     File.foreach(file_path) do |line|
       line_count += 1
       print_progress(line_count, total_lines, "Parsing") if line_count % 100 == 0
-      
+
       line.chomp!
-      
+
       case line
       when "[Term]"
         if current_term[:identifier].present?
           terms_to_create[current_term[:identifier]] = {
             identifier: current_term[:identifier],
             name: current_term[:name],
-            description: current_term[:description]
+            description: current_term[:description],
+            synonyms: current_term[:synonyms] || []
           }
           relationships_to_create.concat(current_relationships)
         end
-        current_term = {}
+        current_term = { synonyms: [] }
         current_relationships = []
+      when /^synonym: "([^"]+)"/
+        # Extract synonym text from formats like: synonym: "human" EXACT genbank_common_name []
+        current_term[:synonyms] ||= []
+        current_term[:synonyms] << $1.strip
       when /^id: (.+)/
         # Accept various identifier formats:
         # - Standard: CL:0000001, UBERON:0001234, EFO:1234567
@@ -99,7 +104,8 @@ namespace :obo do
       terms_to_create[current_term[:identifier]] = {
         identifier: current_term[:identifier],
         name: current_term[:name],
-        description: current_term[:description]
+        description: current_term[:description],
+        synonyms: current_term[:synonyms] || []
       }
       relationships_to_create.concat(current_relationships)
     end
@@ -115,6 +121,7 @@ namespace :obo do
             identifier: attributes[:identifier],
             name: attributes[:name],
             description: attributes[:description],
+            synonyms: attributes[:synonyms] || [],
             created_at: Time.current,
             updated_at: Time.current
           }
@@ -123,7 +130,7 @@ namespace :obo do
         OntologyTerm.upsert_all(
           records,
           unique_by: :identifier,
-          update_only: [:name, :description]
+          update_only: [:name, :description, :synonyms]
         )
 
         terms_processed += records.size

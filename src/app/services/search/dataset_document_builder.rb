@@ -110,6 +110,7 @@ module Search
         hierarchy << {
           id: term.id.to_s,
           name: term.name,
+          synonyms: term.synonyms || [],
           depth: 0,
           is_direct: true
         }
@@ -125,6 +126,7 @@ module Search
           hierarchy << {
             id: ancestor.id.to_s,
             name: ancestor.name,
+            synonyms: ancestor.synonyms || [],
             depth: depth,
             is_direct: false
           }

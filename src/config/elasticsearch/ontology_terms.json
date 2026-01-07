@@ -14,6 +14,7 @@
       "identifier": { "type": "keyword" },
       "category": { "type": "keyword" },
       "name": { "type": "text", "analyzer": "en_text", "fields": { "kw": { "type": "keyword" } } },
+      "synonyms": { "type": "text", "analyzer": "en_text" },
       "parent_ids": { "type": "keyword" },
       "child_ids": { "type": "keyword" },
       "is_used_directly": { "type": "boolean" }

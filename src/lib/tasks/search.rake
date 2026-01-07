@@ -215,10 +215,10 @@ namespace :search do
     total = all_ids.size
     puts "Indexing #{total} ontology terms..."
 
-    name_by_id = OntologyTerm
+    term_data_by_id = OntologyTerm
       .where(id: all_ids.to_a)
-      .pluck(:id, :identifier, :name)
-      .to_h { |id, ident, name| [id, { identifier: ident, name: name }] }
+      .pluck(:id, :identifier, :name, :synonyms)
+      .to_h { |id, ident, name, synonyms| [id, { identifier: ident, name: name, synonyms: synonyms || [] }] }
 
     buffer = []
     processed = 0
@@ -227,11 +227,13 @@ namespace :search do
       terms.each do |term|
         parent_ids = parents_by_child_final[term.id].select { |pid| all_ids.include?(pid) }
         child_ids = children_by_parent[term.id].select { |cid| all_ids.include?(cid) }
+        term_data = term_data_by_id[term.id]
 
         doc = {
           id: term.id,
-          identifier: name_by_id[term.id][:identifier],
-          name: name_by_id[term.id][:name],
+          identifier: term_data[:identifier],
+          name: term_data[:name],
+          synonyms: term_data[:synonyms],
           category: category_for_id[term.id],
           parent_ids: parent_ids,
           child_ids: child_ids

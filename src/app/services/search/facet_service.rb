@@ -160,7 +160,8 @@ module Search
             bool: {
               should: [
                 { prefix: { "#{category}_hierarchy.name.keyword": { value: search_term, case_insensitive: true } } },
-                { match: { "#{category}_hierarchy.name": { query: search_term, fuzziness: "AUTO" } } }
+                { match: { "#{category}_hierarchy.name": { query: search_term, fuzziness: "AUTO" } } },
+                { match: { "#{category}_hierarchy.synonyms": { query: search_term, fuzziness: "AUTO" } } }
               ],
               minimum_should_match: 1
             }
