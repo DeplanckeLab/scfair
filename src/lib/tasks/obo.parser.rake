@@ -79,7 +79,7 @@ namespace :obo do
           # Normalize to standard format (efo:EFO_XXXX -> EFO:XXXX)
           current_term[:identifier] = normalize_identifier(identifier)
         end
-      when /^name: (.+)/
+      when /^name:\s*(.+)/
         current_term[:name] = $1.strip
       when /^def: "([^"]+)".*$/
         current_term[:description] = $1.strip
