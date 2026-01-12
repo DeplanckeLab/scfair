@@ -160,6 +160,15 @@
       "disease_names": { "type": "text", "analyzer": "en_text" },
       "sex_names": { "type": "text", "analyzer": "en_text" },
       "technology_names": { "type": "text", "analyzer": "en_text" },
+      "cell_type_names": { "type": "text", "analyzer": "en_text" },
+
+      "organism_synonyms": { "type": "text", "analyzer": "en_text" },
+      "tissue_synonyms": { "type": "text", "analyzer": "en_text" },
+      "developmental_stage_synonyms": { "type": "text", "analyzer": "en_text" },
+      "disease_synonyms": { "type": "text", "analyzer": "en_text" },
+      "sex_synonyms": { "type": "text", "analyzer": "en_text" },
+      "technology_synonyms": { "type": "text", "analyzer": "en_text" },
+      "cell_type_synonyms": { "type": "text", "analyzer": "en_text" },
 
       "organism_ancestor_names": { "type": "text", "analyzer": "en_text" },
       "tissue_ancestor_names": { "type": "text", "analyzer": "en_text" },
