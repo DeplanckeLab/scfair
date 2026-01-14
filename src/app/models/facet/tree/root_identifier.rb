@@ -21,7 +21,7 @@ class Facet::Tree::RootIdentifier
     max_count = counts_by_id.values.max || 0
     return term_ids if max_count.zero?
 
-    candidates = filter_universal_terms(term_ids, counts_by_id, max_count)
+    candidates = filter_universal_terms(term_ids, counts_by_id, direct_counts_by_id, max_count)
     children_hidden_by_parents = build_hidden_map(
       candidates, counts_by_id, direct_counts_by_id, max_count
     )
@@ -29,11 +29,18 @@ class Facet::Tree::RootIdentifier
   end
 
   private
-    def filter_universal_terms(term_ids, counts_by_id, max_count)
+    def filter_universal_terms(term_ids, counts_by_id, direct_counts_by_id, max_count)
       return term_ids if max_count < MIN_COUNT_FOR_UNIVERSAL_FILTER
 
       universal_threshold = max_count * UNIVERSAL_TERM_THRESHOLD
-      term_ids.reject { |id| (counts_by_id[id] || 0) > universal_threshold }
+      term_ids.reject do |id|
+        ancestor_count = counts_by_id[id] || 0
+        direct_count = direct_counts_by_id[id] || 0
+
+        next false if direct_count > 0 && direct_count >= ancestor_count * 0.5
+
+        ancestor_count > universal_threshold
+      end
     end
 
     def build_hidden_map(candidates, counts_by_id, direct_counts_by_id, max_count)
