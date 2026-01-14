@@ -2,8 +2,8 @@ class DatasetsController < ApplicationController
   allow_browser versions: :modern
 
   def index
-    @query = Search::Query.new(search_params)
-    @total = @query.total
+    @result = Search::DatasetSearch.new(search_params).execute
+    @total = @result.total
     @datasets = paginated_datasets
     @facets = build_facet_views
 
@@ -16,8 +16,23 @@ class DatasetsController < ApplicationController
   private
     def paginated_datasets
       WillPaginate::Collection.create(current_page, items_per_page, @total) do |pager|
-        pager.replace(@query.datasets)
+        pager.replace(load_datasets)
       end
+    end
+
+    def load_datasets
+      return [] if @result.dataset_ids.empty?
+
+      Dataset
+        .includes(*dataset_associations)
+        .where(id: @result.dataset_ids)
+        .in_order_of(:id, @result.dataset_ids)
+    end
+
+    def dataset_associations
+      [:sexes, :cell_types, :tissues, :developmental_stages, :organisms,
+       :diseases, :technologies, :suspension_types, :file_resources,
+       :study, :links, :source]
     end
 
     def build_facet_views
@@ -25,7 +40,7 @@ class DatasetsController < ApplicationController
         {
           key: facet.key.to_sym,
           type: facet.tree? ? :tree : :flat,
-          data: @query.facets[facet.key.to_s] || (facet.tree? ? [] : {}),
+          data: @result.facets[facet.key.to_s] || (facet.tree? ? [] : {}),
           colors: helpers.facet_color_classes(facet.key)
         }
       end
