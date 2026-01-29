@@ -110,7 +110,9 @@ module Search
 
         terms_metadata = Search::OntologyTermLookup.fetch_terms((direct_ids + ancestor_ids).uniq)
         counts = { direct: direct_counts_by_id, ancestor: counts_by_id }
-        visible_roots = Facet::Tree::DisplayFilter.compute_display_ids(direct_ids, counts, terms_metadata)
+
+        candidates = build_candidates_with_groupings(direct_ids, ancestor_ids, terms_metadata)
+        visible_roots = Facet::Tree::DisplayFilter.compute_display_ids(candidates, counts, terms_metadata)
 
         {
           visible_roots: visible_roots,
@@ -359,6 +361,22 @@ module Search
           name_counts[name] += 1 if name
         end
         name_counts.select { |_, count| count > 1 }.keys.to_set
+      end
+
+      def build_candidates_with_groupings(direct_ids, ancestor_ids, metadata)
+        candidates = direct_ids.to_set
+        direct_ids_set = direct_ids.to_set
+
+        ancestor_ids.each do |aid|
+          next if candidates.include?(aid)
+
+          child_ids = metadata.dig(aid, :child_ids) || []
+          children_with_direct = child_ids.count { |cid| direct_ids_set.include?(cid) }
+
+          candidates.add(aid) if children_with_direct >= 2
+        end
+
+        candidates.to_a
       end
   end
 end

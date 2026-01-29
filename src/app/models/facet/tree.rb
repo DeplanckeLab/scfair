@@ -29,8 +29,8 @@ class Facet::Tree
 
     all_filtered_ids = (term_ids + ancestor_ids).to_set
 
-    # Compute display_ids using three-step filtering to avoid chain exclusion problem
-    display_ids = compute_display_ids(term_ids, counts, metadata)
+    candidates = build_candidates_with_groupings(term_ids, ancestor_ids, metadata)
+    display_ids = compute_display_ids(candidates, counts, metadata)
     return empty_result(limit) if display_ids.empty?
 
     global_duplicates = compute_global_duplicate_names(metadata)
@@ -74,8 +74,8 @@ class Facet::Tree
 
     all_filtered_ids = (filtered_term_ids + filtered_ancestor_ids).to_set
 
-    # Compute display_ids using three-step filtering to avoid chain exclusion problem
-    display_ids = compute_display_ids(filtered_term_ids, counts, metadata)
+    candidates = build_candidates_with_groupings(filtered_term_ids, filtered_ancestor_ids, metadata)
+    display_ids = compute_display_ids(candidates, counts, metadata)
     return empty_result(limit) if display_ids.empty?
 
     global_duplicates = compute_global_duplicate_names(metadata)
@@ -211,5 +211,21 @@ class Facet::Tree
 
     def compute_display_ids(term_ids, counts, metadata)
       DisplayFilter.compute_display_ids(term_ids, counts, metadata)
+    end
+
+    def build_candidates_with_groupings(term_ids, ancestor_ids, metadata)
+      candidates = term_ids.to_set
+      term_ids_set = term_ids.to_set
+
+      ancestor_ids.each do |aid|
+        next if candidates.include?(aid)
+
+        child_ids = metadata.dig(aid, :child_ids) || []
+        children_with_direct = child_ids.count { |cid| term_ids_set.include?(cid) }
+
+        candidates.add(aid) if children_with_direct >= 2
+      end
+
+      candidates.to_a
     end
 end

@@ -2,14 +2,17 @@
 
 class Facet::Tree::DisplayFilter
   AGGREGATE_RATIO_THRESHOLD = 10
+  MAX_CHILDREN_FOR_GROUPING = 8
 
   class << self
     # Computes which terms should be displayed at root level using three-step filtering:
     # 1. Filter out ontology roots (terms with no parents like "Disease")
-    # 2. Filter out umbrella terms (high ancestor-to-direct ratio)
+    # 2. Filter out umbrella terms (high ratio AND many children = too generic)
     # 3. Keep only terms with no ancestor in the filtered set
     def compute_display_ids(term_ids, counts, metadata)
       return [] if term_ids.empty?
+
+      term_ids_set = term_ids.to_set
 
       # Step 1: Filter out ontology roots (terms with no parents)
       has_parents = term_ids.select do |id|
@@ -18,25 +21,54 @@ class Facet::Tree::DisplayFilter
       end
       return [] if has_parents.empty?
 
-      # Step 2: Filter out umbrella terms (ancestor/direct ratio > threshold)
-      # Terms with 0 direct datasets are kept as grouping terms (e.g., "10× 3' transcription profiling")
-      not_too_generic = has_parents.select do |id|
+      ancestor_ids_set = counts[:ancestor].keys.to_set
+
+      # Step 2: Filter out umbrella terms (effective roots)
+      not_umbrella = has_parents.select do |id|
         direct_count = counts[:direct][id] || 0
         ancestor_count = counts[:ancestor][id] || 0
-        next true if direct_count == 0  # Keep as potential grouping term
-        ratio = ancestor_count.to_f / direct_count
-        ratio <= AGGREGATE_RATIO_THRESHOLD
+
+        if direct_count > 0
+          ratio = ancestor_count.to_f / direct_count
+          next ratio <= AGGREGATE_RATIO_THRESHOLD
+        end
+
+        parent_ids = metadata.dig(id, :parent_ids) || []
+
+        specific_parents_in_ancestors = parent_ids.select do |pid|
+          next false unless ancestor_ids_set.include?(pid)
+
+          parent_direct = counts[:direct][pid] || 0
+          parent_ancestor = counts[:ancestor][pid] || 0
+
+          if parent_direct == 0
+            next false if parent_ancestor > 500 && ancestor_count > parent_ancestor * 0.97
+            next true
+          end
+
+          parent_ratio = parent_ancestor.to_f / parent_direct
+          parent_ratio <= AGGREGATE_RATIO_THRESHOLD * 2
+        end
+
+        specific_parents_in_ancestors.any?
       end
-      return [] if not_too_generic.empty?
+      return [] if not_umbrella.empty?
 
       # Step 3: Keep only terms with no ancestor in the filtered set
-      not_too_generic_set = not_too_generic.to_set
-      not_too_generic.select do |id|
-        !has_ancestor_in_set?(id, not_too_generic_set, metadata)
+      not_umbrella_set = not_umbrella.to_set
+      not_umbrella.select do |id|
+        !has_ancestor_in_set?(id, not_umbrella_set, metadata)
       end
     end
 
     private
+
+    def count_children_in_results(term_id, term_ids_set, metadata)
+      term_ids_set.count do |tid|
+        parent_ids = metadata.dig(tid, :parent_ids) || []
+        parent_ids.include?(term_id)
+      end
+    end
 
     def has_ancestor_in_set?(term_id, target_set, metadata, visited = Set.new)
       return false if visited.include?(term_id)
