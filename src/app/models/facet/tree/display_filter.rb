@@ -12,8 +12,6 @@ class Facet::Tree::DisplayFilter
     def compute_display_ids(term_ids, counts, metadata)
       return [] if term_ids.empty?
 
-      term_ids_set = term_ids.to_set
-
       # Step 1: Filter out ontology roots (terms with no parents)
       has_parents = term_ids.select do |id|
         parent_ids = metadata.dig(id, :parent_ids) || []
@@ -23,15 +21,28 @@ class Facet::Tree::DisplayFilter
 
       ancestor_ids_set = counts[:ancestor].keys.to_set
 
+      max_ancestor_count = counts[:ancestor].values.max || 0
+
       # Step 2: Filter out umbrella terms (effective roots)
       not_umbrella = has_parents.select do |id|
         direct_count = counts[:direct][id] || 0
         ancestor_count = counts[:ancestor][id] || 0
 
+        if max_ancestor_count > 500 && ancestor_count > max_ancestor_count * 0.8
+          next false
+        end
+
         if direct_count > 0
           ratio = ancestor_count.to_f / direct_count
           next ratio <= AGGREGATE_RATIO_THRESHOLD
         end
+
+        child_ids = metadata.dig(id, :child_ids) || []
+        dominated_by_child = child_ids.any? do |cid|
+          child_ancestor = counts[:ancestor][cid] || 0
+          ancestor_count > 0 && child_ancestor >= ancestor_count * 0.9
+        end
+        next false if dominated_by_child
 
         parent_ids = metadata.dig(id, :parent_ids) || []
 
@@ -42,7 +53,9 @@ class Facet::Tree::DisplayFilter
           parent_ancestor = counts[:ancestor][pid] || 0
 
           if parent_direct == 0
-            next false if parent_ancestor > 500 && ancestor_count > parent_ancestor * 0.97
+            term_dominates_parent = parent_ancestor > 500 && ancestor_count > parent_ancestor * 0.85
+
+            next false if term_dominates_parent
             next true
           end
 

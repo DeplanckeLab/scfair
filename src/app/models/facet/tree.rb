@@ -223,7 +223,7 @@ class Facet::Tree
         child_ids = metadata.dig(aid, :child_ids) || []
         children_with_direct = child_ids.count { |cid| term_ids_set.include?(cid) }
 
-        candidates.add(aid) if children_with_direct >= 2
+        candidates.add(aid) if children_with_direct >= 2 && children_with_direct <= Facet::Tree::DisplayFilter::MAX_CHILDREN_FOR_GROUPING
       end
 
       candidates.to_a
