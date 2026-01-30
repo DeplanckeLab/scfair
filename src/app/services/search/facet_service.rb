@@ -112,7 +112,8 @@ module Search
         counts = { direct: direct_counts_by_id, ancestor: counts_by_id }
 
         candidates = build_candidates_with_groupings(direct_ids, ancestor_ids, terms_metadata)
-        visible_roots = Facet::Tree::DisplayFilter.compute_display_ids(candidates, counts, terms_metadata)
+        filter_options = { has_search_query: @query_text.present? }
+        visible_roots = Facet::Tree::DisplayFilter.compute_display_ids(candidates, counts, terms_metadata, filter_options)
 
         {
           visible_roots: visible_roots,

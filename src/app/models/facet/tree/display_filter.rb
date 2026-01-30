@@ -11,8 +11,10 @@ class Facet::Tree::DisplayFilter
     # 1. Filter out ontology roots (terms with no parents like "Disease")
     # 2. Filter out umbrella terms (high ratio AND many children = too generic)
     # 3. Keep only terms with no ancestor in the filtered set
-    def compute_display_ids(term_ids, counts, metadata)
+    def compute_display_ids(term_ids, counts, metadata, options = {})
       return [] if term_ids.empty?
+
+      has_search_query = options[:has_search_query] || false
 
       # Step 1: Filter out ontology roots (terms with no parents)
       has_parents = term_ids.select do |id|
@@ -30,8 +32,10 @@ class Facet::Tree::DisplayFilter
         direct_count = counts[:direct][id] || 0
         ancestor_count = counts[:ancestor][id] || 0
 
-        if max_ancestor_count > 500 && ancestor_count > max_ancestor_count * 0.8
-          next false
+        unless has_search_query
+          if max_ancestor_count > 500 && ancestor_count > max_ancestor_count * 0.8
+            next false
+          end
         end
 
         if direct_count > 0

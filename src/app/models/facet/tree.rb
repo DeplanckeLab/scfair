@@ -5,6 +5,7 @@ class Facet::Tree
     @facet = facet
     @params = params.respond_to?(:with_indifferent_access) ? params.with_indifferent_access : params.to_h.with_indifferent_access
     @category = facet.key.to_s
+    @has_search_query = @params[:search].to_s.strip.present?
   end
 
   def process(aggregation, limit: nil, offset: 0)
@@ -210,7 +211,7 @@ class Facet::Tree
     end
 
     def compute_display_ids(term_ids, counts, metadata)
-      DisplayFilter.compute_display_ids(term_ids, counts, metadata)
+      DisplayFilter.compute_display_ids(term_ids, counts, metadata, { has_search_query: @has_search_query })
     end
 
     def build_candidates_with_groupings(term_ids, ancestor_ids, metadata)
