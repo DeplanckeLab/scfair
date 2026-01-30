@@ -32,7 +32,9 @@ class Facet::Tree::DisplayFilter
         direct_count = counts[:direct][id] || 0
         ancestor_count = counts[:ancestor][id] || 0
 
-        unless has_search_query
+        is_leaf_term = direct_count > 0 && direct_count == ancestor_count
+
+        unless has_search_query || is_leaf_term
           if max_ancestor_count > 500 && ancestor_count > max_ancestor_count * 0.8
             next false
           end
