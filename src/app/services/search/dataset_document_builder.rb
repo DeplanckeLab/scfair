@@ -37,6 +37,12 @@ module Search
 
         items = Array(association_result).compact
         parts.concat(items.map(&:name))
+
+        items.each do |item|
+          if item.respond_to?(:ontology_term) && item.ontology_term&.synonyms.present?
+            parts.concat(item.ontology_term.synonyms)
+          end
+        end
       end
 
       parts.compact.join(" ")
@@ -63,6 +69,14 @@ module Search
 
         fields["#{category}_names"] = valid_items.map(&:name)
         fields["#{category}_ancestor_names"] = hierarchy_data[:ancestor_names]
+
+        all_synonyms = []
+        valid_items.each do |item|
+          if item.respond_to?(:ontology_term) && item.ontology_term&.synonyms.present?
+            all_synonyms.concat(item.ontology_term.synonyms)
+          end
+        end
+        fields["#{category}_synonyms"] = all_synonyms.uniq
       end
 
       fields
@@ -110,6 +124,7 @@ module Search
         hierarchy << {
           id: term.id.to_s,
           name: term.name,
+          synonyms: term.synonyms || [],
           depth: 0,
           is_direct: true
         }
@@ -125,6 +140,7 @@ module Search
           hierarchy << {
             id: ancestor.id.to_s,
             name: ancestor.name,
+            synonyms: ancestor.synonyms || [],
             depth: depth,
             is_direct: false
           }

@@ -5,6 +5,7 @@ class Facet::Tree
     @facet = facet
     @params = params.respond_to?(:with_indifferent_access) ? params.with_indifferent_access : params.to_h.with_indifferent_access
     @category = facet.key.to_s
+    @has_search_query = @params[:search].to_s.strip.present?
   end
 
   def process(aggregation, limit: nil, offset: 0)
@@ -27,14 +28,10 @@ class Facet::Tree
       metadata = metadata.merge(selected_metadata)
     end
 
-    candidates = build_candidates_with_virtual_parents(term_ids, ancestor_ids, counts, metadata)
-
-    visible_roots = root_identifier(metadata).identify(candidates, counts[:ancestor], counts[:direct])
-    return empty_result(limit) if visible_roots.empty?
-
     all_filtered_ids = (term_ids + ancestor_ids).to_set
 
-    display_ids = (visible_roots & ancestor_ids).select { |id| counts[:ancestor][id].to_i > 0 }
+    candidates = build_candidates_with_groupings(term_ids, ancestor_ids, metadata)
+    display_ids = compute_display_ids(candidates, counts, metadata)
     return empty_result(limit) if display_ids.empty?
 
     global_duplicates = compute_global_duplicate_names(metadata)
@@ -44,7 +41,7 @@ class Facet::Tree
       counts[:ancestor],
       metadata,
       scoped_term_ids: all_filtered_ids,
-      visible_roots: visible_roots,
+      visible_roots: display_ids,
       global_duplicate_names: global_duplicates
     )
 
@@ -65,7 +62,6 @@ class Facet::Tree
     filtered_term_ids = buckets[:direct].map { |b| b["key"] }
     filtered_ancestor_ids = buckets[:ancestor].map { |b| b["key"] }
 
-    visible_roots = unfiltered_structure[:visible_roots]
     unfiltered_metadata = unfiltered_structure[:terms_metadata]
 
     filtered_metadata = lookup_terms((filtered_term_ids + filtered_ancestor_ids).uniq)
@@ -79,7 +75,8 @@ class Facet::Tree
 
     all_filtered_ids = (filtered_term_ids + filtered_ancestor_ids).to_set
 
-    display_ids = (visible_roots & filtered_ancestor_ids).select { |id| counts[:ancestor][id].to_i > 0 }
+    candidates = build_candidates_with_groupings(filtered_term_ids, filtered_ancestor_ids, metadata)
+    display_ids = compute_display_ids(candidates, counts, metadata)
     return empty_result(limit) if display_ids.empty?
 
     global_duplicates = compute_global_duplicate_names(metadata)
@@ -89,14 +86,14 @@ class Facet::Tree
       counts[:ancestor],
       metadata,
       scoped_term_ids: all_filtered_ids,
-      visible_roots: visible_roots,
+      visible_roots: display_ids,
       global_duplicate_names: global_duplicates
     )
 
     paginator.paginate(nodes, limit: limit || nodes.size, offset: offset)
   end
 
-  def process_children(aggregation, parent_id:, visible_roots: [], global_duplicate_names: nil)
+  def process_children(aggregation, parent_id:, visible_roots: [], global_duplicate_names: nil, global_ancestor_ids: [])
     return [] unless aggregation
 
     buckets = extract_children_buckets(aggregation)
@@ -135,7 +132,9 @@ class Facet::Tree
 
     duplicates = global_duplicate_names || compute_global_duplicate_names(metadata)
 
-    all_scoped_ids = (children_term_ids + direct_term_ids).to_set
+    # Include global_ancestor_ids in scoped_ids to correctly compute has_children
+    # Children may have descendants with datasets even if the children themselves don't appear in direct_term_ids
+    all_scoped_ids = (children_term_ids + direct_term_ids + global_ancestor_ids).to_set
     nodes = node_builder.build(
       children_to_show,
       counts[:children],
@@ -181,10 +180,6 @@ class Facet::Tree
       Search::OntologyTermLookup.fetch_terms(ids)
     end
 
-    def root_identifier(metadata)
-      Facet::Tree::RootIdentifier.new(metadata)
-    end
-
     def node_builder
       @node_builder ||= Facet::Tree::NodeBuilder.new(@facet, @params)
     end
@@ -206,25 +201,6 @@ class Facet::Tree
       Array(@params[param_key])
     end
 
-    def build_candidates_with_virtual_parents(term_ids, ancestor_ids, counts, metadata)
-      candidates = term_ids.to_set
-      ancestor_set = ancestor_ids.to_set
-
-      term_ids.each do |child_id|
-        parent_ids = metadata.dig(child_id, :parent_ids) || []
-        parent_ids.each do |pid|
-          next unless ancestor_set.include?(pid)
-          next if candidates.include?(pid)
-          next unless counts[:ancestor][pid].to_i > 0
-          next unless counts[:direct][pid].to_i > 0
-
-          candidates.add(pid)
-        end
-      end
-
-      candidates.to_a
-    end
-
     def compute_global_duplicate_names(metadata)
       name_counts = Hash.new(0)
       metadata.each_value do |term_data|
@@ -232,5 +208,25 @@ class Facet::Tree
         name_counts[name] += 1 if name
       end
       name_counts.select { |_, count| count > 1 }.keys.to_set
+    end
+
+    def compute_display_ids(term_ids, counts, metadata)
+      DisplayFilter.compute_display_ids(term_ids, counts, metadata, { has_search_query: @has_search_query })
+    end
+
+    def build_candidates_with_groupings(term_ids, ancestor_ids, metadata)
+      candidates = term_ids.to_set
+      term_ids_set = term_ids.to_set
+
+      ancestor_ids.each do |aid|
+        next if candidates.include?(aid)
+
+        child_ids = metadata.dig(aid, :child_ids) || []
+        children_with_direct = child_ids.count { |cid| term_ids_set.include?(cid) }
+
+        candidates.add(aid) if children_with_direct >= 2 && children_with_direct <= Facet::Tree::DisplayFilter::MAX_CHILDREN_FOR_GROUPING
+      end
+
+      candidates.to_a
     end
 end

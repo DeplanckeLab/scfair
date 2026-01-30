@@ -6,9 +6,16 @@
       <% nodes.each do |node| %>
         <% checkbox_id = "search_#{category}_#{safe_dom_id(node[:id])}" %>
         <% is_selected = Array(params[param_key]).include?(node[:id]) %>
+        <% indent_level = node[:relative_depth] || 0 %>
+        <% indent_px = indent_level * 16 %>
         <label class="flex items-center py-1 px-1 rounded hover:bg-gray-50 cursor-pointer group transition-colors"
-               for="<%= checkbox_id %>">
-          <span class="w-4 h-4 mr-1.5 inline-block"></span>
+               for="<%= checkbox_id %>"
+               style="<%= "padding-left: #{indent_px}px;" if indent_level > 0 %>">
+          <% if indent_level > 0 %>
+            <span class="text-gray-400 mr-1 text-xs">└</span>
+          <% else %>
+            <span class="w-4 h-4 mr-1.5 inline-block"></span>
+          <% end %>
           <input type="checkbox"
                  id="<%= checkbox_id %>"
                  name="<%= param_key %>[]"

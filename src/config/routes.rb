@@ -21,5 +21,7 @@ Rails.application.routes.draw do
   get "community", to: "home#community", as: :community
   get "contribute", to: "home#contribute", as: :contribute
 
+  get "ECCB-2026", to: redirect("https://deplanckelab.github.io/ECCB-2026/", status: 302)
+
   root to: "home#index"
 end

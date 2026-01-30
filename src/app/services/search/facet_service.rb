@@ -43,7 +43,8 @@ module Search
         response.dig("aggregations", "#{category}_children"),
         parent_id: parent_id,
         visible_roots: unfiltered_structure[:visible_roots],
-        global_duplicate_names: global_duplicates
+        global_duplicate_names: global_duplicates,
+        global_ancestor_ids: unfiltered_structure[:ancestor_ids]
       )
     rescue StandardError => e
       Rails.logger.warn("Children aggregation failed: #{e.class}: #{e.message}")
@@ -108,18 +109,20 @@ module Search
         ancestor_ids = ancestor_buckets.map { |b| b["key"] }
 
         terms_metadata = Search::OntologyTermLookup.fetch_terms((direct_ids + ancestor_ids).uniq)
-        candidates = build_candidates_with_virtual_parents(direct_ids, ancestor_ids, counts_by_id, direct_counts_by_id, terms_metadata)
+        counts = { direct: direct_counts_by_id, ancestor: counts_by_id }
 
-        root_identifier = Facet::Tree::RootIdentifier.new(terms_metadata)
-        visible_roots = root_identifier.identify(candidates, counts_by_id, direct_counts_by_id)
+        candidates = build_candidates_with_groupings(direct_ids, ancestor_ids, terms_metadata)
+        filter_options = { has_search_query: @query_text.present? }
+        visible_roots = Facet::Tree::DisplayFilter.compute_display_ids(candidates, counts, terms_metadata, filter_options)
 
         {
           visible_roots: visible_roots,
-          terms_metadata: terms_metadata
+          terms_metadata: terms_metadata,
+          ancestor_ids: ancestor_ids
         }
       rescue StandardError => e
         Rails.logger.warn("Unfiltered structure fetch failed: #{e.class}: #{e.message}")
-        { visible_roots: [], terms_metadata: {} }
+        { visible_roots: [], terms_metadata: {}, ancestor_ids: [] }
       end
 
       def fetch_filtered_aggregation(category, type)
@@ -160,7 +163,8 @@ module Search
             bool: {
               should: [
                 { prefix: { "#{category}_hierarchy.name.keyword": { value: search_term, case_insensitive: true } } },
-                { match: { "#{category}_hierarchy.name": { query: search_term, fuzziness: "AUTO" } } }
+                { match: { "#{category}_hierarchy.name": { query: search_term, fuzziness: "AUTO" } } },
+                { match: { "#{category}_hierarchy.synonyms": { query: search_term, fuzziness: "AUTO" } } }
               ],
               minimum_should_match: 1
             }
@@ -252,11 +256,52 @@ module Search
             identifier: terms_metadata.dig(bucket["key"], :identifier),
             count: bucket["doc_count"],
             depth: matching["depth"],
-            is_direct: matching["is_direct"]
+            is_direct: matching["is_direct"],
+            parent_ids: terms_metadata.dig(bucket["key"], :parent_ids) || []
           }
         end
 
+        results = sort_hierarchically(results, term_ids.to_set)
         label_duplicates(results) { |result| result[:identifier] }
+      end
+
+      def sort_hierarchically(results, term_ids_in_results)
+        return results if results.empty?
+
+        results_by_id = results.index_by { |r| r[:id] }
+
+        children_map = Hash.new { |h, k| h[k] = [] }
+        results.each do |result|
+          parent_in_results = result[:parent_ids].find { |pid| term_ids_in_results.include?(pid) }
+          if parent_in_results
+            children_map[parent_in_results] << result[:id]
+          end
+        end
+
+        roots = results.select do |result|
+          result[:parent_ids].none? { |pid| term_ids_in_results.include?(pid) }
+        end
+
+        roots.sort_by! { |r| r[:name].to_s.downcase }
+
+        sorted_results = []
+        traverse_and_flatten(roots, children_map, results_by_id, sorted_results, 0)
+
+        sorted_results
+      end
+
+      def traverse_and_flatten(nodes, children_map, results_by_id, output, relative_depth)
+        nodes.each do |node|
+          node[:relative_depth] = relative_depth
+          output << node
+
+          child_ids = children_map[node[:id]]
+          if child_ids.any?
+            children = child_ids.map { |cid| results_by_id[cid] }.compact
+            children.sort_by! { |c| c[:name].to_s.downcase }
+            traverse_and_flatten(children, children_map, results_by_id, output, relative_depth + 1)
+          end
+        end
       end
 
       def process_flat_search_results(agg, category)
@@ -308,25 +353,6 @@ module Search
         @client ||= ElasticsearchClient
       end
 
-      def build_candidates_with_virtual_parents(direct_ids, ancestor_ids, counts_by_id, direct_counts_by_id, terms_metadata)
-        candidates = direct_ids.to_set
-        ancestor_set = ancestor_ids.to_set
-
-        direct_ids.each do |child_id|
-          parent_ids = terms_metadata.dig(child_id, :parent_ids) || []
-          parent_ids.each do |pid|
-            next unless ancestor_set.include?(pid)
-            next if candidates.include?(pid)
-            next unless counts_by_id[pid].to_i > 0
-            next unless direct_counts_by_id[pid].to_i > 0
-
-            candidates.add(pid)
-          end
-        end
-
-        candidates.to_a
-      end
-
       def compute_global_duplicate_names(metadata)
         return Set.new if metadata.nil? || metadata.empty?
 
@@ -337,5 +363,22 @@ module Search
         end
         name_counts.select { |_, count| count > 1 }.keys.to_set
       end
+
+      def build_candidates_with_groupings(direct_ids, ancestor_ids, metadata)
+        candidates = direct_ids.to_set
+        direct_ids_set = direct_ids.to_set
+
+        ancestor_ids.each do |aid|
+          next if candidates.include?(aid)
+
+          child_ids = metadata.dig(aid, :child_ids) || []
+          children_with_direct = child_ids.count { |cid| direct_ids_set.include?(cid) }
+
+          candidates.add(aid) if children_with_direct >= 2 && children_with_direct <= Facet::Tree::DisplayFilter::MAX_CHILDREN_FOR_GROUPING
+        end
+
+        candidates.to_a
+      end
+
   end
 end
