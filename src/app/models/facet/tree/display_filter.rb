@@ -2,6 +2,8 @@
 
 class Facet::Tree::DisplayFilter
   AGGREGATE_RATIO_THRESHOLD = 10
+  SIGNIFICANT_DIRECT_THRESHOLD = 50
+  SIGNIFICANT_RATIO_THRESHOLD = 15
   MAX_CHILDREN_FOR_GROUPING = 8
 
   class << self
@@ -34,7 +36,8 @@ class Facet::Tree::DisplayFilter
 
         if direct_count > 0
           ratio = ancestor_count.to_f / direct_count
-          next ratio <= AGGREGATE_RATIO_THRESHOLD
+          threshold = direct_count >= SIGNIFICANT_DIRECT_THRESHOLD ? SIGNIFICANT_RATIO_THRESHOLD : AGGREGATE_RATIO_THRESHOLD
+          next ratio <= threshold
         end
 
         child_ids = metadata.dig(id, :child_ids) || []
