@@ -38,7 +38,10 @@ module Search
       end
 
       def build_flat_filter(category)
-        selected = Array(@params[category]).reject(&:blank?)
+        facet = Facet.find(category)
+        return nil unless facet
+
+        selected = Array(@params[facet.param_key]).reject(&:blank?)
         return nil if selected.empty?
 
         { terms: { "#{category}_ids": selected } }
