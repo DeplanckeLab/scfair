@@ -81,14 +81,12 @@ class AsapParser
   end
 
   def extract_files(data)
-    files = []
-
-    files << {
-      url: "https://asap.epfl.ch/projects/#{data[:key]}/get_file?filename=parsing/output.h5ad",
-      filetype: "h5ad"
-    }
-
-    files
+    [
+      {
+        url: "https://asap.epfl.ch/projects/#{data[:key]}/get_file?filename=parsing/output.h5ad",
+        filetype: "h5ad"
+      }
+    ]
   end
 
   def extract_sexes(data)
@@ -559,10 +557,12 @@ class AsapParser
       filetype = file[:filetype].to_s.downcase
       next unless filetype.in?(FileResource::VALID_FILETYPES)
 
-      dataset.file_resources.find_or_create_by(
+      resource = dataset.file_resources.find_or_initialize_by(
         url: file[:url],
         filetype: filetype
       )
+      resource.title = file[:title].presence
+      resource.save!
     end
   end
 
