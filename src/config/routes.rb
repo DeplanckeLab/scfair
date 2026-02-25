@@ -1,5 +1,9 @@
 Rails.application.routes.draw do
-  resources :datasets, only: :index, path: "explore"
+  resources :datasets, only: :index, path: "explore" do
+    member do
+      get "file_resources/:file_resource_id/download", to: "datasets#download_file", as: :download_file_resource
+    end
+  end
   get "/facets/param_keys", to: "facets#param_keys", as: :facet_param_keys
   get "/facets/:category", to: "facets#show", as: :facet
   get "/facets/:category/children", to: "facets#children", as: :facet_children

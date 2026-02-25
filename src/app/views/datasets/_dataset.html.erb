@@ -11,7 +11,7 @@
       <div class="flex flex-col h-8">
         <div class="flex flex-col justify-between h-full py-0.5">
           <h2 class="text-xs font-medium text-gray-900 leading-none" 
-                data-action="click->dataset#stopPropagation">
+                data-action="click->card#stopPropagation">
             <%= dataset.source.name %>
           </h2>
           <div class="flex items-center gap-2 text-xs text-gray-600 leading-none">
@@ -19,11 +19,11 @@
             <% if dataset.study.present? %>
               <span class="text-gray-400">•</span>
               <div class="relative group" 
-                     data-action="click->dataset#stopPropagation">
+                     data-action="click->card#stopPropagation">
                 <%= link_to "https://doi.org/#{dataset.study.doi}",
                         target: "_blank",
                         class: "text-brand-dark hover:text-brand-dark/80",
-                        data: { action: "click->dataset#stopPropagation" } do %>
+                        data: { action: "click->card#stopPropagation" } do %>
                   <span class="truncate">
                     <%= dataset.study.authors || dataset.study.first_author %>, <%= dataset.study.year %>
                   </span>
@@ -40,7 +40,7 @@
               <%= link_to "https://doi.org/#{dataset.doi}",
                       target: "_blank",
                       class: "text-brand-dark hover:text-brand-dark/80",
-                      data: { action: "click->dataset#stopPropagation" } do %>
+                      data: { action: "click->card#stopPropagation" } do %>
                 Article
               <% end %>
             <% end %>
@@ -49,19 +49,19 @@
       </div>
     </div>
     <div class="flex items-center gap-2 shrink-0" 
-           data-action="click->dataset#stopPropagation">
+           data-action="click->card#stopPropagation">
       <% if dataset.explorer_url.present? %>
         <%= link_to "Explore", dataset.explorer_url,
               class: "px-3 py-1.5 text-sm font-medium rounded text-brand-dark bg-brand-light/10 hover:bg-brand-light/20",
               target: "_blank",
-              data: { action: "click->dataset#stopPropagation" } %>
+              data: { action: "click->card#stopPropagation" } %>
       <% end %>
       <div class="relative group" 
-              data-action="click->dataset#stopPropagation">
+              data-action="click->card#stopPropagation">
         <%= button_tag type: "button",
             class: "flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded #{dataset.file_resources.any? ? 'bg-gray-50 hover:bg-gray-100 text-gray-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'} border border-gray-200 transition-colors",
             disabled: !dataset.file_resources.any?,
-            data: { action: "click->dataset#stopPropagation" },
+            data: { action: "click->card#stopPropagation" },
             title: dataset.file_resources.any? ? 'Download files' : 'No files available' do %>
           <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" 
@@ -71,12 +71,18 @@
         <% end %>
         <% if dataset.file_resources.any? %>
           <div class="absolute right-0 top-full pt-2 hidden group-hover:block z-50">
-            <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 min-w-[120px]">
+            <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 w-max min-w-[260px]"
+                 data-controller="download-status">
               <% dataset.file_resources.each do |resource| %>
-                <%= link_to resource.url,
-                      class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50",
+                <% download_url = if dataset.source&.slug == "bgee" && resource.h5ad?
+                  download_file_resource_dataset_path(dataset, file_resource_id: resource.id)
+                else
+                  resource.url
+                end %>
+                <%= link_to download_url,
+                      class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap",
                       download: true,
-                      data: { action: "click->dataset#stopPropagation", turbo: false } do %>
+                      data: { action: "click->card#stopPropagation click->download-status#start", turbo: false } do %>
                   <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" 
                             d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" 
@@ -182,7 +188,7 @@
                       class: "px-2 py-0.5 rounded-full text-xs hover:opacity-90 #{tag.class.color_settings[:bg_text]} #{tag.class.color_settings[:text_color]} relative group",
                       data: {
                         controller: "tag",
-                        action: "click->tag#showModal click->dataset#stopPropagation",
+                        action: "click->tag#showModal click->card#stopPropagation",
                         tag_name_value: tag.name.capitalize,
                         tag_bg_color_value: tag.class.color_settings[:bg_text],
                         tag_text_color_value: tag.class.color_settings[:text_color]
@@ -248,7 +254,7 @@
               <%= link_to link.url,
                     target: "_blank",
                     class: "text-brand-dark hover:text-brand-dark/80",
-                    data: { action: "click->dataset#stopPropagation" } do %>
+                    data: { action: "click->card#stopPropagation" } do %>
                 <%= link.name.presence || extract_domain(link.url) || "External Link" %>
               <% end %>
             </div>
