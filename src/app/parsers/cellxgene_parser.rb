@@ -468,10 +468,12 @@ class CellxgeneParser
       filetype = asset_hash.fetch(:filetype, "").to_s.downcase
       next unless filetype.in?(FileResource::VALID_FILETYPES)
 
-      dataset.file_resources.find_or_create_by(
+      resource = dataset.file_resources.find_or_initialize_by(
         url: asset_hash.fetch(:url, ""),
         filetype: filetype
       )
+      resource.title = asset_hash[:title].presence
+      resource.save!
     end
   end
 

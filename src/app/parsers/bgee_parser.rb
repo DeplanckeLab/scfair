@@ -160,14 +160,35 @@ class BgeeParser
     assets_data.each do |asset|
       next if asset.nil?
 
-      filetype = File.extname(asset[:fileName].to_s).delete(".").downcase
+      file_name = asset[:fileName].to_s
+      filetype = extract_filetype(asset, file_name)
       next unless filetype.in?(FileResource::VALID_FILETYPES)
 
-      dataset.file_resources.find_or_create_by(
-        url: asset[:path] + asset[:fileName],
+      resource = dataset.file_resources.find_or_initialize_by(
+        url: build_file_url(asset[:path], file_name),
         filetype: filetype
       )
+      resource.title = asset[:title].presence || file_name.presence
+      resource.save!
     end
+  end
+
+  def extract_filetype(asset, file_name)
+    explicit_type = asset[:filetype].presence || asset[:fileType].presence
+    normalized_explicit_type = explicit_type.to_s.downcase
+    return normalized_explicit_type if normalized_explicit_type.in?(FileResource::VALID_FILETYPES)
+
+    return "tsv.gz" if file_name.downcase.end_with?(".tsv.gz")
+
+    File.extname(file_name).delete(".").downcase
+  end
+
+  def build_file_url(path, file_name)
+    base_path = path.to_s
+    safe_base_path = base_path.end_with?("/") ? base_path : "#{base_path}/"
+    encoded_file_name = ERB::Util.url_encode(file_name.to_s).gsub("%2F", "/")
+
+    "#{safe_base_path}#{encoded_file_name}"
   end
 
   def update_sexes(dataset, sexes_data)

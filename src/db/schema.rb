@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_07_200602) do
+ActiveRecord::Schema[8.0].define(version: 2026_02_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -154,6 +154,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_07_200602) do
     t.string "filetype", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "title"
     t.index ["dataset_id", "url", "filetype"], name: "index_file_resources_on_dataset_id_and_url_and_filetype", unique: true
     t.index ["dataset_id"], name: "index_file_resources_on_dataset_id"
   end

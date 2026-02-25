@@ -9,4 +9,8 @@ export default class extends Controller {
     this.element.classList.toggle("hover:bg-gray-50")
     this.element.classList.toggle("bg-white")
   }
+
+  stopPropagation(event) {
+    event.stopPropagation()
+  }
 } 
