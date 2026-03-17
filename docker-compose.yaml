@@ -8,7 +8,7 @@ services:
       - "32735:3000"
     volumes:
       - ./src:/opt/scfair:cached
-      - /data/scfair:/data/scfair:rw,Z
+      - /data/scfair:/data/scfair:rw,z
     env_file: src/.env
     environment:
       - RAILS_ENV=production
@@ -26,7 +26,7 @@ services:
     image: postgres:15.4
     env_file: src/.env
     volumes:
-      - /data/scfair/postgres:/var/lib/postgresql/data:Z
+      - /data/scfair/postgres:/var/lib/postgresql/data:z
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -39,7 +39,7 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.1.5
     volumes:
-      - /data/scfair/elasticsearch:/usr/share/elasticsearch/data:Z
+      - /data/scfair/elasticsearch:/usr/share/elasticsearch/data:z
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
