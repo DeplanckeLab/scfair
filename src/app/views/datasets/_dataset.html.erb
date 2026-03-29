@@ -74,12 +74,7 @@
             <div class="bg-white rounded-md shadow-lg border border-gray-200 py-1 w-max min-w-[260px]"
                  data-controller="download-status">
               <% dataset.file_resources.each do |resource| %>
-                <% download_url = if dataset.source&.slug == "bgee" && resource.h5ad?
-                  download_file_resource_dataset_path(dataset, file_resource_id: resource.id)
-                else
-                  resource.url
-                end %>
-                <%= link_to download_url,
+                <%= link_to resource.url,
                       class: "flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 whitespace-nowrap",
                       download: true,
                       data: { action: "click->card#stopPropagation click->download-status#start", turbo: false } do %>

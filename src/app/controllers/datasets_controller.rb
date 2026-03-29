@@ -14,25 +14,10 @@ class DatasetsController < ApplicationController
   end
 
   def download_file
-    dataset = Dataset.includes(:source).find(params[:id])
+    dataset = Dataset.find(params[:id])
     resource = dataset.file_resources.find(params[:file_resource_id])
 
-    unless dataset.source&.slug == "bgee" && resource.h5ad?
-      redirect_to resource.url, allow_other_host: true
-      return
-    end
-
-    download = Datasets::FileDownloadProxy.new(resource: resource).call
-    if download.success?
-      send_data(
-        download.body,
-        filename: download.filename,
-        type: download.content_type,
-        disposition: "attachment"
-      )
-    else
-      head download.http_status
-    end
+    redirect_to resource.url, allow_other_host: true
   rescue ActiveRecord::RecordNotFound
     head :not_found
   end
