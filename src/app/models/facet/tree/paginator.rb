@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
 class Facet::Tree::Paginator
-  def initialize(params = {})
+  def initialize(params = {}, facet: nil)
     @params = params
-    @selected_ids = extract_all_selected_ids.to_set
+    @facet = facet
+    @selected_ids = extract_facet_selected_ids.to_set
+  end
+
+  def ordered(nodes)
+    sort_nodes(nodes)
   end
 
   def paginate(nodes, limit:, offset: 0)
@@ -12,11 +17,11 @@ class Facet::Tree::Paginator
     sorted = sort_nodes(nodes)
     total = sorted.size
 
-    if offset.zero?
-      paginated = prioritize_selected(sorted, limit)
-    else
-      paginated = sorted.drop(offset).take(limit)
-    end
+    paginated = if offset.zero?
+                  first_page_slice(sorted, limit)
+                else
+                  sorted.drop(offset).take(limit)
+                end
 
     {
       nodes: paginated.map { |n| n.respond_to?(:to_h) ? n.to_h : n },
@@ -30,15 +35,33 @@ class Facet::Tree::Paginator
   end
 
   private
-    def extract_all_selected_ids
-      @params.values.flatten.compact.map(&:to_s)
+    def extract_facet_selected_ids
+      return [] unless @facet
+
+      pk = @facet.param_key
+      Array(@params[pk]).flatten.compact.map(&:to_s)
+    end
+
+    def first_page_slice(sorted_nodes, limit)
+      disease_facet? ? sorted_nodes.take(limit) : prioritize_selected(sorted_nodes, limit)
     end
 
     def sort_nodes(nodes)
       nodes.sort_by do |node|
-        relevant = relevant?(node)
-        [relevant ? 0 : 1, node.name&.downcase || ""]
+        if disease_facet?
+          [healthy_disease?(node) ? 0 : 1, relevant?(node) ? 0 : 1, node.name&.downcase || ""]
+        else
+          [relevant?(node) ? 0 : 1, node.name&.downcase || ""]
+        end
       end
+    end
+
+    def disease_facet?
+      @facet&.key.to_s == "disease"
+    end
+
+    def healthy_disease?(node)
+      disease_facet? && Disease.facet_healthy_control?(node.id)
     end
 
     def relevant?(node)

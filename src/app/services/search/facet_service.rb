@@ -245,27 +245,35 @@ module Search
         terms_metadata = OntologyTermLookup.fetch_terms(term_ids)
 
         results = buckets.map do |bucket|
+          key = bucket["key"]
           source = bucket.dig("details", "sample", "hits", "hits", 0, "_source") || {}
           hierarchy = source["#{category}_hierarchy"] || []
-          matching = hierarchy.find { |h| h["id"] == bucket["key"] } || {}
-          name = (terms_metadata.dig(bucket["key"], :name) || matching["name"] || bucket["key"]).to_s.capitalize
+          matching = hierarchy.find { |h| h["id"] == key } || {}
+          raw_name = (terms_metadata.dig(key, :name) || matching["name"] || key).to_s
+          name = facet_term_display_name(category, key, raw_name)
 
           {
-            id: bucket["key"],
+            id: key,
             name: name,
-            identifier: terms_metadata.dig(bucket["key"], :identifier),
+            identifier: terms_metadata.dig(key, :identifier),
             count: bucket["doc_count"],
             depth: matching["depth"],
             is_direct: matching["is_direct"],
-            parent_ids: terms_metadata.dig(bucket["key"], :parent_ids) || []
+            parent_ids: terms_metadata.dig(key, :parent_ids) || []
           }
         end
 
-        results = sort_hierarchically(results, term_ids.to_set)
+        results = sort_hierarchically(results, term_ids.to_set, category: category)
         label_duplicates(results) { |result| result[:identifier] }
       end
 
-      def sort_hierarchically(results, term_ids_in_results)
+      def facet_term_display_name(category, term_id, raw_name)
+        return Disease::HEALTHY_FACET_LABEL if category.to_s == "disease" && Disease.facet_healthy_control?(term_id)
+
+        raw_name.capitalize
+      end
+
+      def sort_hierarchically(results, term_ids_in_results, category:)
         return results if results.empty?
 
         results_by_id = results.index_by { |r| r[:id] }
@@ -282,15 +290,27 @@ module Search
           result[:parent_ids].none? { |pid| term_ids_in_results.include?(pid) }
         end
 
-        roots.sort_by! { |r| r[:name].to_s.downcase }
+        sort_facet_results!(roots, category: category)
 
         sorted_results = []
-        traverse_and_flatten(roots, children_map, results_by_id, sorted_results, 0)
+        traverse_and_flatten(roots, children_map, results_by_id, sorted_results, 0, category: category)
 
         sorted_results
       end
 
-      def traverse_and_flatten(nodes, children_map, results_by_id, output, relative_depth)
+      def sort_facet_results!(nodes, category:)
+        nodes.sort_by! do |r|
+          [disease_facet_sort_priority(category, r[:id]), r[:name].to_s.downcase]
+        end
+      end
+
+      def disease_facet_sort_priority(category, term_id)
+        return 0 unless category.to_s == "disease"
+
+        Disease.facet_healthy_control?(term_id) ? 0 : 1
+      end
+
+      def traverse_and_flatten(nodes, children_map, results_by_id, output, relative_depth, category:)
         nodes.each do |node|
           node[:relative_depth] = relative_depth
           output << node
@@ -298,8 +318,8 @@ module Search
           child_ids = children_map[node[:id]]
           if child_ids.any?
             children = child_ids.map { |cid| results_by_id[cid] }.compact
-            children.sort_by! { |c| c[:name].to_s.downcase }
-            traverse_and_flatten(children, children_map, results_by_id, output, relative_depth + 1)
+            sort_facet_results!(children, category: category)
+            traverse_and_flatten(children, children_map, results_by_id, output, relative_depth + 1, category: category)
           end
         end
       end

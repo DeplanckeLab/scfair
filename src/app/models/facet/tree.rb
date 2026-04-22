@@ -48,7 +48,7 @@ class Facet::Tree
     if limit
       paginator.paginate(nodes, limit: limit, offset: offset)
     else
-      nodes.map(&:to_h)
+      paginator.ordered(nodes).map(&:to_h)
     end
   end
 
@@ -185,7 +185,7 @@ class Facet::Tree
     end
 
     def paginator
-      @paginator ||= Facet::Tree::Paginator.new(@params)
+      @paginator ||= Facet::Tree::Paginator.new(@params, facet: @facet)
     end
 
     def empty_result(limit)

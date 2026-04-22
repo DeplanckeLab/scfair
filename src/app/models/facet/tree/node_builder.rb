@@ -27,9 +27,10 @@ class Facet::Tree::NodeBuilder
 
     def build_node(id, counts_by_id, metadata, nodes_with_children, nodes_with_selected_children)
       raw_name = metadata.dig(id, :name) || id
+      display_name = tree_facet_display_name(raw_name, id)
       FacetNode.new(
         id: id,
-        name: raw_name.to_s.capitalize,
+        name: display_name,
         count: counts_by_id[id] || 0,
         has_children: nodes_with_children.include?(id),
         has_selected_children: nodes_with_selected_children.include?(id)
@@ -87,5 +88,11 @@ class Facet::Tree::NodeBuilder
     def extract_ontology_prefix(identifier)
       return nil if identifier.blank?
       identifier.split(":").first
+    end
+
+    def tree_facet_display_name(raw_name, id)
+      return Disease::HEALTHY_FACET_LABEL if @facet.key.to_sym == :disease && Disease.facet_healthy_control?(id)
+
+      raw_name.to_s.capitalize
     end
 end
