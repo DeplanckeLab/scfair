@@ -56,6 +56,8 @@ After setting up the /data folder and placing the ontology file, run the followi
 
 These commands will parse the ontology file, update the adjacency lists, and finally, update the API.
 
+As an alternative to running the OBO parser on each ontology file, you can use the load_ontology.sh script to directly load a dump of the two ontology-related tables after adding the corresponding .csv files to the data directory.
+
 ---
 
 Thank you for being part of the scFAIR initiative! Together, we can make single-cell genomics data more findable, accessible, interoperable, and reusable.
