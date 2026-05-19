@@ -2,11 +2,16 @@
   <div class="space-y-16 max-w-4xl mx-auto">
     <div>
       <h2 class="text-3xl font-bold text-center mb-8">
-        CELLxGENE metadata schema
+        scFAIR metadata schema
       </h2>
       <p class="text-gray-700">
-        We use the CELLxGENE metadata schema due to its inclusion of necessary metadata, use of controlled vocabularies, and flexibility. 
-        The schema documentation and all versions can be found <%= link_to "here", "https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema", class: "text-red-500 hover:text-red-600", target: "_blank" %>.
+        The metadata schema defines how dataset metadata should be structured and annotated so submissions are consistent, interoperable, and reusable across tools and studies.
+      </p>
+      <p class="text-gray-700 mt-4">
+        The scFAIR metadata schema is inspired by the CELLxGENE metadata schema fork from
+        <%= link_to "single-cell-curation schema 7.1.0", "https://github.com/chanzuckerberg/single-cell-curation/tree/main/schema/7.1.0", class: "text-red-500 hover:text-red-600 text-sm", target: "_blank" %>.
+        The scFAIR metadata schema is available at
+        <%= link_to "scFAIR metadata schema documentation (README for schema version 7.1.0)", "https://github.com/scFAIR/scFAIR/blob/main/schema/7.1.0/README.md", class: "text-red-500 hover:text-red-600", target: "_blank" %>.
       </p>
     </div>
   </div>
