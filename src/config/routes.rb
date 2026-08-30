@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   
   resources :stats, only: [:index] do
     collection do
+      get "compliance", to: redirect("/stats")
       get ":source_id/failed_datasets", action: :failed_datasets, as: :failed_datasets
       get ":source_id/:category/parsing_issues", action: :parsing_issues, as: :parsing_issues
     end

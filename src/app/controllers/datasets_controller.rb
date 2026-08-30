@@ -38,9 +38,12 @@ class DatasetsController < ApplicationController
     end
 
     def dataset_associations
-      [:sexes, :cell_types, :tissues, :developmental_stages, :organisms,
-       :diseases, :technologies, :suspension_types, :file_resources,
-       :study, :links, :source]
+      [
+        :sexes, :cell_types, :tissues, :developmental_stages, :organisms,
+        :diseases, :technologies, :suspension_types,
+        { file_resources: :compliance_checks },
+        :study, :links, :source
+      ]
     end
 
     def build_facet_views

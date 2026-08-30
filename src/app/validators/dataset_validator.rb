@@ -65,23 +65,28 @@ class DatasetValidator
   def validate_ontology_coverage(dataset)
     has_cell_type_ontology = dataset.cell_types.any? { |ct| ct.ontology_term_id.present? }
     has_organism_ontology = dataset.organisms.any? { |org| org.ontology_term_id.present? }
+    cell_types_missing_ontology = dataset.cell_types.any? && !has_cell_type_ontology
 
-    if !has_cell_type_ontology || !has_organism_ontology
-      validation_errors = []
+    validation_errors = []
 
+    if cell_types_missing_ontology
       validation_errors << {
         annotation: CellType.name,
         message: "No cell types are linked to ontology terms",
-      } unless has_cell_type_ontology
+      }
+    end
 
+    unless has_organism_ontology
       validation_errors << {
         annotation: Organism.name,
         message: "No organisms are linked to ontology terms",
-      } unless has_organism_ontology
-
-      add_validation_errors(dataset, validation_errors)
-      raise ValidationError, "Dataset lacks required ontology coverage"
+      }
     end
+
+    return if validation_errors.empty?
+
+    add_validation_errors(dataset, validation_errors)
+    raise ValidationError, "Dataset lacks required ontology coverage"
   end
 
   def add_validation_errors(dataset, validation_errors)

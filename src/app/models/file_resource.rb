@@ -1,13 +1,16 @@
 class FileResource < ApplicationRecord
   VALID_FILETYPES = %w[h5ad rds tsv.gz].freeze
-  
+
+  belongs_to :dataset
+  has_many :compliance_checks, dependent: :nullify
+
   validates :filetype, inclusion: { in: VALID_FILETYPES }
   validates :title, length: { maximum: 255 }, allow_blank: true
 
   def h5ad?
     filetype == "h5ad"
   end
-  
+
   def rds?
     filetype == "rds"
   end

@@ -132,6 +132,31 @@ namespace :search do
     puts "✓ Datasets reindexed in #{(total_time / 60).round(1)} minutes avg: #{(total / total_time).round(1)} docs/s"
   end
 
+  desc "Validate processing datasets then bulk-index completed ones (SOURCES=asap,cxg)"
+  task index_new_datasets: :environment do
+    STDOUT.sync = true
+    source_slugs = ENV.fetch("SOURCES", "asap,cxg").split(",").map(&:strip).reject(&:blank?)
+
+    begin
+      Dataset.skip_indexing = true
+      source_slugs.each do |slug|
+        puts "Validating processing datasets for #{slug}..."
+        DatasetValidator.new(slug).validate!
+      end
+    ensure
+      Dataset.skip_indexing = false
+    end
+
+    sources = Source.where(slug: source_slugs)
+    scope = Dataset.completed.where(source: sources).includes(
+      :study, :source, :cell_types, :suspension_types,
+      :organisms, :tissues, :developmental_stages, :diseases, :sexes, :technologies
+    )
+    puts "Bulk indexing #{scope.count} completed datasets for #{source_slugs.join(', ')}..."
+    Search::DatasetIndexer.bulk_index(scope)
+    puts "Done."
+  end
+
   desc "Create Elasticsearch ontology_terms index"
   task setup_ontology_terms: :environment do
     client = ElasticsearchClient

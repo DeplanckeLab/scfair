@@ -25,8 +25,9 @@ class Dataset < ApplicationRecord
   has_and_belongs_to_many :technologies
   has_and_belongs_to_many :suspension_types
 
-  has_many :links, class_name: "DatasetLink"
-  has_many :file_resources
+  has_many :links, class_name: "DatasetLink", dependent: :delete_all
+  has_many :file_resources, dependent: :destroy
+  has_many :compliance_checks, through: :file_resources
   has_many :parsing_issues
 
   belongs_to :study, primary_key: :doi, foreign_key: :doi, optional: true
@@ -47,6 +48,18 @@ class Dataset < ApplicationRecord
     association_method = ASSOCIATION_METHODS[category]
     raise ArgumentError, "Invalid category: #{category}. Must be one of: #{CATEGORIES.join(', ')}" unless association_method
     send(association_method)
+  end
+
+  # Prefer preloaded file_resources -> compliance_checks to avoid N+1 on search lists.
+  def latest_compliance_check
+    checks =
+      if association(:file_resources).loaded?
+        file_resources.flat_map(&:compliance_checks)
+      else
+        compliance_checks
+      end
+
+    Array(checks).max_by { |check| [check.checked_at || Time.at(0), check.asap_id] }
   end
 
   private

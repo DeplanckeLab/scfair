@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_02_23_120000) do
+ActiveRecord::Schema[8.0].define(version: 2026_08_29_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -31,6 +31,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_120000) do
     t.index ["cell_type_id"], name: "index_cell_types_datasets_on_cell_type_id"
     t.index ["dataset_id", "cell_type_id"], name: "index_cell_types_datasets_on_dataset_id_and_cell_type_id", unique: true
     t.index ["dataset_id"], name: "index_cell_types_datasets_on_dataset_id"
+  end
+
+  create_table "compliance_checks", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
+    t.bigint "asap_id", null: false
+    t.string "task_id"
+    t.string "filename"
+    t.string "source_url", null: false
+    t.string "schema_id"
+    t.string "format"
+    t.boolean "passed"
+    t.string "status"
+    t.datetime "checked_at"
+    t.boolean "admin_run", default: false, null: false
+    t.jsonb "result", default: {}, null: false
+    t.uuid "file_resource_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asap_id"], name: "index_compliance_checks_on_asap_id", unique: true
+    t.index ["checked_at"], name: "index_compliance_checks_on_checked_at"
+    t.index ["file_resource_id"], name: "index_compliance_checks_on_file_resource_id"
+    t.index ["passed"], name: "index_compliance_checks_on_passed"
+    t.index ["source_url"], name: "index_compliance_checks_on_source_url"
   end
 
   create_table "dataset_links", id: :uuid, default: -> { "uuid_generate_v4()" }, force: :cascade do |t|
@@ -54,12 +76,14 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_120000) do
     t.integer "links_count", default: 0, null: false
     t.string "status", default: "processing", null: false
     t.jsonb "notes", default: {}
+    t.string "source_version"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["cell_count"], name: "index_datasets_on_cell_count"
     t.index ["doi"], name: "index_datasets_on_doi"
     t.index ["source_id"], name: "index_datasets_on_source_id"
     t.index ["source_reference_id"], name: "index_datasets_on_source_reference_id", unique: true
+    t.index ["source_version"], name: "index_datasets_on_source_version"
     t.index ["status"], name: "index_datasets_on_status"
   end
 
@@ -293,6 +317,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_02_23_120000) do
 
   add_foreign_key "cell_types_datasets", "cell_types"
   add_foreign_key "cell_types_datasets", "datasets"
+  add_foreign_key "compliance_checks", "file_resources"
   add_foreign_key "dataset_links", "datasets"
   add_foreign_key "datasets", "sources"
   add_foreign_key "datasets_developmental_stages", "datasets"

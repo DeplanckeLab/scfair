@@ -1,159 +1,171 @@
 <div class="container mx-auto px-4 mt-4 mb-8">
   <div class="min-h-screen py-8">
     <div class="max-w-7xl mx-auto space-y-8">
-      <h2 class="text-2xl font-bold text-center mb-8">
-        Data statistics
-      </h2>
-
-      <div class="bg-white rounded-lg border border-gray-200">
-        <div class="grid" style="grid-template-columns: 190px repeat(<%= @categories.count %>, 1fr);">
-          <div></div>
-
-          <% @categories.each do |category| %>
-            <div class="px-2 py-3 text-center">
-              <span class="px-2 py-1 rounded-full text-xs font-semibold <%= category.color_settings[:bg_text] %> <%= category.color_settings[:text_color] %>">
-                <%= category.display_name %>
-              </span>
-            </div>
-          <% end %>
-        </div>
-
-        <% @sources.each_with_index do |source, index| %>
-          <div class="grid <%= index.even? ? 'bg-white' : 'bg-gray-50' %>" style="grid-template-columns: 190px repeat(<%= @categories.count %>, 1fr);">
-            <div class="px-4 py-2">
-              <div class="flex items-center">
-                <div class="flex-shrink-0 mr-2">
-                  <div class="flex items-center justify-center w-8 h-8 rounded <%= source.name == 'CELLxGENE' ? "bg-brand-dark" : "bg-gray-200" %>">
-                    <%= image_tag "#{source.logo || 'not_found.svg' }", class: "w-5 h-5", alt: "#{source.name} logo" %>
-                  </div>
-                </div>
-                <div class="flex-1">
-                  <div class="text-sm font-bold text-gray-900 leading-tight"><%= source.name %></div>
-                    <div class="text-xs text-gray-600 mt-1 space-y-0.5">
-                      <div class="flex items-center space-x-2">
-                        <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          ✓ <%= source.completed_datasets_count %>
-                        </span>
-                        <%= link_to failed_datasets_stats_path(source_id: source),
-                              class: "inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1 hover:bg-red-200 cursor-pointer",
-                              data: { turbo_frame: "stats_details" } do %>
-                          ✗ <%= source.failed_datasets_count %>
-                        <% end %>
-                      </div>
-                      <% if source.total_datasets_count > 0 %>
-                        <div class="text-xs text-gray-500">
-                          <%= source.completion_rate %>% success rate
-                        </div>
-                      <% end %>
-                    </div>
-                </div>
-              </div>
-            </div>
-            <% @stats[source.id].each_with_index do |stat, category_index| %>
-              <%
-                records = stat.records_count
-                relationships = stat.relationships_count
-                parsing_issues = stat.parsing_issues_count
-                records_with_ontology = stat.records_with_ontology_count
-                records_missing_ontology = stat.records_missing_ontology_count
-                category_class = @categories[category_index]
-                requires_ontology = category_class.requires_ontology_link?
-
-                if parsing_issues == 0 && relationships > 0 && (!requires_ontology || records == records_with_ontology)
-                  # Fully linked
-                  status_class = "bg-green-100 text-green-800"
-                  status_icon = "✅"
-                  coverage = 100.0
-                elsif relationships > 0 && (
-                  (requires_ontology && (records_missing_ontology + parsing_issues) > 0) ||
-                  (!requires_ontology && parsing_issues > 0)
-                )
-                  # Partially linked
-                  status_class = "bg-yellow-100 text-yellow-800"
-                  status_icon = "⚠️"
-                  if requires_ontology
-                    coverage = (1 - ((records_missing_ontology + parsing_issues).to_f / relationships)) * 100
-                  else
-                    coverage = (1 - (parsing_issues.to_f / relationships)) * 100
-                  end
-                elsif records >= 0 && records_with_ontology == 0
-                  # Not provided
-                  status_class = "bg-gray-100 text-gray-600"
-                  status_icon = "✖"
-                  coverage = 0.0
-                else
-                  status_class = "bg-red-100 text-red-800"
-                  status_icon = "✖"
-                  coverage = 0.0
-                end
-              %>
-              <div class="px-2 py-2 text-center">
-                <div class="flex flex-col items-center justify-center space-y-1 relative group cursor-help">
-                  <% if status_icon == "⚠️" && parsing_issues > 0 %>
-                    <%= link_to parsing_issues_stats_path(source_id: source, category: @categories[category_index].name),
-                          class: "inline-flex flex-col items-center text-xs font-medium hover:opacity-80 cursor-pointer",
-                          data: { turbo_frame: "stats_details" } do %>
-                      <span class="inline-flex items-center px-2 py-1 rounded-full <%= status_class %>">
-                        <%= status_icon %>
-                      </span>
-                      <% if coverage < 100 %>
-                        <span class="mt-1 text-gray-600 font-semibold">
-                          <%= ((coverage * 10).floor / 10.0).round(1) %>%
-                        </span>
-                      <% end %>
-                    <% end %>
-                  <% else %>
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
-                      <%= status_icon %>
-                    </span>
-                  <% end %>
-
-                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
-                    <div class="bg-gray-900 text-white text-xs rounded-md py-2 px-3 whitespace-nowrap">
-                      <div class="space-y-1">
-                        <div><strong>Unique <%= @categories[category_index].display_name.downcase.pluralize %>:</strong> <%= records %></div>
-                        <div><strong>Used in datasets:</strong> <%= relationships %></div>
-                        <div><strong>Linked to ontology:</strong> <%= records_with_ontology %></div>
-                        <div><strong>Not linked to ontology:</strong> <%= records_missing_ontology %></div>
-                        <% if parsing_issues > 0 %>
-                          <div><strong>Parsing issues:</strong> <%= parsing_issues %></div>
-                        <% end %>
-                      </div>
-                    </div>
-                    <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-1/2 -translate-y-1 absolute left-1/2"></div>
-                  </div>
-                </div>
-              </div>
-            <% end %>
-          </div>
-        <% end %>
-
-        <div class="mt-6 pt-4 pb-4">
-          <h3 class="text-sm text-gray-800 text-center mb-3">Legend</h3>
-          <div class="flex flex-wrap justify-center gap-4">
-            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-              <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">✅</span>
-              <span class="text-xs font-medium text-gray-700">Fully Linked</span>
-            </div>
-            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-              <span class="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⚠️</span>
-              <span class="text-xs font-medium text-gray-700">Partially Linked</span>
-            </div>
-            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
-              <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">✖</span>
-              <span class="text-xs font-medium text-gray-700">Not Provided</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-gray-50 border-t border-gray-200 rounded-b-lg p-4">
-          <p class="text-sm text-gray-700 text-center">
-            Data validation performed using <%= link_to "CELLxGENE schema v7.1.0", "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/7.1.0/schema.md", class: "text-red-500 hover:text-red-600", target: "_blank" %>
-          </p>
-        </div>
+      <div class="flex flex-col items-center gap-2">
+        <h2 class="text-2xl font-bold text-center">
+          scFAIR compliance statistics by resource
+        </h2>
+        <p class="text-sm text-gray-600 text-center">
+          
+        </p>
       </div>
 
-      <turbo-frame id="stats_details"></turbo-frame>
+      <div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+        <h3 class="text-lg font-semibold px-4 pt-4">Coverage</h3>
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="px-4 py-3 text-left font-medium text-gray-600 sticky left-0 bg-white">Metric</th>
+              <% @coverage.each do |coverage| %>
+                <th class="px-4 py-3 text-center font-medium text-gray-900">
+                  <div class="inline-flex items-center justify-center gap-2">
+                    <span class="inline-flex items-center justify-center w-7 h-7 rounded <%= coverage.column.name.start_with?('CELLxGENE') ? 'bg-brand-dark' : 'bg-gray-200' %>">
+                      <%= image_tag "#{coverage.column.logo || 'not_found.svg'}", class: "w-4 h-4", alt: "#{coverage.column.name} logo" %>
+                    </span>
+                    <span><%= coverage.column.name %></span>
+                  </div>
+                </th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-gray-100">
+              <td class="px-4 py-2 sticky left-0 bg-white text-gray-700">File resources</td>
+              <% @coverage.each do |coverage| %>
+                <td class="px-4 py-2 text-center"><%= coverage.file_resources_count %></td>
+              <% end %>
+            </tr>
+            <tr class="border-b border-gray-100 bg-gray-50">
+              <td class="px-4 py-2 sticky left-0 bg-gray-50 text-gray-700">Checked</td>
+              <% @coverage.each do |coverage| %>
+                <td class="px-4 py-2 text-center"><%= coverage.checked_count %></td>
+              <% end %>
+            </tr>
+            <tr class="border-b border-gray-100">
+              <td class="px-4 py-2 sticky left-0 bg-white text-gray-700">Passed</td>
+              <% @coverage.each do |coverage| %>
+                <td class="px-4 py-2 text-center text-green-800"><%= coverage.passed_count %></td>
+              <% end %>
+            </tr>
+            <tr class="border-b border-gray-100 bg-gray-50">
+              <td class="px-4 py-2 sticky left-0 bg-gray-50 text-gray-700">Failed validation</td>
+              <% @coverage.each do |coverage| %>
+                <td class="px-4 py-2 text-center text-red-800"><%= coverage.failed_count %></td>
+              <% end %>
+            </tr>
+            <tr>
+              <td class="px-4 py-2 sticky left-0 bg-white text-gray-700">Check run failed</td>
+              <% @coverage.each do |coverage| %>
+                <td class="px-4 py-2 text-center text-gray-600"><%= coverage.failed_run_count %></td>
+              <% end %>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bg-white rounded-lg border border-gray-200 overflow-x-auto">
+        <h3 class="text-lg font-semibold px-4 pt-4">Checks by resource</h3>
+        <p class="px-4 pb-2 text-xs text-gray-500">
+          Pass rate among evaluated outcomes (passed, failed, warning). Skipped checks are excluded from the rate.
+          Equivalent H5AD and Loom checks are shown on the same row.
+        </p>
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-200">
+              <th class="px-4 py-3 text-left font-medium text-gray-600 sticky left-0 bg-white min-w-[16rem]">Check</th>
+              <% @columns.each do |column| %>
+                <th class="px-3 py-3 text-center font-medium text-gray-900 min-w-[7rem]">
+                  <%= column.name %>
+                </th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody>
+            <% current_group = nil %>
+            <% @checks.each do |check| %>
+              <% if check.group_id != current_group %>
+                <% current_group = check.group_id %>
+                <tr class="bg-gray-100 border-t border-gray-200">
+                  <td colspan="<%= @columns.size + 1 %>" class="px-4 py-2 text-xs font-semibold text-gray-800 sticky left-0 bg-gray-100">
+                    <%= check.group_label.presence || check.group_id %>
+                  </td>
+                </tr>
+              <% end %>
+              <tr class="border-b border-gray-100 hover:bg-gray-50">
+                <td class="px-4 py-2 sticky left-0 bg-white hover:bg-gray-50">
+                  <div class="font-medium text-gray-900"><%= check.title %></div>
+                  <div class="text-xs text-gray-500 font-mono"><%= check.field %></div>
+                </td>
+                <% @columns.each do |column| %>
+                  <% counts = check.by_column[column.key] %>
+                  <td class="px-3 py-2 text-center">
+                    <% if counts.nil? || counts.total.zero? %>
+                      <span class="text-gray-400">-</span>
+                    <% elsif counts.evaluated.zero? %>
+                      <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600"
+                            title="skipped <%= counts.skipped %>">
+                        skipped
+                      </span>
+                    <% else %>
+                      <%
+                        rate = counts.pass_rate
+                        status_class =
+                          if rate == 100.0
+                            "bg-green-100 text-green-800"
+                          elsif rate >= 80.0
+                            "bg-yellow-100 text-yellow-800"
+                          else
+                            "bg-red-100 text-red-800"
+                          end
+                        title = "passed #{counts.passed}, failed #{counts.failed}, warning #{counts.warning}, skipped #{counts.skipped}"
+                      %>
+                      <span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold <%= status_class %>"
+                            title="<%= title %>">
+                        <%= rate %>%
+                      </span>
+                    <% end %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+            <% if @checks.empty? %>
+              <tr>
+                <td colspan="<%= @columns.size + 1 %>" class="px-4 py-6 text-center text-gray-500">
+                  No compliance check results imported yet.
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <div class="mt-4 pt-3 pb-4 border-t border-gray-200">
+          <h4 class="text-sm text-gray-800 text-center mb-3">Legend</h4>
+          <div class="flex flex-wrap justify-center gap-3">
+            <div class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800">100%</span>
+              <span class="text-xs text-gray-700">All evaluated passed</span>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded text-xs font-semibold bg-yellow-100 text-yellow-800">80%+</span>
+              <span class="text-xs text-gray-700">Mostly passed</span>
+            </div>
+            <div class="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800">&lt;80%</span>
+              <span class="text-xs text-gray-700">Many failures or warnings</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-2 bg-gray-50 rounded-lg px-3 py-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">skipped</span>
+                <span class="text-xs text-gray-700">Check ran but was not applicable; excluded from the pass rate</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-gray-400 text-xs font-medium px-2">-</span>
+                <span class="text-xs text-gray-700">No result for this check and resource</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

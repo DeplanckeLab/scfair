@@ -159,12 +159,30 @@ module Search
 
       def build_search_clause(category, search_term, tree:)
         if tree
+          name_field = "#{category}_hierarchy.name"
+          keyword_field = "#{category}_hierarchy.name.keyword"
+          syn_field = "#{category}_hierarchy.synonyms"
+
           {
             bool: {
               should: [
-                { prefix: { "#{category}_hierarchy.name.keyword": { value: search_term, case_insensitive: true } } },
-                { match: { "#{category}_hierarchy.name": { query: search_term, fuzziness: "AUTO" } } },
-                { match: { "#{category}_hierarchy.synonyms": { query: search_term, fuzziness: "AUTO" } } }
+                { prefix: { keyword_field => { value: search_term, case_insensitive: true } } },
+                {
+                  match_phrase_prefix: {
+                    name_field => {
+                      query: search_term,
+                      max_expansions: 50
+                    }
+                  }
+                },
+                {
+                  match_phrase_prefix: {
+                    syn_field => {
+                      query: search_term,
+                      max_expansions: 50
+                    }
+                  }
+                }
               ],
               minimum_should_match: 1
             }
@@ -270,7 +288,7 @@ module Search
       def facet_term_display_name(category, term_id, raw_name)
         return Disease::HEALTHY_FACET_LABEL if category.to_s == "disease" && Disease.facet_healthy_control?(term_id)
 
-        raw_name.capitalize
+        raw_name
       end
 
       def sort_hierarchically(results, term_ids_in_results, category:)
@@ -334,7 +352,7 @@ module Search
           names = source["#{category}_names"] || []
 
           index = ids.index(current_id)
-          name = (index ? names[index] : current_id).to_s.capitalize
+          name = (index ? names[index] : current_id).to_s
 
           next unless name_matches_search?(name, @current_search_term)
 

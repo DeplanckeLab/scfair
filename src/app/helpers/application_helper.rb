@@ -36,7 +36,63 @@ module ApplicationHelper
     "facet_nodes_#{category}_#{safe_parent}"
   end
 
+  # Compact scFAIR status beside the dataset source title (same language as ASAP
+  # catalog_candidate_scfair_compliance_list_icon). Links to the ASAP standalone
+  # check result when a ComplianceCheck is linked.
+  def dataset_scfair_compliance_list_icon(dataset)
+    check = dataset.latest_compliance_check
+    passed = check&.passed
+    asap_id = check&.asap_id
+
+    if passed == true
+      icon_class = "text-green-600"
+      title = "scFAIR compliant"
+    else
+      icon_class = "text-gray-300"
+      title = if passed == false
+                "scFAIR not compliant"
+              else
+                "scFAIR not yet validated"
+              end
+    end
+
+    icon = content_tag(
+      :svg,
+      content_tag(
+        :path,
+        nil,
+        fill_rule: "evenodd",
+        clip_rule: "evenodd",
+        d: "M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+      ),
+      xmlns: "http://www.w3.org/2000/svg",
+      class: "w-3 h-3 #{icon_class}",
+      viewBox: "0 0 20 20",
+      fill: "currentColor",
+      "aria-hidden": true
+    )
+    wrapper_class = "inline-flex items-center shrink-0"
+
+    if asap_id.present?
+      link_to(
+        icon,
+        "#{asap_base_url}/standalone_compliance_checks/#{asap_id}",
+        class: "#{wrapper_class} hover:opacity-80",
+        title: "#{title} (open check)",
+        target: "_blank",
+        rel: "noopener noreferrer",
+        data: { action: "click->card#stopPropagation" }
+      )
+    else
+      content_tag(:span, icon, class: wrapper_class, title: title)
+    end
+  end
+
   private
+    def asap_base_url
+      ENV.fetch("ASAP_BASE_URL", "https://asap.epfl.ch").to_s.chomp("/")
+    end
+
     def default_facet_colors
       {
         bg_circle: "bg-blue-500",

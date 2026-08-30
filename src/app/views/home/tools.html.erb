@@ -21,6 +21,17 @@
         <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-600">cellxgene-schema validate</code>
         command checks an annotation file and will print validation failure messages or a validation success message.
       </p>
+      <p class="text-gray-700 mt-4">
+        <%= link_to "ASAP standalone scFAIR compliance check", "https://asap.epfl.ch/compliance/file-check", class: "text-red-500 hover:text-red-600", target: "_blank" %>:
+        ASAP provides a standalone validator to upload a
+        <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-600">.loom</code>
+        or
+        <code class="bg-gray-100 px-1 py-0.5 rounded text-pink-600">.h5ad</code>
+        file and check it against the scFAIR metadata schema in the browser.
+        Beyond validation alone, ASAP also helps you produce scFAIR-valid Loom or H5AD files through its project compliance tool:
+        create an ASAP project, complete the guided compliance workflow (metadata mapping, ontology resolution, and fixes), then export a compliant file.
+        Since ASAP v8, publicly published ASAP projects are exclusively scFAIR compliant.
+      </p>
     </div>
   </div>
 </main>

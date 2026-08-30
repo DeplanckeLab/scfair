@@ -1,8 +1,9 @@
 class StatsController < ApplicationController
   def index
-    @sources = Source.all.order(:name)
-    @categories = Dataset::CATEGORIES
-    @stats = OntologyCoverage.all.group_by(&:source_id)
+    stats = ::ComplianceCheck.stats_for_page
+    @columns = stats[:columns]
+    @coverage = stats[:coverage]
+    @checks = stats[:checks]
   end
 
   def failed_datasets
@@ -11,7 +12,8 @@ class StatsController < ApplicationController
                       .where(status: :failed)
                       .includes(
                         :sexes, :cell_types, :tissues, :developmental_stages,
-                        :organisms, :diseases, :technologies, :file_resources,
+                        :organisms, :diseases, :technologies,
+                        { file_resources: :compliance_checks },
                         :study, :links
                       )
 
@@ -36,7 +38,7 @@ class StatsController < ApplicationController
                          .pluck(:id)
 
     @datasets = Dataset.where(id: dataset_ids)
-                      .includes(:source, :study, :file_resources)
+                      .includes(:source, :study, { file_resources: :compliance_checks })
                       .preload(
                         :sexes, :cell_types, :tissues, :developmental_stages,
                         :organisms, :diseases, :technologies, :links

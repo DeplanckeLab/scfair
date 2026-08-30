@@ -48,7 +48,7 @@ class Facet::Flat
     def build_node(bucket, names_by_id)
       id = bucket["key"]
       raw_name = names_by_id[id] || id
-      name = raw_name.to_s.capitalize
+      name = display_name_for(raw_name)
 
       FacetNode.new(
         id: id,
@@ -57,6 +57,13 @@ class Facet::Flat
         has_children: false,
         has_selected_children: false
       )
+    end
+
+    def display_name_for(raw_name)
+      value = raw_name.to_s
+      return value if @category == "source"
+
+      value.capitalize
     end
 
     def sort_nodes(nodes)

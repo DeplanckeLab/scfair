@@ -1,0 +1,159 @@
+<div class="container mx-auto px-4 mt-4 mb-8">
+  <div class="min-h-screen py-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+      <h2 class="text-2xl font-bold text-center mb-4">
+        Data statistics
+      </h2>
+
+      <div class="bg-white rounded-lg border border-gray-200">
+        <div class="grid" style="grid-template-columns: 190px repeat(<%= @categories.count %>, 1fr);">
+          <div></div>
+
+          <% @categories.each do |category| %>
+            <div class="px-2 py-3 text-center">
+              <span class="px-2 py-1 rounded-full text-xs font-semibold <%= category.color_settings[:bg_text] %> <%= category.color_settings[:text_color] %>">
+                <%= category.display_name %>
+              </span>
+            </div>
+          <% end %>
+        </div>
+
+        <% @sources.each_with_index do |source, index| %>
+          <div class="grid <%= index.even? ? 'bg-white' : 'bg-gray-50' %>" style="grid-template-columns: 190px repeat(<%= @categories.count %>, 1fr);">
+            <div class="px-4 py-2">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 mr-2">
+                  <div class="flex items-center justify-center w-8 h-8 rounded <%= source.name == 'CELLxGENE' ? "bg-brand-dark" : "bg-gray-200" %>">
+                    <%= image_tag "#{source.logo || 'not_found.svg' }", class: "w-5 h-5", alt: "#{source.name} logo" %>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-bold text-gray-900 leading-tight"><%= source.name %></div>
+                    <div class="text-xs text-gray-600 mt-1 space-y-0.5">
+                      <div class="flex items-center space-x-2">
+                        <span class="inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          ✓ <%= source.completed_datasets_count %>
+                        </span>
+                        <%= link_to failed_datasets_stats_path(source_id: source),
+                              class: "inline-flex items-center px-1 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 ml-1 hover:bg-red-200 cursor-pointer",
+                              data: { turbo_frame: "stats_details" } do %>
+                          ✗ <%= source.failed_datasets_count %>
+                        <% end %>
+                      </div>
+                      <% if source.total_datasets_count > 0 %>
+                        <div class="text-xs text-gray-500">
+                          <%= source.completion_rate %>% success rate
+                        </div>
+                      <% end %>
+                    </div>
+                </div>
+              </div>
+            </div>
+            <% @stats[source.id].each_with_index do |stat, category_index| %>
+              <%
+                records = stat.records_count
+                relationships = stat.relationships_count
+                parsing_issues = stat.parsing_issues_count
+                records_with_ontology = stat.records_with_ontology_count
+                records_missing_ontology = stat.records_missing_ontology_count
+                category_class = @categories[category_index]
+                requires_ontology = category_class.requires_ontology_link?
+
+                if parsing_issues == 0 && relationships > 0 && (!requires_ontology || records == records_with_ontology)
+                  # Fully linked
+                  status_class = "bg-green-100 text-green-800"
+                  status_icon = "✅"
+                  coverage = 100.0
+                elsif relationships > 0 && (
+                  (requires_ontology && (records_missing_ontology + parsing_issues) > 0) ||
+                  (!requires_ontology && parsing_issues > 0)
+                )
+                  # Partially linked
+                  status_class = "bg-yellow-100 text-yellow-800"
+                  status_icon = "⚠️"
+                  if requires_ontology
+                    coverage = (1 - ((records_missing_ontology + parsing_issues).to_f / relationships)) * 100
+                  else
+                    coverage = (1 - (parsing_issues.to_f / relationships)) * 100
+                  end
+                elsif records >= 0 && records_with_ontology == 0
+                  # Not provided
+                  status_class = "bg-gray-100 text-gray-600"
+                  status_icon = "✖"
+                  coverage = 0.0
+                else
+                  status_class = "bg-red-100 text-red-800"
+                  status_icon = "✖"
+                  coverage = 0.0
+                end
+              %>
+              <div class="px-2 py-2 text-center">
+                <div class="flex flex-col items-center justify-center space-y-1 relative group cursor-help">
+                  <% if status_icon == "⚠️" && parsing_issues > 0 %>
+                    <%= link_to parsing_issues_stats_path(source_id: source, category: @categories[category_index].name),
+                          class: "inline-flex flex-col items-center text-xs font-medium hover:opacity-80 cursor-pointer",
+                          data: { turbo_frame: "stats_details" } do %>
+                      <span class="inline-flex items-center px-2 py-1 rounded-full <%= status_class %>">
+                        <%= status_icon %>
+                      </span>
+                      <% if coverage < 100 %>
+                        <span class="mt-1 text-gray-600 font-semibold">
+                          <%= ((coverage * 10).floor / 10.0).round(1) %>%
+                        </span>
+                      <% end %>
+                    <% end %>
+                  <% else %>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium <%= status_class %>">
+                      <%= status_icon %>
+                    </span>
+                  <% end %>
+
+                  <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-50">
+                    <div class="bg-gray-900 text-white text-xs rounded-md py-2 px-3 whitespace-nowrap">
+                      <div class="space-y-1">
+                        <div><strong>Unique <%= @categories[category_index].display_name.downcase.pluralize %>:</strong> <%= records %></div>
+                        <div><strong>Used in datasets:</strong> <%= relationships %></div>
+                        <div><strong>Linked to ontology:</strong> <%= records_with_ontology %></div>
+                        <div><strong>Not linked to ontology:</strong> <%= records_missing_ontology %></div>
+                        <% if parsing_issues > 0 %>
+                          <div><strong>Parsing issues:</strong> <%= parsing_issues %></div>
+                        <% end %>
+                      </div>
+                    </div>
+                    <div class="w-2 h-2 bg-gray-900 transform rotate-45 translate-x-1/2 -translate-y-1 absolute left-1/2"></div>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <div class="mt-6 pt-4 pb-4">
+          <h3 class="text-sm text-gray-800 text-center mb-3">Legend</h3>
+          <div class="flex flex-wrap justify-center gap-4">
+            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">✅</span>
+              <span class="text-xs font-medium text-gray-700">Fully Linked</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">⚠️</span>
+              <span class="text-xs font-medium text-gray-700">Partially Linked</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2">
+              <span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">✖</span>
+              <span class="text-xs font-medium text-gray-700">Not Provided</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gray-50 border-t border-gray-200 rounded-b-lg p-4">
+          <p class="text-sm text-gray-700 text-center">
+            Data validation performed using <%= link_to "CELLxGENE schema v7.1.0", "https://github.com/chanzuckerberg/single-cell-curation/blob/main/schema/7.1.0/schema.md", class: "text-red-500 hover:text-red-600", target: "_blank" %>
+          </p>
+        </div>
+      </div>
+
+      <turbo-frame id="stats_details"></turbo-frame>
+    </div>
+  </div>
+</div>

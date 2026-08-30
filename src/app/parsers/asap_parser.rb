@@ -28,8 +28,12 @@ class AsapParser
   def process_dataset(data)
     parser_hash = Digest::SHA256.hexdigest(data.to_s)
     dataset = Dataset.find_or_initialize_by(source_reference_id: data[:public_key])
+    dataset.source_version = data[:version].to_s.presence
 
-    return if dataset.parser_hash == parser_hash
+    if dataset.persisted? && dataset.parser_hash == parser_hash
+      dataset.save! if dataset.changed?
+      return
+    end
 
     dataset_data = {
       collection_id: "ASAP000000",
@@ -38,6 +42,7 @@ class AsapParser
       explorer_url: "https://asap.epfl.ch/projects/#{data[:public_key]}",
       doi: data[:doi],
       cell_count: data[:nber_cols],
+      source_version: data[:version].to_s.presence,
       parser_hash: parser_hash
     }
 
@@ -68,15 +73,26 @@ class AsapParser
   end
 
   def extract_cell_types(data)
-    data[:annotation_groups].flat_map do |group|
-      group[:annotations].flat_map do |annotation|
-        annotation[:cell_ontology_terms].map do |term|
-          {
-            name: term[:name],
-            identifier: term[:identifier]
-          }
+    if data[:annotation_groups].present?
+      return data[:annotation_groups].flat_map do |group|
+        group[:annotations].flat_map do |annotation|
+          annotation[:cell_ontology_terms].map do |term|
+            {
+              name: term[:name],
+              identifier: term[:identifier]
+            }
+          end
         end
-      end
+      end.compact.uniq
+    end
+
+    return [] unless data[:cell_type].present?
+
+    data[:cell_type].map do |cell_type_data|
+      {
+        name: cell_type_data[:name],
+        identifier: cell_type_data[:identifier]
+      }
     end.compact.uniq
   end
 

@@ -67,17 +67,19 @@ class CellxgeneParser
 
     return if dataset.parser_hash == parser_hash
 
-    dataset.assign_attributes(
-      collection_id: collection.id,
-      source: source,
-      source_url: collection.url,
-      explorer_url: data.fetch(:explorer_url, ""),
-      doi: collection.doi,
-      cell_count: data.fetch(:cell_count, 0),
-      parser_hash: parser_hash
-    )
+    Dataset.transaction do
+      dataset.assign_attributes(
+        collection_id: collection.id,
+        source: source,
+        source_url: collection.url,
+        explorer_url: data.fetch(:explorer_url, ""),
+        doi: collection.doi,
+        cell_count: data.fetch(:cell_count, 0),
+        parser_hash: parser_hash
+      )
 
-    if dataset.save
+      dataset.save!
+
       update_sexes(dataset, data.fetch(:sex, []))
       update_cell_types(dataset, data.fetch(:cell_type, []))
       update_tissues(dataset, data.fetch(:tissue, []))
@@ -88,11 +90,13 @@ class CellxgeneParser
       update_suspension_types(dataset, data.fetch(:suspension_type, []))
       update_file_resources(dataset, data.fetch(:assets))
       update_links(dataset, collection.links)
-
-      puts "Imported #{dataset.id}"
-    else
-      @errors << "Failed to save dataset #{dataset.id}: #{dataset.errors.full_messages.join(", ")}"
     end
+
+    puts "Imported #{dataset.id}"
+  rescue ActiveRecord::RecordInvalid => e
+    @errors << "Failed to save dataset #{data[:dataset_id]}: #{e.record.errors.full_messages.join(", ")}"
+  rescue ActiveRecord::ActiveRecordError => e
+    @errors << "Failed to process dataset #{data[:dataset_id]}: #{e.message}"
   end
 
   def source
@@ -464,23 +468,42 @@ class CellxgeneParser
   end
 
   def update_file_resources(dataset, assets_data)
+    keep_ids = []
+
     assets_data.each do |asset_hash|
       filetype = asset_hash.fetch(:filetype, "").to_s.downcase
       next unless filetype.in?(FileResource::VALID_FILETYPES)
 
-      resource = dataset.file_resources.find_or_initialize_by(
-        url: asset_hash.fetch(:url, ""),
-        filetype: filetype
-      )
+      url = asset_hash.fetch(:url, "")
+      resource = dataset.file_resources.find_by(url: url, filetype: filetype)
+
+      # CELLxGENE rotates asset UUIDs on revision; update the single existing
+      # resource of this filetype in place so we do not leave stale URLs behind.
+      if resource.nil?
+        same_type = dataset.file_resources.where(filetype: filetype).to_a
+        resource = same_type.first if same_type.size == 1
+      end
+
+      resource ||= dataset.file_resources.build(filetype: filetype)
+      resource.url = url
       resource.title = asset_hash[:title].presence
       resource.save!
+      keep_ids << resource.id
     end
+
+    dataset.file_resources.where.not(id: keep_ids).find_each(&:destroy!)
   end
 
   def update_links(dataset, links_data)
     dataset.links.clear
     links_data.each do |link_hash|
-      dataset.links.create(url: link_hash.fetch(:link_url, ""))
+      url = link_hash.fetch(:link_url, "")
+      next if url.blank?
+
+      dataset.links.create!(
+        url: url,
+        name: link_hash[:link_name].presence
+      )
     end
   end
 end
