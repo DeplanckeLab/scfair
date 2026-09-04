@@ -1,9 +1,34 @@
 class StatsController < ApplicationController
   def index
+    @sources = Source.all.order(:name)
+    @categories = Dataset::CATEGORIES
+    category_order = @categories.map(&:name)
+    @stats = OntologyCoverage.all.group_by(&:source_id).transform_values do |records|
+      records.sort_by { |record| category_order.index(record.category) || Float::INFINITY }
+    end
+  end
+
+  def compliance
     stats = ::ComplianceCheck.stats_for_page
     @columns = stats[:columns]
     @coverage = stats[:coverage]
     @checks = stats[:checks]
+  end
+
+  def failing_check_datasets
+    @column_key = params.require(:column_key)
+    @group_id = params.require(:group_id)
+    @field = params.require(:field)
+    @title = params[:title].presence || @field
+    @column_name = params[:column_name].presence || @column_key
+
+    @failing_datasets = ::ComplianceCheckStats.failing_datasets(
+      column_key: @column_key,
+      group_id: @group_id,
+      field: @field
+    )
+
+    render layout: false, formats: [:html]
   end
 
   def failed_datasets

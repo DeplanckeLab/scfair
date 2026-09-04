@@ -39,6 +39,10 @@ module ApplicationHelper
   # Compact scFAIR status beside the dataset source title (same language as ASAP
   # catalog_candidate_scfair_compliance_list_icon). Links to the ASAP standalone
   # check result when a ComplianceCheck is linked.
+  def asap_standalone_compliance_check_url(asap_id)
+    "#{asap_base_url}/standalone_compliance_checks/#{asap_id}"
+  end
+
   def dataset_scfair_compliance_list_icon(dataset)
     check = dataset.latest_compliance_check
     passed = check&.passed
@@ -76,7 +80,7 @@ module ApplicationHelper
     if asap_id.present?
       link_to(
         icon,
-        "#{asap_base_url}/standalone_compliance_checks/#{asap_id}",
+        asap_standalone_compliance_check_url(asap_id),
         class: "#{wrapper_class} hover:opacity-80",
         title: "#{title} (open check)",
         target: "_blank",
