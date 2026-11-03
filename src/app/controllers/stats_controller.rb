@@ -9,10 +9,12 @@ class StatsController < ApplicationController
   end
 
   def compliance
-    stats = ::ComplianceCheck.stats_for_page
-    @columns = stats[:columns]
-    @coverage = stats[:coverage]
-    @checks = stats[:checks]
+    load_compliance_stats(include_all: false)
+  end
+
+  def compliance_all
+    load_compliance_stats(include_all: true)
+    render :compliance
   end
 
   def failing_check_datasets
@@ -75,5 +77,15 @@ class StatsController < ApplicationController
                                    .group_by(&:dataset_id)
 
     render layout: false, formats: [:html]
+  end
+
+  private
+
+  def load_compliance_stats(include_all:)
+    stats = ::ComplianceCheck.stats_for_page(include_all: include_all)
+    @include_all = include_all
+    @columns = stats[:columns]
+    @coverage = stats[:coverage]
+    @checks = stats[:checks]
   end
 end

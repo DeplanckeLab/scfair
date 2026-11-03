@@ -27,7 +27,7 @@ gem "will_paginate", "~> 4.0"
 
 gem "tzinfo-data"
 
-gem "elasticsearch", "~> 9.1", ">= 9.1.2"
+gem "elasticsearch", "~> 9.5", ">= 9.5.0"
 gem "oj"
 
 group :development, :test do

@@ -58,6 +58,59 @@ These commands will parse the ontology file, update the adjacency lists, and fin
 
 As an alternative to running the OBO parser on each ontology file, you can use the load_ontology.sh script to directly load a dump of the two ontology-related tables after adding the corresponding .csv files to the data directory.
 
+## Operations
+
+### Elasticsearch
+
+The stack runs Elasticsearch from `docker-compose.yaml` (currently **9.5.5**). The Rails app uses the `elasticsearch` Ruby gem (9.5.x) and talks to the service at `ELASTICSEARCH_URL` (`http://elasticsearch:9200` inside Compose).
+
+#### Upgrade Elasticsearch
+
+1. **Back up data** (production persists to `/data/scfair/elasticsearch` on the host). Copy or snapshot that directory before upgrading on a live instance.
+
+2. **Pull and restart the search service** from the project root:
+
+   ```bash
+   docker compose pull elasticsearch
+   docker compose up -d elasticsearch
+   ```
+
+3. **Watch startup** until the healthcheck passes:
+
+   ```bash
+   docker compose logs -f elasticsearch
+   curl -s http://localhost:9200
+   ```
+
+4. **Refresh the website image** if `Gemfile` / `Gemfile.lock` changed:
+
+   ```bash
+   docker compose exec website bundle install
+   docker compose up -d website
+   ```
+
+5. **Smoke-test search** in the UI or via the app. If indices are missing or mappings fail after a major jump, rebuild search from the database:
+
+   ```bash
+   docker compose exec website rake index_db
+   ```
+
+   That runs `search:setup_datasets`, `search:setup_ontology_terms`, and full reindex tasks for ontology terms and datasets.
+
+#### Test environment
+
+Use the test Compose file (Elasticsearch on host port **9201**):
+
+```bash
+docker compose -f docker-compose.test.yaml pull elasticsearch
+docker compose -f docker-compose.test.yaml up -d elasticsearch
+```
+
+#### If the node fails to start after upgrade
+
+- Read the first error in `docker compose logs elasticsearch` (often incompatible data from an older major version).
+- Restore the backup of `/data/scfair/elasticsearch`, or stop Elasticsearch, remove the data directory only after confirming you can rebuild from `rake index_db`, then start a fresh node and run `index_db` as above.
+
 ---
 
 Thank you for being part of the scFAIR initiative! Together, we can make single-cell genomics data more findable, accessible, interoperable, and reusable.

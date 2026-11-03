@@ -13,6 +13,7 @@ Rails.application.routes.draw do
   resources :stats, only: [:index] do
     collection do
       get "compliance", action: :compliance, as: :compliance
+      get "compliance_all", action: :compliance_all, as: :compliance_all
       get "failing_check_datasets", action: :failing_check_datasets, as: :failing_check_datasets
       get ":source_id/failed_datasets", action: :failed_datasets, as: :failed_datasets
       get ":source_id/:category/parsing_issues", action: :parsing_issues, as: :parsing_issues

@@ -65,32 +65,47 @@ class ComplianceCheckStats
 
   EQUIVALENT_FIELDS = {
     "X" => "matrix",
-    "dimensions" => "matrix"
+    "dimensions" => "matrix",
+    "uns.ensembl.assembly" => "uns/ensembl_assembly",
+    "uns.ensembl.database" => "uns/ensembl_database",
+    "uns.ensembl.release" => "uns/ensembl_release"
   }.freeze
 
   EQUIVALENT_GROUPS = {
     "h5ad.matrix_encoding" => "matrix_encoding",
     "loom.matrix_encoding" => "matrix_encoding",
     "h5ad.structure" => "structure",
-    "loom.structure" => "structure"
+    "loom.structure" => "structure",
+    "uns.ensembl" => "uns.required_presence"
   }.freeze
 
   GROUP_LABELS = {
     "matrix_encoding" => "Matrix encoding checks",
-    "structure" => "File structural integrity"
+    "structure" => "File structural integrity",
+    "uns.required_presence" => "Required dataset metadata fields"
   }.freeze
 
   ASAP_COLUMN_KEY = "asap".freeze
   ASAP_V8_COLUMN_KEY = "asap_v8".freeze
+  BGEE_V16_COLUMN_KEY = "bgee_v16".freeze
+  BGEE_CURRENT_FTP_SEGMENT = "/ftp/current/".freeze
+  BGEE_V16_FTP_SEGMENT = "/ftp/16/".freeze
   EXCLUDED_SOURCE_SLUGS = %w[bgee scp].freeze
 
-  def self.build
-    new.build
+  def self.build(include_all: false)
+    new(include_all: include_all).build
   end
 
-
   def self.failing_datasets(column_key:, group_id:, field:)
-    new.failing_datasets(column_key: column_key, group_id: group_id, field: field)
+    new(include_all: true).failing_datasets(column_key: column_key, group_id: group_id, field: field)
+  end
+
+  def self.bgee_v16_source_url(url)
+    url.to_s.sub(BGEE_CURRENT_FTP_SEGMENT, BGEE_V16_FTP_SEGMENT)
+  end
+
+  def initialize(include_all: false)
+    @include_all = include_all
   end
 
   def build
@@ -110,36 +125,65 @@ class ComplianceCheckStats
     raise ArgumentError, "group_id produced no variants" if group_ids.empty?
     raise ArgumentError, "field produced no variants" if fields.empty?
 
-    sql = <<~SQL
-      SELECT DISTINCT ON (d.id)
-        d.id AS dataset_id,
-        d.source_reference_id,
-        d.explorer_url,
-        s.name AS source_name,
-        d.source_version,
-        COALESCE(item->>'status', item->'detail'->>'status', 'unknown') AS status,
-        COALESCE(item->>'message', item->'detail'->>'result_message', item->'detail'->>'summary') AS message,
-        cc.asap_id
-      FROM compliance_checks cc
-      JOIN file_resources fr ON fr.id = cc.file_resource_id
-      JOIN datasets d ON d.id = fr.dataset_id
-      JOIN sources s ON s.id = d.source_id
-      CROSS JOIN LATERAL jsonb_array_elements(cc.result->'check_groups') g
-      CROSS JOIN LATERAL jsonb_array_elements(COALESCE(g->'items', '[]'::jsonb)) item
-      WHERE jsonb_exists(cc.result, 'check_groups')
-        AND jsonb_typeof(cc.result->'check_groups') = 'array'
-        AND g->>'id' IN (#{quoted_list(group_ids)})
-        AND item->>'field' IN (#{quoted_list(fields)})
-        AND COALESCE(item->>'status', item->'detail'->>'status') IN ('failed', 'warning')
-        AND (
-          CASE
-            WHEN s.slug = 'asap' AND d.source_version = 'v8' THEN 'asap_v8'
-            WHEN s.slug = 'asap' THEN 'asap'
-            ELSE s.id::text
-          END
-        ) = #{ApplicationRecord.connection.quote(column_key.to_s)}
-      ORDER BY d.id, COALESCE(item->>'status', item->'detail'->>'status') ASC, cc.asap_id DESC
-    SQL
+    sql = if column_key.to_s == BGEE_V16_COLUMN_KEY
+            <<~SQL
+              SELECT DISTINCT ON (d.id)
+                d.id AS dataset_id,
+                d.source_reference_id,
+                d.explorer_url,
+                s.name AS source_name,
+                d.source_version,
+                COALESCE(item->>'status', item->'detail'->>'status', 'unknown') AS status,
+                COALESCE(item->>'message', item->'detail'->>'result_message', item->'detail'->>'summary') AS message,
+                cc.asap_id
+              FROM compliance_checks cc
+              JOIN file_resources fr ON cc.source_url = #{bgee_v16_url_sql("fr.url")}
+              JOIN datasets d ON d.id = fr.dataset_id
+              JOIN sources s ON s.id = d.source_id
+              CROSS JOIN LATERAL jsonb_array_elements(cc.result->'check_groups') g
+              CROSS JOIN LATERAL jsonb_array_elements(COALESCE(g->'items', '[]'::jsonb)) item
+              WHERE jsonb_exists(cc.result, 'check_groups')
+                AND jsonb_typeof(cc.result->'check_groups') = 'array'
+                AND s.slug = 'bgee'
+                AND fr.url LIKE #{quoted_like(BGEE_CURRENT_FTP_SEGMENT)}
+                AND g->>'id' IN (#{quoted_list(group_ids)})
+                AND item->>'field' IN (#{quoted_list(fields)})
+                AND COALESCE(item->>'status', item->'detail'->>'status') IN ('failed', 'warning')
+              ORDER BY d.id, COALESCE(item->>'status', item->'detail'->>'status') ASC, cc.asap_id DESC
+            SQL
+          else
+            <<~SQL
+              SELECT DISTINCT ON (d.id)
+                d.id AS dataset_id,
+                d.source_reference_id,
+                d.explorer_url,
+                s.name AS source_name,
+                d.source_version,
+                COALESCE(item->>'status', item->'detail'->>'status', 'unknown') AS status,
+                COALESCE(item->>'message', item->'detail'->>'result_message', item->'detail'->>'summary') AS message,
+                cc.asap_id
+              FROM compliance_checks cc
+              JOIN file_resources fr ON fr.id = cc.file_resource_id
+              JOIN datasets d ON d.id = fr.dataset_id
+              JOIN sources s ON s.id = d.source_id
+              CROSS JOIN LATERAL jsonb_array_elements(cc.result->'check_groups') g
+              CROSS JOIN LATERAL jsonb_array_elements(COALESCE(g->'items', '[]'::jsonb)) item
+              WHERE jsonb_exists(cc.result, 'check_groups')
+                AND jsonb_typeof(cc.result->'check_groups') = 'array'
+                AND g->>'id' IN (#{quoted_list(group_ids)})
+                AND item->>'field' IN (#{quoted_list(fields)})
+                AND COALESCE(item->>'status', item->'detail'->>'status') IN ('failed', 'warning')
+                AND #{not_bgee_v16_check_sql("cc")}
+                AND (
+                  CASE
+                    WHEN s.slug = 'asap' AND d.source_version = 'v8' THEN 'asap_v8'
+                    WHEN s.slug = 'asap' THEN 'asap'
+                    ELSE s.id::text
+                  END
+                ) = #{quote(column_key.to_s)}
+              ORDER BY d.id, COALESCE(item->>'status', item->'detail'->>'status') ASC, cc.asap_id DESC
+            SQL
+          end
 
     ApplicationRecord.connection.select_all(sql).map do |row|
       FailingDataset.new(
@@ -157,8 +201,26 @@ class ComplianceCheckStats
 
   private
 
+  attr_reader :include_all
+
+  def quote(value)
+    ApplicationRecord.connection.quote(value.to_s)
+  end
+
   def quoted_list(values)
-    values.map { |value| ApplicationRecord.connection.quote(value.to_s) }.join(", ")
+    values.map { |value| quote(value) }.join(", ")
+  end
+
+  def quoted_like(segment)
+    quote("%#{segment}%")
+  end
+
+  def bgee_v16_url_sql(url_expression)
+    "replace(#{url_expression}, #{quote(BGEE_CURRENT_FTP_SEGMENT)}, #{quote(BGEE_V16_FTP_SEGMENT)})"
+  end
+
+  def not_bgee_v16_check_sql(table_alias = "cc")
+    "#{table_alias}.source_url NOT LIKE #{quoted_like(BGEE_V16_FTP_SEGMENT)}"
   end
 
   def group_id_variants(canonical_group_id)
@@ -187,15 +249,23 @@ class ComplianceCheckStats
     variants.uniq
   end
 
+  def excluded_slugs
+    include_all ? [] : EXCLUDED_SOURCE_SLUGS
+  end
+
   def sources
-    @sources ||= Source.order(:name).where.not(slug: EXCLUDED_SOURCE_SLUGS).to_a
+    @sources ||= begin
+      scope = Source.order(:name)
+      scope = scope.where.not(slug: excluded_slugs) if excluded_slugs.any?
+      scope.to_a
+    end
   end
 
   def excluded_sources_sql
-    @excluded_sources_sql ||= begin
-      quoted = EXCLUDED_SOURCE_SLUGS.map { |slug| ApplicationRecord.connection.quote(slug) }.join(", ")
-      "s.slug NOT IN (#{quoted})"
-    end
+    return "TRUE" if excluded_slugs.empty?
+
+    quoted = excluded_slugs.map { |slug| quote(slug) }.join(", ")
+    "s.slug NOT IN (#{quoted})"
   end
 
   def columns
@@ -209,6 +279,14 @@ class ComplianceCheckStats
       end
       other_sources.each do |source|
         cols << Column.new(key: source.id.to_s, name: source.name, logo: source.logo, source_id: source.id.to_s)
+        next unless include_all && source.slug == "bgee"
+
+        cols << Column.new(
+          key: BGEE_V16_COLUMN_KEY,
+          name: "Bgee v16",
+          logo: source.logo,
+          source_id: source.id.to_s
+        )
       end
       if asap
         cols << Column.new(
@@ -238,12 +316,13 @@ class ComplianceCheckStats
       FROM sources s
       LEFT JOIN datasets d ON d.source_id = s.id
       LEFT JOIN file_resources fr ON fr.dataset_id = d.id
-      LEFT JOIN compliance_checks cc ON cc.file_resource_id = fr.id
+      LEFT JOIN compliance_checks cc ON cc.file_resource_id = fr.id AND #{not_bgee_v16_check_sql("cc")}
       WHERE #{excluded_sources_sql}
       GROUP BY column_key
     SQL
 
     rows = ApplicationRecord.connection.select_all(sql).index_by { |row| row["column_key"].to_s }
+    rows = rows.merge(bgee_v16_coverage_row) if include_all
 
     individual_checks_sql = <<~SQL
       SELECT
@@ -263,10 +342,12 @@ class ComplianceCheckStats
       WHERE jsonb_exists(cc.result, 'check_groups')
         AND jsonb_typeof(cc.result->'check_groups') = 'array'
         AND #{excluded_sources_sql}
+        AND #{not_bgee_v16_check_sql("cc")}
       GROUP BY column_key
     SQL
 
     individual_checks = ApplicationRecord.connection.select_all(individual_checks_sql).index_by { |row| row["column_key"].to_s }
+    individual_checks = individual_checks.merge(bgee_v16_individual_checks_row) if include_all
 
     columns.map do |column|
       row = rows[column.key] || {}
@@ -284,8 +365,74 @@ class ComplianceCheckStats
     end
   end
 
-  def check_rows
+  def bgee_v16_coverage_row
     sql = <<~SQL
+      SELECT
+        #{quote(BGEE_V16_COLUMN_KEY)} AS column_key,
+        COUNT(DISTINCT fr.id) AS file_resources_count,
+        COUNT(DISTINCT cc.id) AS checked_count,
+        COUNT(DISTINCT cc.id) FILTER (WHERE cc.passed IS TRUE) AS passed_count,
+        COUNT(DISTINCT cc.id) FILTER (WHERE cc.passed IS FALSE AND cc.status = 'completed') AS failed_count,
+        COUNT(DISTINCT cc.id) FILTER (WHERE cc.status = 'failed') AS failed_run_count
+      FROM sources s
+      JOIN datasets d ON d.source_id = s.id
+      JOIN file_resources fr ON fr.dataset_id = d.id
+      LEFT JOIN compliance_checks cc ON cc.source_url = #{bgee_v16_url_sql("fr.url")}
+      WHERE s.slug = 'bgee'
+        AND fr.url LIKE #{quoted_like(BGEE_CURRENT_FTP_SEGMENT)}
+    SQL
+
+    row = ApplicationRecord.connection.select_all(sql).first
+    return {} if row.nil?
+
+    { BGEE_V16_COLUMN_KEY => row }
+  end
+
+  def bgee_v16_individual_checks_row
+    sql = <<~SQL
+      SELECT
+        #{quote(BGEE_V16_COLUMN_KEY)} AS column_key,
+        COUNT(*) FILTER (WHERE COALESCE(item->>'status', item->'detail'->>'status') = 'passed') AS passed,
+        COUNT(*) FILTER (WHERE COALESCE(item->>'status', item->'detail'->>'status') IN ('passed', 'failed')) AS evaluated
+      FROM compliance_checks cc
+      JOIN file_resources fr ON cc.source_url = #{bgee_v16_url_sql("fr.url")}
+      JOIN datasets d ON d.id = fr.dataset_id
+      JOIN sources s ON s.id = d.source_id
+      CROSS JOIN LATERAL jsonb_array_elements(cc.result->'check_groups') g
+      CROSS JOIN LATERAL jsonb_array_elements(COALESCE(g->'items', '[]'::jsonb)) item
+      WHERE jsonb_exists(cc.result, 'check_groups')
+        AND jsonb_typeof(cc.result->'check_groups') = 'array'
+        AND s.slug = 'bgee'
+        AND fr.url LIKE #{quoted_like(BGEE_CURRENT_FTP_SEGMENT)}
+    SQL
+
+    row = ApplicationRecord.connection.select_all(sql).first
+    return {} if row.nil?
+
+    { BGEE_V16_COLUMN_KEY => row }
+  end
+
+  def check_rows
+    grouped = {}
+    accumulate_check_rows(grouped, standard_check_rows_sql)
+    accumulate_check_rows(grouped, bgee_v16_check_rows_sql) if include_all
+
+    grouped.values
+           .sort_by { |check| [check[:group_id].to_s, check[:field].to_s] }
+           .map do |check|
+             CheckRow.new(
+               group_id: check[:group_id],
+               group_label: check[:group_label],
+               field: display_field(check[:original_fields], check[:field]),
+               canonical_field: check[:field],
+               title: check[:title],
+               by_column: check[:by_column]
+             )
+           end
+  end
+
+  def standard_check_rows_sql
+    <<~SQL
       SELECT
         CASE
           WHEN s.slug = 'asap' AND d.source_version = 'v8' THEN 'asap_v8'
@@ -307,12 +454,38 @@ class ComplianceCheckStats
       WHERE jsonb_exists(cc.result, 'check_groups')
         AND jsonb_typeof(cc.result->'check_groups') = 'array'
         AND #{excluded_sources_sql}
+        AND #{not_bgee_v16_check_sql("cc")}
       GROUP BY column_key, g->>'id', g->>'label', item->>'field', COALESCE(item->'detail'->>'title', item->>'field'), COALESCE(item->>'status', item->'detail'->>'status', 'unknown')
       ORDER BY g->>'id', item->>'field', column_key
     SQL
+  end
 
-    grouped = {}
+  def bgee_v16_check_rows_sql
+    <<~SQL
+      SELECT
+        #{quote(BGEE_V16_COLUMN_KEY)} AS column_key,
+        g->>'id' AS group_id,
+        g->>'label' AS group_label,
+        item->>'field' AS field,
+        COALESCE(item->'detail'->>'title', item->>'field') AS title,
+        COALESCE(item->>'status', item->'detail'->>'status', 'unknown') AS status,
+        COUNT(*) AS n
+      FROM compliance_checks cc
+      JOIN file_resources fr ON cc.source_url = #{bgee_v16_url_sql("fr.url")}
+      JOIN datasets d ON d.id = fr.dataset_id
+      JOIN sources s ON s.id = d.source_id
+      CROSS JOIN LATERAL jsonb_array_elements(cc.result->'check_groups') g
+      CROSS JOIN LATERAL jsonb_array_elements(COALESCE(g->'items', '[]'::jsonb)) item
+      WHERE jsonb_exists(cc.result, 'check_groups')
+        AND jsonb_typeof(cc.result->'check_groups') = 'array'
+        AND s.slug = 'bgee'
+        AND fr.url LIKE #{quoted_like(BGEE_CURRENT_FTP_SEGMENT)}
+      GROUP BY column_key, g->>'id', g->>'label', item->>'field', COALESCE(item->'detail'->>'title', item->>'field'), COALESCE(item->>'status', item->'detail'->>'status', 'unknown')
+      ORDER BY g->>'id', item->>'field'
+    SQL
+  end
 
+  def accumulate_check_rows(grouped, sql)
     ApplicationRecord.connection.select_all(sql).each do |row|
       canonical_group_id = normalize_group_id(row["group_id"])
       canonical_field = normalize_field(row["field"])
@@ -344,19 +517,6 @@ class ComplianceCheckStats
       else counts.unknown += amount
       end
     end
-
-    grouped.values
-           .sort_by { |check| [check[:group_id].to_s, check[:field].to_s] }
-           .map do |check|
-             CheckRow.new(
-               group_id: check[:group_id],
-               group_label: check[:group_label],
-               field: display_field(check[:original_fields], check[:field]),
-               canonical_field: check[:field],
-               title: check[:title],
-               by_column: check[:by_column]
-             )
-           end
   end
 
   def normalize_group_id(group_id)

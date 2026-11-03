@@ -12,4 +12,11 @@ namespace :compliance_checks do
     ok = importer.perform
     abort "compliance_checks:import_scp_from_asap finished with errors" unless ok
   end
+
+  desc "Import Bgee v16 ASAP checks (/ftp/current/ -> /ftp/16/; ASAP_BASE_URL defaults to asap-test, DRY_RUN=1, LIMIT=n)"
+  task import_bgee_v16_from_asap: :environment do
+    importer = BgeeV16ComplianceCheckImporter.new
+    ok = importer.perform
+    abort "compliance_checks:import_bgee_v16_from_asap finished with errors" unless ok
+  end
 end

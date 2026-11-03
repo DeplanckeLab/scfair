@@ -4,7 +4,7 @@ class ComplianceCheck < ApplicationRecord
   validates :asap_id, presence: true, uniqueness: true
   validates :source_url, presence: true
 
-  def self.stats_for_page
-    ::ComplianceCheckStats.build
+  def self.stats_for_page(include_all: false)
+    ::ComplianceCheckStats.build(include_all: include_all)
   end
 end
