@@ -29,6 +29,8 @@ gem "tzinfo-data"
 
 gem "elasticsearch", "~> 9.5", ">= 9.5.0"
 gem "oj"
+gem "msgpack", ">= 1.8.7"
+
 
 group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
