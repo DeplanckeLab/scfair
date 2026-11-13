@@ -35,6 +35,7 @@ gem "oj", ">= 3.17.3"
 gem "addressable", ">= 2.9.1"
 gem "faraday", ">= 2.14.3"
 gem "json", "~> 2.10", ">= 2.10.2"
+gem "rexml", ">= 3.4.2"
 
 group :development, :test do
   gem "debug", platforms: %i[ mri mingw x64_mingw ]
