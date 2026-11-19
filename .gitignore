@@ -8,6 +8,7 @@ src/log/**
 !src/tmp/.keep
 src/vendor/bundle
 src/public/assets/*
+src/db/schema_comments.rb
 
 */node_modules
 .env.prod

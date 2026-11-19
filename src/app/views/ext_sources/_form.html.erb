@@ -1,0 +1,45 @@
+<%= form_with(model: ext_source) do |form| %>
+  <% if ext_source.errors.any? %>
+    <div style="color: red">
+      <h2><%= pluralize(ext_source.errors.count, "error") %> prohibited this ext_source from being saved:</h2>
+
+      <ul>
+        <% ext_source.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group row">
+    <%= label_tag "Name", nil,  {:class => 'col-sm-2 col-form-label'} %>
+    <div class="col-sm-10">
+      <%= form.text_field :name, {:class => 'form-control'} %>
+    </div>
+  </div>
+  
+  <div class="form-group row">
+    <%= label_tag "Description", nil,  {:class => 'col-sm-2 col-form-label'} %>
+    <div class="col-sm-10">
+      <%= form.text_field :description, {:class => 'form-control'} %>
+    </div>
+  </div>
+  
+  <div class="form-group row">
+    <%= label_tag "URL mask", nil,  {:class => 'col-sm-2 col-form-label'} %>
+    <div class="col-sm-10">
+      <%= form.text_field :url_mask, {:class => 'form-control'} %>
+    </div>
+  </div>
+
+  <div class="form-group row">
+    <%= label_tag "ID regexp", nil,  {:class => 'col-sm-2 col-form-label'} %>
+    <div class="col-sm-10">
+      <%= form.text_field :id_regexp, {:class => 'form-control'} %>
+    </div>
+  </div>
+  
+  <div>
+    <%= form.submit %>
+  </div>
+<% end %>

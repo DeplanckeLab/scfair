@@ -1,0 +1,56 @@
+<p style="color: green"><%= notice %></p>
+
+<div class='float_end'>
+  <%= link_to "New external source", new_ext_source_path, {:class => 'btn btn-primary'} %> 
+</div>
+
+<h1>External sources</h1>
+
+<!--<div id="ext_sources">
+  <% @ext_sources.each do |ext_source| %>
+    <%= render ext_source %>
+    <p>
+      <%= link_to "Show this ext source", ext_source %>
+    </p>
+  <% end %>
+</div>
+
+<%= link_to "New ext source", new_ext_source_path %>
+-->
+
+<table id='ext_sources'>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Description</th>
+      <th>URL mask</th>
+      <th>ID regexp</th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @ext_sources.each do |es| %>
+    <tr>
+      <td><%= es.id %></td>
+      <td><%= es.name %></td>
+      <td><%= es.description %></td>
+      <td><%= es.url_mask %></td>
+      <td><%= es.id_regexp %></td>
+      <td>
+	<%= link_to "Edit", edit_ext_source_path(es), {:class => 'btn btn-primary'} %>
+      </td><td>
+	<%= button_to "Destroy", es, {:method => :delete, :class => 'btn btn-danger', :data => {:turbo => 'false', :method => 'delete'}} %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+
+
+<%= javascript_tag do %>
+
+$("#ext_sources").DataTable({})
+
+<% end %>
